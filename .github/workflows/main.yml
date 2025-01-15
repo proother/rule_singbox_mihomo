@@ -58,13 +58,17 @@ jobs:
       #
       - name: Add data for meta
         env:
-          # This sets up the SED pipeline you had:
-          # 1) grep DOMAIN
-          # 2) remove lines with "#"
-          # 3) replace "  - DOMAIN," -> "full:"
-          # 4) replace "  - DOMAIN-SUFFIX," -> ""
-          # 5) replace "  - DOMAIN-KEYWORD," -> "keyword:"
-          SED: grep DOMAIN | grep -v "#" | sed 's/  - DOMAIN,/full:/g' | sed 's/  - DOMAIN-SUFFIX,//g' | sed 's/  - DOMAIN-KEYWORD,/keyword:/g'
+          SED: |
+            # 1) Remove lines that start with '#' (comments).
+            # 2) Convert lines like:
+            #    - DOMAIN-SUFFIX,domain.com    -> +.domain.com
+            #    - DOMAIN-KEYWORD,keyword     -> +.keyword
+            #    - DOMAIN,domain.com          -> +.domain.com
+            grep -v '^#' \
+            | sed 's/^[[:space:]]*-[[:space:]]*DOMAIN-SUFFIX,//g' \
+            | sed 's/^[[:space:]]*-[[:space:]]*DOMAIN-KEYWORD,//g' \
+            | sed 's/^[[:space:]]*-[[:space:]]*DOMAIN,//g' \
+            | sed 's/^/+./'
         run: |
           echo "=== Gathering all .list files with SED transformation ==="
           mkdir -p community/data

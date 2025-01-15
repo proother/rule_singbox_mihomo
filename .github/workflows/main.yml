@@ -55,23 +55,22 @@ jobs:
           echo "=== Gathering all .list files for meta ==="
           mkdir -p community/data
           # Copy all .list files from ios_rule_script into community/data
-          cp ios_rule_script/rule/Clash/*/*.list community/data/
+          #cp ios_rule_script/rule/Clash/*/*.list community/data/
+          
+          # Combine all .list files into one big file
+          cat ios_rule_script/rule/Clash/*/*.list > community/data/all_merged_clash_rules.list
+
           echo "List files copied. Ready to build geosite.dat."
 
       #
       # 3) Build geosite.dat file
       #
       - name: Build geosite.dat file
-        env:
-          NO_SKIP: true
         run: |
-          echo "=== Building geosite.dat ==="
-          # Move into the converter folder (where go.mod is located)
           cd converter
-          # Run the converter, specifying the data path in ../community/data
-          go run . --datapath=../community/data --outputname=geosite.dat
-          # Move the resulting geosite.dat up into community/data
-          mv geosite.dat ../community/data/geosite.dat
+          go run . clash \
+            -f ../community/data/all_merged_clash_rules.list \
+            -o ../community/data/geosite.dat
 
       #
       # 4) Build db and metadb file (no geoip)

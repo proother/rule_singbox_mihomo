@@ -20,7 +20,6 @@ jobs:
           echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
         shell: bash
 
-      - name: Checkout
       #
       # 1) Checkout repositories
       #

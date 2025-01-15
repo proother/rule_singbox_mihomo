@@ -40,21 +40,20 @@ jobs:
           # Option A: Copy them directly into community/data (if the converter can handle multiple .list inputs from a directory).
           cp ios_rule_script/rule/Clash/*/*.list community/data/
 
-          # Option B (if needed): Combine or transform each .list 
-          # cat ios_rule_script/rule/Clash/*/*.list > community/data/all_merged_rules.list
-          # Possibly add your own sed/awk transformations, etc.
-
           echo "List files copied. Ready to build geosite.dat."
+
 
       #
       # 3) Build geosite.dat file
       #
-      - name: Build geosite.dat file
+      - name: Build geosite-lite.dat file
+        env:
+          NO_SKIP: true
+          SED: grep DOMAIN | grep -v "#" | sed 's/  - DOMAIN,/full:/g' | sed 's/  - DOMAIN-SUFFIX,//g' | sed 's/  - DOMAIN-KEYWORD,/keyword:/g'
         run: |
-          cd custom || exit 1
-          # echo sentry.io >>  ../community/data/openai
-          # echo ipleak.net >> ../community/data/geolocation-\!cn && echo browserleaks.org >> ../community/data/geolocation-\!cn
-          go run ./ --datapath=../community/data
+          cd community || exit 1
+          mkdir -p data
+          go run ./ --datapath=./data --outputname geosite.dat
       #
       # 4) Build db and metadb file (no geoip)
       #
@@ -63,7 +62,7 @@ jobs:
           NO_SKIP: true
         run: |
           go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
-          geo convert site -i v2ray -o sing -f geosite.db ./custom/publish/geosite.dat
+          geo convert site -i v2ray -o sing -f geosite.db ./community/data/geosite.dat
           echo "DB & metadb build complete (without geoip)."
 
       #
@@ -75,7 +74,7 @@ jobs:
         run: |
           mkdir -p sing-rule/geo/geosite && mkdir -p sing-rule/geo/geoip
           cd convert
-          go run ./ geosite -f ../custom/publish/geosite.dat -o ../sing-rule/geo/geosite -t sing-box
+          go run ./ geosite -f ../community/data/geosite.dat -o ../sing-rule/geo/geosite -t sing-box
 
       #
       # 6) Convert geo to meta-rule-set
@@ -86,7 +85,7 @@ jobs:
         run: |
           mkdir -p meta-rule/geo/geosite && mkdir -p meta-rule/geo/geoip
           cd convert
-          go run ./ geosite -f ../custom/publish/geosite.dat -o ../meta-rule/geo/geosite
+          go run ./ geosite -f ../community/data/geosite.dat -o ../meta-rule/geo/geosite
 
       #
       # (Optional) Upload or publish artifacts, etc.

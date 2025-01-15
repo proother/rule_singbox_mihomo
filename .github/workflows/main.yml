@@ -77,11 +77,7 @@ jobs:
           # then outputs everything to -o with type 'sing-box'
           go run . clash -i ../community/sing-data -o ../sing-rule -t sing-box
           cd ../sing-rule
-          for file in *; do
-            if [[ $file != classical.* ]]; then
-              rm -f "$file"
-            fi
-          done
+          find . -type f ! -name 'classical.*' -exec rm -f {} +
 
           echo "=== Final files in sing-rule ==="
           ls -al

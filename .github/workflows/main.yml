@@ -68,24 +68,24 @@ jobs:
             cp "$f" "community/data/$newName"
           done
           # Create empty placeholders for missing lists
-          touch community/data/geolocation-!cn
-          touch community/data/geolocation-cn
-          touch community/data/tld-!cn
-          touch community/data/tld-cn
-          touch community/data/private
+          #touch community/data/geolocation-!cn
+          #touch community/data/geolocation-cn
+          #touch community/data/tld-!cn
+          #touch community/data/tld-cn
+          #touch community/data/private
           ls -al community/data
 
       #
       # 5. Build geosite.dat file
       #
-      - name: Build geosite.dat file
-        run: |
-          echo "=== Building geosite.dat ==="
-          cd custom
-          echo ipleak.net >> ../community/data/geolocation-!cn
-          echo browserleaks.org >> ../community/data/geolocation-!cn
-          go run ./ --datapath=../community/data
-          cp ./publish/geosite.dat ../community/data/geosite.dat
+      #- name: Build geosite.dat file
+      #  run: |
+      #    echo "=== Building geosite.dat ==="
+      #    cd custom
+      #    echo ipleak.net >> ../community/data/geolocation-!cn
+      #    echo browserleaks.org >> ../community/data/geolocation-!cn
+      #    go run ./ --datapath=../community/data
+      #    cp ./publish/geosite.dat ../community/data/geosite.dat
 
       #
       # 6. Build db (no geoip)

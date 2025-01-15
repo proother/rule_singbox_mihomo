@@ -75,7 +75,7 @@ jobs:
           cd converter
           # The 'clash' subcommand looks for *.yaml in the -i folder,
           # then outputs everything to -o with type 'sing-box'
-          go run . clash -i ../community/data -o ../sing-rule -t sing-box
+          go run . clash -i ../community/sing-data -o ../sing-rule -t sing-box
 
       # 4. Add data (copy & transform .list files)
       #

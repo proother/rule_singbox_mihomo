@@ -85,7 +85,7 @@ jobs:
             dir=${dir%/}
 
             if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-              dir_name=$(basename "$dir" | tr '[:upper:]' '[:lower:]')
+              dir_name=$(basename "$dir")
 
               mv "$dir/classical.json" "${dir_name}.json"
               mv "$dir/classical.srs" "${dir_name}.srs"

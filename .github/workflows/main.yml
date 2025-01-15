@@ -55,44 +55,88 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.20'
+          go-version: '^1.23'
           # Adjust the Go version as needed
 
-      #
-      # 4. Create specialized lists
-      #    Integrates all rules from blackmatrix7/ios_rule_script/tree/master/rule/Clash/*/*.list
-      #
-      - name: Create specialized lists
+      # 4. Prepare a publish directory
+      - name: Prepare publish folder
         run: |
-          # <Your steps here>
-          # Example:
-          # - cd ios_rule_script/rule/Clash
-          # - cat */*.list >> combined_rules.txt
-          # - do any filtering, sorting, or merging you need
-          echo "Integrate specialized lists..."
+          mkdir -p publish
 
       #
-      # 5. Convert all rules files to “sing-rule-set” and “meta-rule-set”
+      # METHOD A: Combine ALL .list files into a single file, convert once
       #
-      - name: Convert all rules to sing-rule-set & meta-rule-set
+      - name: Method A - Combine & Convert (Single File)
         run: |
-          # <Your steps here>
-          # Possibly run your converter tool from "converter" directory
-          # e.g., `cd converter && go run . --input ../combined_rules.txt --output ../some_folder`
-          echo "Convert all rule files..."
+          echo "=== Combining .list files ==="
+          cd ios_rule_script/rule/Clash
+          # 1) Combine all .list files into a single file
+          cat */*.list > all_merged_rules.txt
+          # 2) (Optional) Sort / deduplicate
+          sort -u all_merged_rules.txt -o all_merged_rules.txt
+          
+          echo "=== Converting single file to .dat (mihomo) & .db (sing-box) ==="
+          cd ../../../converter
+
+          # Example commands to produce .dat for mihomo
+          # The actual flags/commands depend on your converter
+          go run . \
+            --input ../ios_rule_script/rule/Clash/all_merged_rules.txt \
+            --output-type dat \
+            --output-file ../publish/all_rules_mihomo.dat
+
+          # Example commands to produce .db for sing-box
+          go run . \
+            --input ../ios_rule_script/rule/Clash/all_merged_rules.txt \
+            --output-type db \
+            --output-file ../publish/all_rules_singbox.db
+
+          echo "Single-file conversion complete."
 
       #
-      # 6. Delete current assets (if they exist)
+      # METHOD B: Process each .list file individually
+      #           (Create .yaml & .mrs for mihomo, .json & .srs for sing-box)
+      #
+      - name: Method B - Convert each file individually
+        run: |
+          echo "=== Converting each .list file individually ==="
+          cd ios_rule_script/rule/Clash
+
+          # Loop over each .list file
+          for file in $(find . -type f -name "*.list"); do
+            echo "Processing $file..."
+            
+            # Extract base name without extension, e.g. "SteamCN.list" -> "SteamCN"
+            filename=$(basename "$file" .list)
+            
+            # Convert to .yaml & .mrs (for mihomo)
+            # Example commands—replace with your actual script/tool usage
+            ../../../../converter/yourConverterTool \
+              --input "$file" \
+              --output-yaml "../publish/${filename}.yaml" \
+              --output-mrs "../publish/${filename}.mrs"
+            
+            # Convert to .json & .srs (for sing-box)
+            ../../../../converter/yourConverterTool \
+              --input "$file" \
+              --output-json "../publish/${filename}.json" \
+              --output-srs "../publish/${filename}.srs"
+          done
+
+          echo "All individual files converted."
+
+      #
+      # 5. [Optional] If you need to delete existing release assets
       #
       - name: Delete current assets
         uses: andreaswilli/delete-release-assets-action@v3.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: main              # The release tag you want to clear
+          tag: main
           deleteOnlyFromDrafts: false
 
       #
-      # 7. Create and upload (under main branch)
+      # 6. Create and upload release
       #
       - name: Create & Upload Release
         id: create_upload_release
@@ -103,35 +147,29 @@ jobs:
           tag: main
           file_glob: true
           overwrite: true
-          file: ./publish/*      # Adjust to the folder/files you want to upload
+          file: ./publish/*
 
       #
-      # 8. Git push assets to various path (under main branch)
-      #    8.1 Push to sing-rule path
-      #    8.2 Push to meta-rule path
+      # 7. Git push assets (if you want them in the repo itself)
       #
-      - name: Git push assets to sing-rule path
+      - name: Commit and push assets to main (subfolder)
         run: |
-          # <Your steps here>
-          # For example:
-          # 1. mkdir -p sing-rule
-          # 2. cp -r your_sing_output/* sing-rule/
-          # 3. Commit/push those to the main branch at a subfolder
-          echo "Push to sing-rule path..."
-
-      - name: Git push assets to meta-rule path
-        run: |
-          # <Your steps here>
-          # Similar approach, but for meta-rule
-          echo "Push to meta-rule path..."
+          cd publish
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b main-assets
+          git add .
+          git commit -m "Assets from ${{ env.BUILDTIME }}"
+          # Force push to your main branch subfolder or a dedicated branch
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin main-assets
 
       #
-      # 9. Purge jsdelivr CDN
+      # 8. Purge jsdelivr CDN (optional)
       #
       - name: Purge jsdelivr CDN
         run: |
-          # Assuming final files live in ./publish:
-          for file in $(ls ./publish); do
-            echo "Purging $file ..."
+          for file in $(ls publish); do
             curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/${file}"
           done

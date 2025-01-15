@@ -22,8 +22,6 @@ jobs:
         shell: bash
         run: |
           echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
-          # Add any other variables you need:
-          # echo "MY_VARIABLE=some_value" >> $GITHUB_ENV
 
       #
       # 2. Checkout multiple repositories
@@ -72,28 +70,25 @@ jobs:
         run: |
           echo "=== Combining .list files ==="
           cd ios_rule_script/rule/Clash
-          
-          # 1) Combine all .list files into a single file
+
+          # 1) Combine all .list files into one
           cat */*.list > all_merged_rules.txt
-          
-          # 2) (Optional) Sort / deduplicate
+
+          # 2) (Optional) Sort & deduplicate
           sort -u all_merged_rules.txt -o all_merged_rules.txt
-          
+
           cd ../../../converter
           echo "=== Converting single file to .dat (mihomo) & .db (sing-box) ==="
 
-          # Example: Use the "geosite" subcommand with its known flags
-          # (Replace with the correct subcommand and flags as per your converter’s --help)
-          # Below: -f is input file, -o is output file, -t is the target type or format.
-
+          # Use the 'clash' subcommand (not 'geosite'), because .list files = Clash format
           # 1) Convert to .dat for "mihomo"
-          go run . geosite \
+          go run . clash \
             -f ../ios_rule_script/rule/Clash/all_merged_rules.txt \
             -o ../publish/all_rules_mihomo.dat \
             -t mihomo
 
           # 2) Convert to .db for "sing-box"
-          go run . geosite \
+          go run . clash \
             -f ../ios_rule_script/rule/Clash/all_merged_rules.txt \
             -o ../publish/all_rules_singbox.db \
             -t sing-box
@@ -116,38 +111,33 @@ jobs:
             # Extract the base name without extension, e.g. "SteamCN.list" -> "SteamCN"
             filename=$(basename "$file" .list)
             
-            # Example: Use the same "geosite" subcommand but produce different outputs
-            #   (Replace with your real converter usage & flags.)
-            #   For mihomo: .yaml & .mrs
-            #   For sing-box: .json & .srs
-
             # Convert to .yaml (for mihomo)
-            ../../../converter/convert geosite \
+            ../../../converter/convert clash \
               -f "$file" \
               -o "../$filename.yaml" \
               -t mihomo-yaml
 
             # Convert to .mrs (for mihomo, if that format is supported)
-            ../../../converter/convert geosite \
+            ../../../converter/convert clash \
               -f "$file" \
               -o "../$filename.mrs" \
               -t mihomo-mrs
 
             # Convert to .json (for sing-box)
-            ../../../converter/convert geosite \
+            ../../../converter/convert clash \
               -f "$file" \
               -o "../$filename.json" \
               -t sing-box-json
 
             # Convert to .srs (for sing-box)
-            ../../../converter/convert geosite \
+            ../../../converter/convert clash \
               -f "$file" \
               -o "../$filename.srs" \
               -t sing-box-srs
           done
 
           echo "All individual files converted."
-          mv ./*.yaml ./*.mrs ./*.json ./*.srs ../../publish || true
+          mv ./*.yaml ./*.mrs ./*.json ./*.srs ../../publish 2>/dev/null || true
 
       #
       # 5. [Optional] If you need to delete existing release assets
@@ -160,7 +150,7 @@ jobs:
           deleteOnlyFromDrafts: false
 
       #
-      # 6. Create and upload release
+      # 6. Create & Upload Release
       #
       - name: Create & Upload Release
         id: create_upload_release

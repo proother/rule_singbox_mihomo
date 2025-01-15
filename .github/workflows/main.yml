@@ -57,24 +57,15 @@ jobs:
       # 4. Add data for meta (copy .list files)
       #
       - name: Add data for meta
-        env:
-          SED: |
-            grep -v '^#' \
-            | sed 's/^[[:space:]]*DOMAIN-SUFFIX,[[:space:]]*/+./g' \
-            | sed 's/^[[:space:]]*DOMAIN-KEYWORD,[[:space:]]*/+./g' \
-            | sed 's/^[[:space:]]*DOMAIN,[[:space:]]*/+./g'
         run: |
-          echo "=== Gathering all .list files with SED transformation ==="
+          echo "=== Gathering all .list files for meta ==="
           mkdir -p community/data
-
-          # Loop over each *.list in ios_rule_script
-          for f in ios_rule_script/rule/Clash/*/*.list; do
-            # Remove the ".list" suffix
-            newName=$(basename "$f" .list)
-            # Apply the SED pipeline, then write into community/data/$newName (no .list extension)
-            cat "$f" | ${{ env.SED }} > "community/data/$newName"
+          # Copy them as-is (with the .list extension)
+          cp ios_rule_script/rule/Clash/*/*.list community/data/
+          # Rename each file in community/data/ to remove .list
+          for f in community/data/*.list; do
+            mv "$f" "${f%.list}"
           done
-
           # Create empty placeholders for missing lists
           touch community/data/geolocation-!cn
           touch community/data/geolocation-cn
@@ -102,7 +93,7 @@ jobs:
         run: |
           echo "=== Building geosite.db (no geoip) ==="
           go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
-          geo convert site -i v2ray -o sing -f geosite.db ./community/data/geosite.dat
+          geo convert clash -i v2ray -o sing -f geosite.db ./community/data/geosite.dat
 
       #
       # 7. Convert geo to sing-rule-set

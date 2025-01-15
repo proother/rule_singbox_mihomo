@@ -61,11 +61,12 @@ jobs:
           echo "=== Gathering all .yaml files ==="
           mkdir -p community/sing-data
 
-          find ios_rule_script/rule/Clash -type d | while read -r dir; do
-            if [[ -f "$dir"/*_Classical.yaml ]]; then
-              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve*' -exec cp {} community/sing-data/ \;
+          for dir in $(find ios_rule_script/rule/Clash -type d); do
+            if ls "$dir"/*_Classical.yaml 2>/dev/null; then
+              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml' -exec cp {} community/sing-data/ \;
             else
-              find "$dir" -type f -name '*.yaml' ! -name '*_No_Resolve*' -exec cp {} community/sing-data/ \;
+              dir_name=$(basename "$dir")
+              find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -exec cp {} community/sing-data/ \;
             fi
           done
 

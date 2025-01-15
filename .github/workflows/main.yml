@@ -79,7 +79,7 @@ jobs:
           cd custom || exit 1
           # echo sentry.io >>  ../community/data/openai
           # echo ipleak.net >> ../community/data/geolocation-\!cn && echo browserleaks.org >> ../community/data/geolocation-\!cn
-          go run ./ --datapath=../community/data --no-default-lists
+          go run ./ --datapath=../community/data
 
       #
       # 4) Build db and metadb file (no geoip)

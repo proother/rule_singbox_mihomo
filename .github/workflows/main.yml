@@ -61,7 +61,13 @@ jobs:
           echo "=== Gathering all .yaml files ==="
           mkdir -p community/sing-data
 
-          find ios_rule_script/rule/Clash -type f -name '*_Classical.yaml' -exec cp {} community/sing-data/ \;
+          find ios_rule_script/rule/Clash -type d | while read -r dir; do
+            if [[ -f "$dir"/*_Classical.yaml ]]; then
+              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve*' -exec cp {} community/sing-data/ \;
+            else
+              find "$dir" -type f -name '*.yaml' ! -name '*_No_Resolve*' -exec cp {} community/sing-data/ \;
+            fi
+          done
 
           echo "=== Copied files in community/sing-data ==="
           ls -al community/sing-data

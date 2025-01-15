@@ -54,16 +54,16 @@ jobs:
           cache-dependency-path: ./custom/go.sum
 
       #
-      # 4. Copy .list files as .yaml
+      # 4. Copy .yaml files
       #
-      - name: Add data for meta (copy & rename .list -> .yaml)
+      - name: Add data for sing-box (copy yaml)
         run: |
-          echo "=== Gathering all .list files as .yaml ==="
-          mkdir -p community/data
-          cp ios_rule_script/rule/Clash/*/*.yaml community/data/
+          echo "=== Gathering all .yaml files ==="
+          mkdir -p community/sing-data
+          cp ios_rule_script/rule/Clash/*/*.yaml community/sing-data/
 
-          ls -al community/data
-          echo "All .list files have been renamed to .yaml."
+          ls -al community/sing-data
+          echo "All .yaml files have been copied"
 
       #
       # 5. Convert YAML to sing rules
@@ -77,6 +77,31 @@ jobs:
           # then outputs everything to -o with type 'sing-box'
           go run . clash -i ../community/data -o ../sing-rule -t sing-box
 
+      # 4. Add data (copy & transform .list files)
+      #
+      - name: Add data for meta (copy list)
+        run: |
+          echo "=== Gathering all .list files ==="
+          mkdir -p community/meta-data
+          cp ios_rule_script/rule/Clash/*/*.list community/meta-data/
+
+          touch community/meta-data/geolocation-!cn
+          touch community/meta-data/geolocation-cn
+          touch community/meta-data/tld-!cn
+          touch community/meta-data/tld-cn
+          touch community/meta-data/private
+          ls -al community/meta-data
+      #
+      # 5. Build geosite.dat
+      #
+      - name: Build geosite.dat file
+        run: |
+          echo "=== Building geosite.dat ==="
+          cd custom
+          echo ipleak.net >> ../community/meta-data/geolocation-!cn
+          echo browserleaks.org >> ../community/meta-data/geolocation-!cn
+          go run ./ --datapath=../community/meta-data
+          cp ./publish/geosite.dat ../community/meta-data/geosite.dat
       #
       # 6. Convert YAML to meta rules
       #
@@ -86,7 +111,7 @@ jobs:
           mkdir -p meta-rule
           cd converter
           # Now with type 'meta' (assuming the converter supports that)
-          go run . geosite -f ../community/data/ -o ../meta-rule/ -t clash
+          go run . geosite -f ../community/meta-data/ -o ../meta-rule/ -t clash
           echo "All conversions complete."
 
       #

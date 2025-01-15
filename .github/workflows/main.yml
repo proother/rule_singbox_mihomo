@@ -1,0 +1,134 @@
+name: Convert Workflow
+
+on:
+  # Trigger this workflow on manual dispatch or on pushes to the main branch
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      #
+      # 1. Set variables
+      #
+      - name: Set variables
+        shell: bash
+        run: |
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+          # Add any other variables you need:
+          # echo "MY_VARIABLE=some_value" >> $GITHUB_ENV
+
+      #
+      # 2. Checkout multiple repositories
+      #    2.1 Checkout MetaCubeX/meta-rules-dat
+      #    2.2 Checkout blackmatrix7/ios_rule_script
+      #    2.3 Checkout MetaCubeX/meta-rules-converter
+      #
+      - name: Checkout MetaCubeX/meta-rules-dat
+        uses: actions/checkout@v4
+        with:
+          repository: MetaCubeX/meta-rules-dat
+          # path: meta-rules-dat  # Optional path if you want a subfolder
+
+      - name: Checkout blackmatrix7/ios_rule_script
+        uses: actions/checkout@v4
+        with:
+          repository: blackmatrix7/ios_rule_script
+          path: ios_rule_script  # This folder will contain all blackmatrix7’s rules
+
+      - name: Checkout MetaCubeX/meta-rules-converter
+        uses: actions/checkout@v4
+        with:
+          repository: MetaCubeX/meta-rules-converter
+          path: converter  # This folder will contain the converter tool
+
+      #
+      # 3. Set up Go
+      #
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+          # Adjust the Go version as needed
+
+      #
+      # 4. Create specialized lists
+      #    Integrates all rules from blackmatrix7/ios_rule_script/tree/master/rule/Clash/*/*.list
+      #
+      - name: Create specialized lists
+        run: |
+          # <Your steps here>
+          # Example:
+          # - cd ios_rule_script/rule/Clash
+          # - cat */*.list >> combined_rules.txt
+          # - do any filtering, sorting, or merging you need
+          echo "Integrate specialized lists..."
+
+      #
+      # 5. Convert all rules files to “sing-rule-set” and “meta-rule-set”
+      #
+      - name: Convert all rules to sing-rule-set & meta-rule-set
+        run: |
+          # <Your steps here>
+          # Possibly run your converter tool from "converter" directory
+          # e.g., `cd converter && go run . --input ../combined_rules.txt --output ../some_folder`
+          echo "Convert all rule files..."
+
+      #
+      # 6. Delete current assets (if they exist)
+      #
+      - name: Delete current assets
+        uses: andreaswilli/delete-release-assets-action@v3.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: main              # The release tag you want to clear
+          deleteOnlyFromDrafts: false
+
+      #
+      # 7. Create and upload (under main branch)
+      #
+      - name: Create & Upload Release
+        id: create_upload_release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: "Release ${{ env.BUILDTIME }}"
+          tag: main
+          file_glob: true
+          overwrite: true
+          file: ./publish/*      # Adjust to the folder/files you want to upload
+
+      #
+      # 8. Git push assets to various path (under main branch)
+      #    8.1 Push to sing-rule path
+      #    8.2 Push to meta-rule path
+      #
+      - name: Git push assets to sing-rule path
+        run: |
+          # <Your steps here>
+          # For example:
+          # 1. mkdir -p sing-rule
+          # 2. cp -r your_sing_output/* sing-rule/
+          # 3. Commit/push those to the main branch at a subfolder
+          echo "Push to sing-rule path..."
+
+      - name: Git push assets to meta-rule path
+        run: |
+          # <Your steps here>
+          # Similar approach, but for meta-rule
+          echo "Push to meta-rule path..."
+
+      #
+      # 9. Purge jsdelivr CDN
+      #
+      - name: Purge jsdelivr CDN
+        run: |
+          # Assuming final files live in ./publish:
+          for file in $(ls ./publish); do
+            echo "Purging $file ..."
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/${file}"
+          done

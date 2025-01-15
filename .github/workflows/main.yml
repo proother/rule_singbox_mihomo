@@ -76,8 +76,19 @@ jobs:
           # The 'clash' subcommand looks for *.yaml in the -i folder,
           # then outputs everything to -o with type 'sing-box'
           go run . clash -i ../community/sing-data -o ../sing-rule -t sing-box
+
+          echo "=== Moving and renaming files ==="
           cd ../sing-rule
-          find . -type f ! -name 'classical.*' -exec rm -f {} +
+
+          for dir in */; do
+            dir=${dir%/}
+            if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
+              mv "$dir/classical.json" "${dir}.json"
+              mv "$dir/classical.srs" "${dir}.srs"
+            fi
+            
+            rm -rf "$dir"
+          done
 
           echo "=== Final files in sing-rule ==="
           ls -al

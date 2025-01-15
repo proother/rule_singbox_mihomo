@@ -89,13 +89,19 @@ jobs:
 
           for dir in */; do
             dir=${dir%/}
+
             if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-              mv "$dir/classical.json" "${dir}.json"
-              mv "$dir/classical.srs" "${dir}.srs"
+              dir_name=$(basename "$dir")
+
+              mv "$dir/classical.json" "${dir_name}.json"
+              mv "$dir/classical.srs" "${dir_name}.srs"
             fi
-            
+
             rm -rf "$dir"
           done
+
+          find . -type f ! -name '*.json' ! -name '*.srs' -exec rm -f {} +
+          find . -type f \( -name '*_domain.*' -o -name '*_ip.*' -o -name '*_process.*' \) -exec rm -f {} +
 
           echo "=== Final files in sing-rule ==="
           ls -al

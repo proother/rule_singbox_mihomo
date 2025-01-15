@@ -1,7 +1,7 @@
 name: Convert Workflow
 
 on:
-  # Trigger this workflow on manual dispatch or on pushes to the main branch
+  # Trigger manually or on push to main
   workflow_dispatch:
   push:
     branches:
@@ -16,174 +16,103 @@ jobs:
 
     steps:
       #
-      # 1. Set variables
+      # 1) Checkout repositories
       #
-      - name: Set variables
-        shell: bash
-        run: |
-          echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
-
-      #
-      # 2. Checkout multiple repositories
-      #    2.1 Checkout MetaCubeX/meta-rules-dat
-      #    2.2 Checkout blackmatrix7/ios_rule_script
-      #    2.3 Checkout MetaCubeX/meta-rules-converter
-      #
-      - name: Checkout MetaCubeX/meta-rules-dat
-        uses: actions/checkout@v4
-        with:
-          repository: MetaCubeX/meta-rules-dat
-          # path: meta-rules-dat  # Optional path if you want a subfolder
-
       - name: Checkout blackmatrix7/ios_rule_script
         uses: actions/checkout@v4
         with:
           repository: blackmatrix7/ios_rule_script
-          path: ios_rule_script  # This folder will contain all blackmatrix7’s rules
+          path: ios_rule_script
 
       - name: Checkout MetaCubeX/meta-rules-converter
         uses: actions/checkout@v4
         with:
           repository: MetaCubeX/meta-rules-converter
-          path: converter  # This folder will contain the converter tool
+          path: converter
 
       #
-      # 3. Set up Go
+      # 2) Add data for `meta` (using all .list files from blackmatrix7)
       #
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '^1.23'
-          # Adjust the Go version as needed
-
-      #
-      # 4. Prepare a publish directory
-      #
-      - name: Prepare publish folder
+      - name: Add data for meta
         run: |
-          mkdir -p publish
+          echo "=== Gathering all .list files for meta ==="
+          mkdir -p community/data
+          # Option A: Copy them directly into community/data (if the converter can handle multiple .list inputs from a directory).
+          cp ios_rule_script/rule/Clash/*/*.list community/data/
+
+          # Option B (if needed): Combine or transform each .list 
+          # cat ios_rule_script/rule/Clash/*/*.list > community/data/all_merged_rules.list
+          # Possibly add your own sed/awk transformations, etc.
+
+          echo "List files copied. Ready to build geosite.dat."
 
       #
-      # METHOD A: Combine ALL .list files into a single file, convert once
+      # 3) Build geosite.dat file
       #
-      - name: Method A - Combine & Convert (Single File)
+      - name: Build geosite.dat file
         run: |
-          echo "=== Combining .list files ==="
-          cd ios_rule_script/rule/Clash
-
-          # 1) Combine all .list files into one
-          cat */*.list > all_merged_rules.txt
-
-          # 2) (Optional) Sort & deduplicate
-          sort -u all_merged_rules.txt -o all_merged_rules.txt
-
-          cd ../../../converter
-          echo "=== Converting single file to .dat (mihomo) & .db (sing-box) ==="
-
-          # Use the 'clash' subcommand (not 'geosite'), because .list files = Clash format
-          # 1) Convert to .dat for "mihomo"
+          echo "=== Building geosite.dat from community/data ==="
+          cd converter
+          # Example usage: If your converter supports `--datapath` for multiple .list files in a directory:
           go run . clash \
-            -f ../ios_rule_script/rule/Clash/all_merged_rules.txt \
-            -o ../publish/all_rules_mihomo.dat \
-            -t mihomo
+            --datapath ../community/data \
+            --output ../custom/publish/geosite.dat
 
-          # 2) Convert to .db for "sing-box"
-          go run . clash \
-            -f ../ios_rule_script/rule/Clash/all_merged_rules.txt \
-            -o ../publish/all_rules_singbox.db \
+          # Alternatively, if your converter uses a different CLI:
+          # go run . clash -f ../community/data/all_merged_rules.list -o ../custom/publish/geosite.dat
+
+      #
+      # 4) Build db and metadb file (no geoip)
+      #
+      - name: Build db and metadb file
+        env:
+          NO_SKIP: true
+        run: |
+          echo "=== Building geosite.db and others (no geoip) ==="
+          # 1) Install geo tool
+          go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
+
+          # 2) Convert site to .db for v2ray->sing
+          #    (This uses the newly built geosite.dat)
+          geo convert site \
+            -i v2ray \
+            -o sing \
+            -f geosite.db \
+            ./custom/publish/geosite.dat
+
+          echo "DB & metadb build complete (without geoip)."
+
+      #
+      # 5) Convert geo to sing-rule-set
+      #
+      - name: Convert geo to sing-rule-set
+        env:
+          NO_SKIP: true
+        run: |
+          echo "=== Converting geosite.dat to sing-rule-set ==="
+          mkdir -p sing-rule/geo/geosite
+          cd convert
+          go run ./ geosite \
+            -f ../custom/publish/geosite.dat \
+            -o ../sing-rule/geo/geosite \
             -t sing-box
 
-          echo "Single-file conversion complete."
-
       #
-      # METHOD B: Process each .list file individually
-      #           (Create .yaml & .mrs for mihomo, .json & .srs for sing-box)
+      # 6) Convert geo to meta-rule-set
       #
-      - name: Method B - Convert each file individually
+      - name: Convert geo to meta-rule-set
+        env:
+          NO_SKIP: true
         run: |
-          echo "=== Converting each .list file individually ==="
-          cd ios_rule_script/rule/Clash
-
-          # Loop over each .list file
-          for file in $(find . -type f -name "*.list"); do
-            echo "Processing $file..."
-            
-            # Extract the base name without extension, e.g. "SteamCN.list" -> "SteamCN"
-            filename=$(basename "$file" .list)
-            
-            # Convert to .yaml (for mihomo)
-            ../../../converter/convert clash \
-              -f "$file" \
-              -o "../$filename.yaml" \
-              -t mihomo-yaml
-
-            # Convert to .mrs (for mihomo, if that format is supported)
-            ../../../converter/convert clash \
-              -f "$file" \
-              -o "../$filename.mrs" \
-              -t mihomo-mrs
-
-            # Convert to .json (for sing-box)
-            ../../../converter/convert clash \
-              -f "$file" \
-              -o "../$filename.json" \
-              -t sing-box-json
-
-            # Convert to .srs (for sing-box)
-            ../../../converter/convert clash \
-              -f "$file" \
-              -o "../$filename.srs" \
-              -t sing-box-srs
-          done
-
-          echo "All individual files converted."
-          mv ./*.yaml ./*.mrs ./*.json ./*.srs ../../publish 2>/dev/null || true
+          echo "=== Converting geosite.dat to meta-rule-set ==="
+          mkdir -p meta-rule/geo/geosite
+          cd convert
+          go run ./ geosite \
+            -f ../custom/publish/geosite.dat \
+            -o ../meta-rule/geo/geosite
 
       #
-      # 5. [Optional] If you need to delete existing release assets
+      # (Optional) Upload or publish artifacts, etc.
       #
-      - name: Delete current assets
-        uses: andreaswilli/delete-release-assets-action@v3.0.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: main
-          deleteOnlyFromDrafts: false
-
-      #
-      # 6. Create & Upload Release
-      #
-      - name: Create & Upload Release
-        id: create_upload_release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          release_name: "Release ${{ env.BUILDTIME }}"
-          tag: main
-          file_glob: true
-          overwrite: true
-          file: ./publish/*
-
-      #
-      # 7. Git push assets (if you want them in the repo itself)
-      #
-      - name: Commit and push assets to main (subfolder)
-        run: |
-          cd publish
-          git init
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b main-assets
-          git add .
-          git commit -m "Assets from ${{ env.BUILDTIME }}"
-          # Force push to your main branch subfolder or a dedicated branch
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push -f -u origin main-assets
-
-      #
-      # 8. Purge jsdelivr CDN (optional)
-      #
-      - name: Purge jsdelivr CDN
-        run: |
-          for file in $(ls publish); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/${file}"
-          done
+      - name: Done
+        run: echo "All steps completed!"

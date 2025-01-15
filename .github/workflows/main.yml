@@ -58,7 +58,9 @@ jobs:
           go-version: '^1.23'
           # Adjust the Go version as needed
 
+      #
       # 4. Prepare a publish directory
+      #
       - name: Prepare publish folder
         run: |
           mkdir -p publish
@@ -70,26 +72,31 @@ jobs:
         run: |
           echo "=== Combining .list files ==="
           cd ios_rule_script/rule/Clash
+          
           # 1) Combine all .list files into a single file
           cat */*.list > all_merged_rules.txt
+          
           # 2) (Optional) Sort / deduplicate
           sort -u all_merged_rules.txt -o all_merged_rules.txt
           
-          echo "=== Converting single file to .dat (mihomo) & .db (sing-box) ==="
           cd ../../../converter
+          echo "=== Converting single file to .dat (mihomo) & .db (sing-box) ==="
 
-          # Example commands to produce .dat for mihomo
-          # The actual flags/commands depend on your converter
-          go run . \
-            --input ../ios_rule_script/rule/Clash/all_merged_rules.txt \
-            --output-type dat \
-            --output-file ../publish/all_rules_mihomo.dat
+          # Example: Use the "geosite" subcommand with its known flags
+          # (Replace with the correct subcommand and flags as per your converter’s --help)
+          # Below: -f is input file, -o is output file, -t is the target type or format.
 
-          # Example commands to produce .db for sing-box
-          go run . \
-            --input ../ios_rule_script/rule/Clash/all_merged_rules.txt \
-            --output-type db \
-            --output-file ../publish/all_rules_singbox.db
+          # 1) Convert to .dat for "mihomo"
+          go run . geosite \
+            -f ../ios_rule_script/rule/Clash/all_merged_rules.txt \
+            -o ../publish/all_rules_mihomo.dat \
+            -t mihomo
+
+          # 2) Convert to .db for "sing-box"
+          go run . geosite \
+            -f ../ios_rule_script/rule/Clash/all_merged_rules.txt \
+            -o ../publish/all_rules_singbox.db \
+            -t sing-box
 
           echo "Single-file conversion complete."
 
@@ -106,24 +113,41 @@ jobs:
           for file in $(find . -type f -name "*.list"); do
             echo "Processing $file..."
             
-            # Extract base name without extension, e.g. "SteamCN.list" -> "SteamCN"
+            # Extract the base name without extension, e.g. "SteamCN.list" -> "SteamCN"
             filename=$(basename "$file" .list)
             
-            # Convert to .yaml & .mrs (for mihomo)
-            # Example commands—replace with your actual script/tool usage
-            ../../../../converter/yourConverterTool \
-              --input "$file" \
-              --output-yaml "../publish/${filename}.yaml" \
-              --output-mrs "../publish/${filename}.mrs"
-            
-            # Convert to .json & .srs (for sing-box)
-            ../../../../converter/yourConverterTool \
-              --input "$file" \
-              --output-json "../publish/${filename}.json" \
-              --output-srs "../publish/${filename}.srs"
+            # Example: Use the same "geosite" subcommand but produce different outputs
+            #   (Replace with your real converter usage & flags.)
+            #   For mihomo: .yaml & .mrs
+            #   For sing-box: .json & .srs
+
+            # Convert to .yaml (for mihomo)
+            ../../../converter/convert geosite \
+              -f "$file" \
+              -o "../$filename.yaml" \
+              -t mihomo-yaml
+
+            # Convert to .mrs (for mihomo, if that format is supported)
+            ../../../converter/convert geosite \
+              -f "$file" \
+              -o "../$filename.mrs" \
+              -t mihomo-mrs
+
+            # Convert to .json (for sing-box)
+            ../../../converter/convert geosite \
+              -f "$file" \
+              -o "../$filename.json" \
+              -t sing-box-json
+
+            # Convert to .srs (for sing-box)
+            ../../../converter/convert geosite \
+              -f "$file" \
+              -o "../$filename.srs" \
+              -t sing-box-srs
           done
 
           echo "All individual files converted."
+          mv ./*.yaml ./*.mrs ./*.json ./*.srs ../../publish || true
 
       #
       # 5. [Optional] If you need to delete existing release assets

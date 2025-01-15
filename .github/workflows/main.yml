@@ -60,11 +60,7 @@ jobs:
         run: |
           echo "=== Gathering all .list files as .yaml ==="
           mkdir -p community/data
-          # For each *.list, rename to *.yaml
-          for f in ios_rule_script/rule/Clash/*/*.list; do
-            newName="$(basename "$f" .list).yaml"
-            cp "$f" "community/data/$newName"
-          done
+          cp ios_rule_script/rule/Clash/*/*.yaml community/data/
 
           ls -al community/data
           echo "All .list files have been renamed to .yaml."
@@ -90,7 +86,7 @@ jobs:
           mkdir -p meta-rule
           cd converter
           # Now with type 'meta' (assuming the converter supports that)
-          go run . clash -i ../community/data -o ../meta-rule -t meta
+          go run . clash -i ../community/data -o ../meta-rule -t clash
           echo "All conversions complete."
 
       #

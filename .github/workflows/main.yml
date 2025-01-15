@@ -85,11 +85,18 @@ jobs:
           cd ../sing-rule
 
           for dir in */; do
-              dir=$(basename "$dir")
+              dir_name=$(basename "$dir")
               if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-                  mv "$dir/classical.json" "${dir}.json"
-                  mv "$dir/classical.srs" "${dir}.srs"
+                  mv "$dir/classical.json" "${dir_name}.json"
+                  mv "$dir/classical.srs" "${dir_name}.srs"
                   rm -rf "$dir"
+              fi
+          done
+
+          for file in *.json *.srs; do
+              if [[ "$file" == *_classical.* ]]; then
+                  new_name=$(echo "$file" | sed 's/_classical//')
+                  mv "$file" "$new_name"
               fi
           done
 

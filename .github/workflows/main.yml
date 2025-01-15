@@ -34,6 +34,19 @@ jobs:
         with:
           repository: MetaCubeX/meta-rules-converter
           path: converter
+          
+      - name: Checkout Loyalsoldier/domain-list-custom
+        uses: actions/checkout@v4
+        with:
+          repository: Loyalsoldier/domain-list-custom
+          path: custom
+          
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: ./custom/go.sum
+          
 
       #
       # 2) Add data for `meta` (using all .list files from blackmatrix7)
@@ -56,9 +69,9 @@ jobs:
           NO_SKIP: true
           SED: grep DOMAIN | grep -v "#" | sed 's/  - DOMAIN,/full:/g' | sed 's/  - DOMAIN-SUFFIX,//g' | sed 's/  - DOMAIN-KEYWORD,/keyword:/g'
         run: |
-          cd converter
-          go run . --datapath=../community/data --outputname geosite.dat
-          mv geosite.dat ../community/data/geosite.dat
+          cd community || exit 1
+          mkdir -p data
+          go run ./ --datapath=./data --outputname geosite.dat
           
       #
       # 4) Build db and metadb file (no geoip)

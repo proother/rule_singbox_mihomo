@@ -61,16 +61,10 @@ jobs:
           echo "=== Gathering all .yaml files ==="
           mkdir -p community/sing-data
 
-          find ios_rule_script/rule/Clash -type d | while read -r dir; do
-            if [[ -f "$dir"/*_Classical.yaml ]]; then
-              find "$dir" -type f -name '*_Classical.yaml' -exec cp {} community/sing-data/ \;
-            else
-              find "$dir" -type f -name '*.yaml' ! -name '*_No_Resolve*' -exec cp {} community/sing-data/ \;
-            fi
-          done
+          find ios_rule_script/rule/Clash -type f -name '*_Classical.yaml' -exec cp {} community/sing-data/ \;
 
+          echo "=== Copied files in community/sing-data ==="
           ls -al community/sing-data
-          echo "All .yaml files have been copied"
 
       #
       # 5. Convert YAML to sing rules
@@ -84,14 +78,14 @@ jobs:
           # then outputs everything to -o with type 'sing-box'
           go run . clash -i ../community/sing-data -o ../sing-rule -t sing-box
 
-          echo "=== Moving and renaming files ==="
+          echo "=== Renaming files ==="
           cd ../sing-rule
 
           for dir in */; do
             dir=${dir%/}
 
             if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-              dir_name=$(basename "$dir")
+              dir_name=$(basename "$dir" | tr '[:upper:]' '[:lower:]')
 
               mv "$dir/classical.json" "${dir_name}.json"
               mv "$dir/classical.srs" "${dir_name}.srs"
@@ -99,9 +93,6 @@ jobs:
 
             rm -rf "$dir"
           done
-
-          find . -type f ! -name '*.json' ! -name '*.srs' -exec rm -f {} +
-          find . -type f \( -name '*_domain.*' -o -name '*_ip.*' -o -name '*_process.*' \) -exec rm -f {} +
 
           echo "=== Final files in sing-rule ==="
           ls -al

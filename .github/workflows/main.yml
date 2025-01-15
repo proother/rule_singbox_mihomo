@@ -55,10 +55,11 @@ jobs:
           echo "=== Gathering all .list files for meta ==="
           mkdir -p community/data
           # Copy all .list files from ios_rule_script into community/data
-          #cp ios_rule_script/rule/Clash/*/*.list community/data/
+          cp ios_rule_script/rule/Clash/*/*.list community/data/
           
           # Combine all .list files into one big file
-          cat ios_rule_script/rule/Clash/*/*.list > community/data/all_merged_clash_rules.list
+          # cat ios_rule_script/rule/Clash/*/*.list > community/data/all_merged_clash_rules.list
+          ls ./community/data/*.*
 
           echo "List files copied. Ready to build geosite.dat."
 
@@ -67,10 +68,10 @@ jobs:
       #
       - name: Build geosite.dat file
         run: |
-          cd converter
-          go run . clash \
-            -f ../community/data/all_merged_clash_rules.list \
-            -o ../community/data/geosite.dat
+          cd custom || exit 1
+          # echo sentry.io >>  ../community/data/openai
+          # echo ipleak.net >> ../community/data/geolocation-\!cn && echo browserleaks.org >> ../community/data/geolocation-\!cn
+          go run ./ --datapath=../community/data
 
       #
       # 4) Build db and metadb file (no geoip)

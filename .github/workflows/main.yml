@@ -81,24 +81,16 @@ jobs:
           echo "=== Converting .yaml to sing rules ==="
           mkdir -p sing-rule
           cd converter
-          # The 'clash' subcommand looks for *.yaml in the -i folder,
-          # then outputs everything to -o with type 'sing-box'
           go run . clash -i ../community/sing-data -o ../sing-rule -t sing-box
-
-          echo "=== Renaming files ==="
           cd ../sing-rule
 
           for dir in */; do
-            dir=${dir%/}
-
-            if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-              dir_name=$(basename "$dir")
-
-              mv "$dir/classical.json" "${dir_name}.json"
-              mv "$dir/classical.srs" "${dir_name}.srs"
-            fi
-
-            rm -rf "$dir"
+              dir=$(basename "$dir")
+              if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
+                  mv "$dir/classical.json" "${dir}.json"
+                  mv "$dir/classical.srs" "${dir}.srs"
+                  rm -rf "$dir"
+              fi
           done
 
           echo "=== Final files in sing-rule ==="

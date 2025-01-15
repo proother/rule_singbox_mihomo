@@ -57,10 +57,26 @@ jobs:
       # 4. Add data for meta (copy .list files)
       #
       - name: Add data for meta
+        env:
+          # This sets up the SED pipeline you had:
+          # 1) grep DOMAIN
+          # 2) remove lines with "#"
+          # 3) replace "  - DOMAIN," -> "full:"
+          # 4) replace "  - DOMAIN-SUFFIX," -> ""
+          # 5) replace "  - DOMAIN-KEYWORD," -> "keyword:"
+          SED: grep DOMAIN | grep -v "#" | sed 's/  - DOMAIN,/full:/g' | sed 's/  - DOMAIN-SUFFIX,//g' | sed 's/  - DOMAIN-KEYWORD,/keyword:/g'
         run: |
-          echo "=== Gathering all .list files for meta ==="
+          echo "=== Gathering all .list files with SED transformation ==="
           mkdir -p community/data
-          cp ios_rule_script/rule/Clash/*/*.list community/data/
+
+          # Loop over each *.list in ios_rule_script
+          for f in ios_rule_script/rule/Clash/*/*.list; do
+            # Remove the ".list" suffix
+            newName=$(basename "$f" .list)
+            # Apply the SED pipeline, then write into community/data/$newName (no .list extension)
+            cat "$f" | ${{ env.SED }} > "community/data/$newName"
+          done
+
           # Create empty placeholders for missing lists
           touch community/data/geolocation-!cn
           touch community/data/geolocation-cn
@@ -110,28 +126,6 @@ jobs:
           cd converter
           go run . geosite -f ../community/data/geosite.dat -o ../meta-rule/geo/geosite
           echo "All conversions complete."
-
-      #
-      # 9. **Rename** double-extensions
-      #
-      - name: Fix double extensions
-        shell: bash
-        run: |
-          echo "=== Removing .list from .list.* files ==="
-          # In the meta-rule output
-          find meta-rule/geo/geosite -type f -name "*.list.*" | while read -r old; do
-            # e.g. old = meta-rule/geo/geosite/115.list.yaml
-            new=$(echo "$old" | sed 's/\.list\././')
-            mv "$old" "$new"
-            echo "Renamed $old -> $new"
-          done
-
-          # In the sing-rule output
-          find sing-rule/geo/geosite -type f -name "*.list.*" | while read -r old; do
-            new=$(echo "$old" | sed 's/\.list\././')
-            mv "$old" "$new"
-            echo "Renamed $old -> $new"
-          done
 
       #
       # 10. Gather artifacts into publish folder

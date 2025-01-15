@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set variables
+        shell: bash
         run: |
           echo "GOAMD64=v3" >> $GITHUB_ENV
           echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
-        shell: bash
 
       #
       # 1) Checkout repositories
@@ -46,7 +46,6 @@ jobs:
         with:
           go-version: '1.22'
           cache-dependency-path: ./custom/go.sum
-          
 
       #
       # 2) Add data for `meta` (using all .list files from blackmatrix7)
@@ -55,24 +54,25 @@ jobs:
         run: |
           echo "=== Gathering all .list files for meta ==="
           mkdir -p community/data
-          # Option A: Copy them directly into community/data (if the converter can handle multiple .list inputs from a directory).
+          # Copy all .list files from ios_rule_script into community/data
           cp ios_rule_script/rule/Clash/*/*.list community/data/
-
           echo "List files copied. Ready to build geosite.dat."
-
 
       #
       # 3) Build geosite.dat file
       #
-      - name: Build geosite-lite.dat file
+      - name: Build geosite.dat file
         env:
           NO_SKIP: true
-          SED: grep DOMAIN | grep -v "#" | sed 's/  - DOMAIN,/full:/g' | sed 's/  - DOMAIN-SUFFIX,//g' | sed 's/  - DOMAIN-KEYWORD,/keyword:/g'
         run: |
-          cd community || exit 1
-          mkdir -p data
-          go run ./ --datapath=./data --outputname geosite.dat
-          
+          echo "=== Building geosite.dat ==="
+          # Move into the converter folder (where go.mod is located)
+          cd converter
+          # Run the converter, specifying the data path in ../community/data
+          go run . --datapath=../community/data --outputname=geosite.dat
+          # Move the resulting geosite.dat up into community/data
+          mv geosite.dat ../community/data/geosite.dat
+
       #
       # 4) Build db and metadb file (no geoip)
       #
@@ -80,9 +80,11 @@ jobs:
         env:
           NO_SKIP: true
         run: |
+          echo "=== Building geosite.db (no geoip) ==="
           go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
+          # Convert the newly built geosite.dat into geosite.db
           geo convert site -i v2ray -o sing -f geosite.db ./community/data/geosite.dat
-          echo "DB & metadb build complete (without geoip)."
+          echo "DB build complete (without geoip)."
 
       #
       # 5) Convert geo to sing-rule-set
@@ -91,9 +93,10 @@ jobs:
         env:
           NO_SKIP: true
         run: |
+          echo "=== Converting geo to sing-rule-set ==="
           mkdir -p sing-rule/geo/geosite && mkdir -p sing-rule/geo/geoip
-          cd convert
-          go run ./ geosite -f ../community/data/geosite.dat -o ../sing-rule/geo/geosite -t sing-box
+          cd converter
+          go run . geosite -f ../community/data/geosite.dat -o ../sing-rule/geo/geosite -t sing-box
 
       #
       # 6) Convert geo to meta-rule-set
@@ -102,9 +105,10 @@ jobs:
         env:
           NO_SKIP: true
         run: |
+          echo "=== Converting geo to meta-rule-set ==="
           mkdir -p meta-rule/geo/geosite && mkdir -p meta-rule/geo/geoip
-          cd convert
-          go run ./ geosite -f ../community/data/geosite.dat -o ../meta-rule/geo/geosite
+          cd converter
+          go run . geosite -f ../community/data/geosite.dat -o ../meta-rule/geo/geosite
 
       #
       # (Optional) Upload or publish artifacts, etc.

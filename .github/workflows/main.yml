@@ -60,12 +60,8 @@ jobs:
         run: |
           echo "=== Gathering all .list files for meta ==="
           mkdir -p community/data
-          # Copy them as-is (with the .list extension)
-          cp ios_rule_script/rule/Clash/*/*.list community/data/
-          # Rename each file in community/data/ to remove .list
-          for f in community/data/*.list; do
-            mv "$f" "${f%.list}"
-          done
+          # Copy them as-is (with the .yaml extension)
+          cp ios_rule_script/rule/Clash/*/*.yaml community/data/
           # Create empty placeholders for missing lists
           touch community/data/geolocation-!cn
           touch community/data/geolocation-cn
@@ -93,7 +89,7 @@ jobs:
         run: |
           echo "=== Building geosite.db (no geoip) ==="
           go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
-          geo convert clash -i v2ray -o sing -f geosite.db ./community/data/geosite.dat
+          geo convert clash -i ./community/data -o geosite.db -t sing-box
 
       #
       # 7. Convert geo to sing-rule-set

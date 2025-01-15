@@ -59,6 +59,14 @@ jobs:
           
           # Combine all .list files into one big file
           # cat ios_rule_script/rule/Clash/*/*.list > community/data/all_merged_clash_rules.list
+
+          # Create empty "geolocation-!cn" and others, if needed:
+          touch community/data/geolocation-!cn.list
+          touch community/data/geolocation-cn.list
+          touch community/data/tld-!cn.list
+          touch community/data/tld-cn.list
+          touch community/data/private.list
+          
           ls ./community/data/*.*
 
           echo "List files copied. Ready to build geosite.dat."

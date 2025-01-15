@@ -13,7 +13,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      #
+      # 1. Set variables
+      #
       - name: Set variables
         shell: bash
         run: |
@@ -21,7 +25,7 @@ jobs:
           echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
       #
-      # 1) Checkout repositories
+      # 2. Check out repositories
       #
       - name: Checkout blackmatrix7/ios_rule_script
         uses: actions/checkout@v4
@@ -41,6 +45,9 @@ jobs:
           repository: Loyalsoldier/domain-list-custom
           path: custom
           
+      #
+      # 3. Setup Go
+      #
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -48,7 +55,7 @@ jobs:
           cache-dependency-path: ./custom/go.sum
 
       #
-      # 2) Add data for `meta` (using all .list files from blackmatrix7)
+      # 4. Add data for `meta` (using all .list files from blackmatrix7)
       #
       - name: Add data for meta
         run: |
@@ -57,34 +64,31 @@ jobs:
           # Copy all .list files from ios_rule_script into community/data
           cp ios_rule_script/rule/Clash/*/*.list community/data/
           
-          # Combine all .list files into one big file
-          # cat ios_rule_script/rule/Clash/*/*.list > community/data/all_merged_clash_rules.list
+          # Create empty placeholders for missing lists:
+          touch community/data/geolocation-!cn
+          touch community/data/geolocation-cn
+          touch community/data/tld-!cn
+          touch community/data/tld-cn
+          touch community/data/private
 
-          # Create empty "geolocation-!cn" and others, if needed:
-          touch community/data/geolocation-!cn.list
-          touch community/data/geolocation-cn.list
-          touch community/data/tld-!cn.list
-          touch community/data/tld-cn.list
-          touch community/data/private.list
-          
-          ls ./community/data/*.*
-
+          ls -al community/data
           echo "List files copied. Ready to build geosite.dat."
 
       #
-      # 3) Build geosite.dat file
+      # 5. Build geosite.dat file
       #
       - name: Build geosite.dat file
         run: |
+          echo "=== Building geosite.dat ==="
           cd custom || exit 1
-          # echo sentry.io >>  ../community/data/openai
-          echo ipleak.net >> ../community/data/geolocation-\!cn && echo browserleaks.org >> ../community/data/geolocation-\!cn
+          echo ipleak.net >> ../community/data/geolocation-!cn
+          echo browserleaks.org >> ../community/data/geolocation-!cn
           go run ./ --datapath=../community/data
           cp ./publish/geosite.dat ../community/data/geosite.dat
-          ls ../community/data/geosite.*
+          echo "geosite.dat is in ../community/data now."
 
       #
-      # 4) Build db and metadb file (no geoip)
+      # 6. Build db and metadb file (no geoip)
       #
       - name: Build db and metadb file
         env:
@@ -92,12 +96,11 @@ jobs:
         run: |
           echo "=== Building geosite.db (no geoip) ==="
           go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
-          # Convert the newly built geosite.dat into geosite.db
           geo convert site -i v2ray -o sing -f geosite.db ./community/data/geosite.dat
           echo "DB build complete (without geoip)."
 
       #
-      # 5) Convert geo to sing-rule-set
+      # 7. Convert geo to sing-rule-set
       #
       - name: Convert geo to sing-rule-set
         env:
@@ -109,7 +112,7 @@ jobs:
           go run . geosite -f ../community/data/geosite.dat -o ../sing-rule/geo/geosite -t sing-box
 
       #
-      # 6) Convert geo to meta-rule-set
+      # 8. Convert geo to meta-rule-set
       #
       - name: Convert geo to meta-rule-set
         env:
@@ -119,9 +122,77 @@ jobs:
           mkdir -p meta-rule/geo/geosite && mkdir -p meta-rule/geo/geoip
           cd converter
           go run . geosite -f ../community/data/geosite.dat -o ../meta-rule/geo/geosite
+          echo "All conversions complete."
 
       #
-      # (Optional) Upload or publish artifacts, etc.
+      # 9. Gather artifacts into publish folder
       #
+      - name: Prepare publish artifacts
+        run: |
+          echo "=== Collecting final artifacts into ./publish/ ==="
+          mkdir -p publish
+          
+          # Move geosite.dat, geosite.db
+          cp community/data/geosite.dat publish/
+          [ -f geosite.db ] && cp geosite.db publish/
+
+          # Move sing-rule and meta-rule outputs
+          cp -r sing-rule publish/sing-rule
+          cp -r meta-rule publish/meta-rule
+
+          ls -R publish
+
+      #
+      # 10. [Optional] Delete current release assets
+      #
+      - name: Delete current assets
+        uses: andreaswilli/delete-release-assets-action@v3.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: main
+          deleteOnlyFromDrafts: false
+
+      #
+      # 11. Create & Upload Release
+      #
+      - name: Create & Upload Release
+        id: create_upload_release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: "Release ${{ env.BUILDTIME }}"
+          tag: main
+          file_glob: true
+          overwrite: true
+          file: ./publish/**
+
+      #
+      # 12. Git push assets to main (subfolder)
+      #
+      - name: Commit and push assets to main (subfolder)
+        run: |
+          echo "=== Committing ./publish/ to branch 'main-assets' ==="
+          cd publish
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b main-assets
+          git add .
+          git commit -m "Assets from ${{ env.BUILDTIME }}"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin main-assets
+
+      #
+      # 13. Purge jsdelivr CDN (optional)
+      #
+      - name: Purge jsdelivr CDN
+        run: |
+          echo "=== Purging jsDelivr cache for files in ./publish/ ==="
+          for file in $(find publish -type f); do
+            filename=$(basename "$file")
+            echo "Purging $filename..."
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/${filename}"
+          done
+
       - name: Done
         run: echo "All steps completed!"

@@ -83,36 +83,7 @@ jobs:
         run: |
           echo "=== Gathering all .list files ==="
           mkdir -p community/meta-data
-          cp ios_rule_script/rule/Clash/*/*.list community/meta-data/
-
-          touch community/meta-data/geolocation-!cn
-          touch community/meta-data/geolocation-cn
-          touch community/meta-data/tld-!cn
-          touch community/meta-data/tld-cn
-          touch community/meta-data/private
-          ls -al community/meta-data
-      #
-      # 5. Build geosite.dat
-      #
-      - name: Build geosite.dat file
-        run: |
-          echo "=== Building geosite.dat ==="
-          cd custom
-          echo ipleak.net >> ../community/meta-data/geolocation-!cn
-          echo browserleaks.org >> ../community/meta-data/geolocation-!cn
-          go run ./ --datapath=../community/meta-data
-          cp ./publish/geosite.dat ../community/meta-data/geosite.dat
-      #
-      # 6. Convert YAML to meta rules
-      #
-      - name: Convert YAML to meta rules
-        run: |
-          echo "=== Converting .yaml to meta rules ==="
-          mkdir -p meta-rule
-          cd converter
-          # Now with type 'meta' (assuming the converter supports that)
-          go run . geosite -f ../community/meta-data/geosite.dat -o ../meta-rule/ -t clash
-          echo "All conversions complete."
+          cp ios_rule_script/rule/Clash/*/*.list ../meta-rule/
 
       #
       # 7. Gather artifacts into publish folder

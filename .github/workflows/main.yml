@@ -80,6 +80,8 @@ jobs:
           # echo sentry.io >>  ../community/data/openai
           echo ipleak.net >> ../community/data/geolocation-\!cn && echo browserleaks.org >> ../community/data/geolocation-\!cn
           go run ./ --datapath=../community/data
+          cp ./publish/geosite.dat ../community/data/geosite.dat
+          ls ../community/data/geosite.*
 
       #
       # 4) Build db and metadb file (no geoip)

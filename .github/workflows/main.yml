@@ -83,6 +83,7 @@ jobs:
         run: |
           echo "=== Gathering all .list files ==="
           mkdir -p community/meta-data
+          mkdir -p meta-rule
           cp ios_rule_script/rule/Clash/*/*.list ../meta-rule/
 
       #

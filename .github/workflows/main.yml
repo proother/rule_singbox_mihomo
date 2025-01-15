@@ -155,16 +155,16 @@ jobs:
       #
       # 11. Create & Upload Release
       #
-      - name: Create & Upload Release
-        id: create_upload_release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          release_name: "Release ${{ env.BUILDTIME }}"
-          tag: main
-          file_glob: true
-          overwrite: true
-          file: ./publish/**
+      #- name: Create & Upload Release
+      #  id: create_upload_release
+      #  uses: svenstaro/upload-release-action@v2
+      #  with:
+      #    repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #    release_name: "Release ${{ env.BUILDTIME }}"
+      #    tag: main
+      #    file_glob: true
+      #    overwrite: true
+      #    file: ./publish/**
 
       #
       # 12. Git push assets to main (subfolder)
@@ -175,7 +175,7 @@ jobs:
           cd publish
           git init
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "idontknow+github-actions[bot]@users.noreply.github.com"
           git checkout -b main-assets
           git add .
           git commit -m "Assets from ${{ env.BUILDTIME }}"

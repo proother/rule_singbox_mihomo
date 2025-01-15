@@ -56,9 +56,10 @@ jobs:
           NO_SKIP: true
           SED: grep DOMAIN | grep -v "#" | sed 's/  - DOMAIN,/full:/g' | sed 's/  - DOMAIN-SUFFIX,//g' | sed 's/  - DOMAIN-KEYWORD,/keyword:/g'
         run: |
-          cd community || exit 1
-          mkdir -p data
-          go run ./ --datapath=./data --outputname geosite.dat
+          cd converter
+          go run . --datapath=../community/data --outputname geosite.dat
+          mv geosite.dat ../community/data/geosite.dat
+          
       #
       # 4) Build db and metadb file (no geoip)
       #

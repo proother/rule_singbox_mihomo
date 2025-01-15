@@ -76,6 +76,15 @@ jobs:
           # The 'clash' subcommand looks for *.yaml in the -i folder,
           # then outputs everything to -o with type 'sing-box'
           go run . clash -i ../community/sing-data -o ../sing-rule -t sing-box
+          cd ../sing-rule
+          for file in *; do
+            if [[ $file != classical.* ]]; then
+              rm -f "$file"
+            fi
+          done
+
+          echo "=== Final files in sing-rule ==="
+          ls -al
 
       # 4. Add data (copy & transform .list files)
       #

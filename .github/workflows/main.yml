@@ -61,7 +61,12 @@ jobs:
           echo "=== Gathering all .list files for meta ==="
           mkdir -p community/data
           # Copy them as-is (with the .yaml extension)
-          cp ios_rule_script/rule/Clash/*/*.yaml community/data/
+          for f in ios_rule_script/rule/Clash/*/*.list; do
+            # Strip the .list extension and replace it with .yaml
+            newName="$(basename "$f" .list).yaml"
+            # Copy the file into community/data
+            cp "$f" "community/data/$newName"
+          done
           # Create empty placeholders for missing lists
           touch community/data/geolocation-!cn
           touch community/data/geolocation-cn

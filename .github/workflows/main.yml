@@ -54,83 +54,60 @@ jobs:
           cache-dependency-path: ./custom/go.sum
 
       #
-      # 4. Add data for meta (copy .list files)
+      # 4. Copy .list files as .yaml
       #
-      - name: Add data for meta
+      - name: Add data for meta (copy & rename .list -> .yaml)
         run: |
-          echo "=== Gathering all .list files for meta ==="
+          echo "=== Gathering all .list files as .yaml ==="
           mkdir -p community/data
-          # Copy them as-is (with the .yaml extension)
+          # For each *.list, rename to *.yaml
           for f in ios_rule_script/rule/Clash/*/*.list; do
-            # Strip the .list extension and replace it with .yaml
             newName="$(basename "$f" .list).yaml"
-            # Copy the file into community/data
             cp "$f" "community/data/$newName"
           done
-          # Create empty placeholders for missing lists
-          #touch community/data/geolocation-!cn
-          #touch community/data/geolocation-cn
-          #touch community/data/tld-!cn
-          #touch community/data/tld-cn
-          #touch community/data/private
+
           ls -al community/data
+          echo "All .list files have been renamed to .yaml."
 
       #
-      # 5. Build geosite.dat file
+      # 5. Convert YAML to sing rules
       #
-      #- name: Build geosite.dat file
-      #  run: |
-      #    echo "=== Building geosite.dat ==="
-      #    cd custom
-      #    echo ipleak.net >> ../community/data/geolocation-!cn
-      #    echo browserleaks.org >> ../community/data/geolocation-!cn
-      #    go run ./ --datapath=../community/data
-      #    cp ./publish/geosite.dat ../community/data/geosite.dat
-
-      #
-      # 6. Build db (no geoip)
-      #
-      - name: Build db
+      - name: Convert YAML to sing rules
         run: |
-          echo "=== Building geosite.db (no geoip) ==="
-          go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
-          geo convert clash -i ./community/data -o geosite.db -t sing-box
-
-      #
-      # 7. Convert geo to sing-rule-set
-      #
-      - name: Convert geo to sing-rule-set
-        run: |
-          echo "=== Converting geo to sing-rule-set ==="
-          mkdir -p sing-rule/geo/geosite && mkdir -p sing-rule/geo/geoip
+          echo "=== Converting .yaml to sing rules ==="
+          mkdir -p sing-rule
           cd converter
-          go run . geosite -f ../community/data/geosite.dat -o ../sing-rule/geo/geosite -t sing-box
+          # The 'clash' subcommand looks for *.yaml in the -i folder,
+          # then outputs everything to -o with type 'sing-box'
+          go run . clash -i ../community/data -o ../sing-rule -t sing-box
 
       #
-      # 8. Convert geo to meta-rule-set
+      # 6. Convert YAML to meta rules
       #
-      - name: Convert geo to meta-rule-set
+      - name: Convert YAML to meta rules
         run: |
-          echo "=== Converting geo to meta-rule-set ==="
-          mkdir -p meta-rule/geo/geosite && mkdir -p meta-rule/geo/geoip
+          echo "=== Converting .yaml to meta rules ==="
+          mkdir -p meta-rule
           cd converter
-          go run . geosite -f ../community/data/geosite.dat -o ../meta-rule/geo/geosite
+          # Now with type 'meta' (assuming the converter supports that)
+          go run . clash -i ../community/data -o ../meta-rule -t meta
           echo "All conversions complete."
 
       #
-      # 10. Gather artifacts into publish folder
+      # 7. Gather artifacts into publish folder
       #
       - name: Prepare publish artifacts
         run: |
+          echo "=== Collecting final artifacts into ./publish/ ==="
           mkdir -p publish
-          cp community/data/geosite.dat publish/
-          [ -f geosite.db ] && cp geosite.db publish/
+          
+          # Move sing-rule and meta-rule into publish/
           cp -r sing-rule publish/sing-rule
           cp -r meta-rule publish/meta-rule
           ls -R publish
 
       #
-      # 11. Commit and push (or optionally release) ...
+      # 8. Commit & push to 'release' branch
       #
       - name: Commit and push assets to 'release'
         run: |
@@ -146,7 +123,7 @@ jobs:
           git push -f -u origin release
 
       #
-      # 12. Purge jsdelivr CDN (optional)
+      # 9. Purge jsdelivr CDN (optional)
       #
       - name: Purge jsdelivr CDN
         run: |

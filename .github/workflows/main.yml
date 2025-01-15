@@ -1,7 +1,6 @@
 name: Convert Workflow
 
 on:
-  # Trigger manually or on push to main
   workflow_dispatch:
   push:
     branches:
@@ -44,7 +43,7 @@ jobs:
         with:
           repository: Loyalsoldier/domain-list-custom
           path: custom
-          
+
       #
       # 3. Setup Go
       #
@@ -55,24 +54,20 @@ jobs:
           cache-dependency-path: ./custom/go.sum
 
       #
-      # 4. Add data for `meta` (using all .list files from blackmatrix7)
+      # 4. Add data for meta (copy .list files)
       #
       - name: Add data for meta
         run: |
           echo "=== Gathering all .list files for meta ==="
           mkdir -p community/data
-          # Copy all .list files from ios_rule_script into community/data
           cp ios_rule_script/rule/Clash/*/*.list community/data/
-          
-          # Create empty placeholders for missing lists:
+          # Create empty placeholders for missing lists
           touch community/data/geolocation-!cn
           touch community/data/geolocation-cn
           touch community/data/tld-!cn
           touch community/data/tld-cn
           touch community/data/private
-
           ls -al community/data
-          echo "List files copied. Ready to build geosite.dat."
 
       #
       # 5. Build geosite.dat file
@@ -80,31 +75,25 @@ jobs:
       - name: Build geosite.dat file
         run: |
           echo "=== Building geosite.dat ==="
-          cd custom || exit 1
+          cd custom
           echo ipleak.net >> ../community/data/geolocation-!cn
           echo browserleaks.org >> ../community/data/geolocation-!cn
           go run ./ --datapath=../community/data
           cp ./publish/geosite.dat ../community/data/geosite.dat
-          echo "geosite.dat is in ../community/data now."
 
       #
-      # 6. Build db and metadb file (no geoip)
+      # 6. Build db (no geoip)
       #
-      - name: Build db and metadb file
-        env:
-          NO_SKIP: true
+      - name: Build db
         run: |
           echo "=== Building geosite.db (no geoip) ==="
           go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
           geo convert site -i v2ray -o sing -f geosite.db ./community/data/geosite.dat
-          echo "DB build complete (without geoip)."
 
       #
       # 7. Convert geo to sing-rule-set
       #
       - name: Convert geo to sing-rule-set
-        env:
-          NO_SKIP: true
         run: |
           echo "=== Converting geo to sing-rule-set ==="
           mkdir -p sing-rule/geo/geosite && mkdir -p sing-rule/geo/geoip
@@ -115,8 +104,6 @@ jobs:
       # 8. Convert geo to meta-rule-set
       #
       - name: Convert geo to meta-rule-set
-        env:
-          NO_SKIP: true
         run: |
           echo "=== Converting geo to meta-rule-set ==="
           mkdir -p meta-rule/geo/geosite && mkdir -p meta-rule/geo/geoip
@@ -125,65 +112,57 @@ jobs:
           echo "All conversions complete."
 
       #
-      # 9. Gather artifacts into publish folder
+      # 9. **Rename** double-extensions
+      #
+      - name: Fix double extensions
+        shell: bash
+        run: |
+          echo "=== Removing .list from .list.* files ==="
+          # In the meta-rule output
+          find meta-rule/geo/geosite -type f -name "*.list.*" | while read -r old; do
+            # e.g. old = meta-rule/geo/geosite/115.list.yaml
+            new=$(echo "$old" | sed 's/\.list\././')
+            mv "$old" "$new"
+            echo "Renamed $old -> $new"
+          done
+
+          # In the sing-rule output
+          find sing-rule/geo/geosite -type f -name "*.list.*" | while read -r old; do
+            new=$(echo "$old" | sed 's/\.list\././')
+            mv "$old" "$new"
+            echo "Renamed $old -> $new"
+          done
+
+      #
+      # 10. Gather artifacts into publish folder
       #
       - name: Prepare publish artifacts
         run: |
-          echo "=== Collecting final artifacts into ./publish/ ==="
           mkdir -p publish
-          
-          # Move geosite.dat, geosite.db
           cp community/data/geosite.dat publish/
           [ -f geosite.db ] && cp geosite.db publish/
-
-          # Move sing-rule and meta-rule outputs
           cp -r sing-rule publish/sing-rule
           cp -r meta-rule publish/meta-rule
-
           ls -R publish
 
       #
-      # 10. [Optional] Delete current release assets
+      # 11. Commit and push (or optionally release) ...
       #
-      - name: Delete current assets
-        uses: andreaswilli/delete-release-assets-action@v3.0.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: main
-          deleteOnlyFromDrafts: false
-
-      #
-      # 11. Create & Upload Release
-      #
-      #- name: Create & Upload Release
-      #  id: create_upload_release
-      #  uses: svenstaro/upload-release-action@v2
-      #  with:
-      #    repo_token: ${{ secrets.GITHUB_TOKEN }}
-      #    release_name: "Release ${{ env.BUILDTIME }}"
-      #    tag: main
-      #    file_glob: true
-      #    overwrite: true
-      #    file: ./publish/**
-
-      #
-      # 12. Git push assets to main (subfolder)
-      #
-      - name: Commit and push assets to main (subfolder)
+      - name: Commit and push assets to 'release'
         run: |
-          echo "=== Committing ./publish/ to branch 'main-assets' ==="
+          echo "=== Committing ./publish/ to branch 'release' ==="
           cd publish
           git init
           git config user.name "github-actions[bot]"
           git config user.email "idontknow+github-actions[bot]@users.noreply.github.com"
-          git checkout -b main-assets
+          git checkout -b release
           git add .
           git commit -m "Assets from ${{ env.BUILDTIME }}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push -f -u origin main-assets
+          git push -f -u origin release
 
       #
-      # 13. Purge jsdelivr CDN (optional)
+      # 12. Purge jsdelivr CDN (optional)
       #
       - name: Purge jsdelivr CDN
         run: |
@@ -191,7 +170,7 @@ jobs:
           for file in $(find publish -type f); do
             filename=$(basename "$file")
             echo "Purging $filename..."
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/${filename}"
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${filename}"
           done
 
       - name: Done

@@ -118,7 +118,6 @@ jobs:
       #
       # 6. Process YAML files for meta-rule
       #
-		  
       - name: Process YAML files for meta-rule
         run: |
           echo "=== Processing YAML files for meta-rule ==="

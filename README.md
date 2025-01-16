@@ -3,10 +3,10 @@
 ## Introduction
 This repository automatically **fetches** and **converts** daily rules from [@blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) into `json` and `srs` for sing-box, `yaml` for Mihomo.
 
+
+### Mihomo的引用方法：
 Mihomo内核的二进制文件`msr`目前behavior仅支持 domain/ipcidr，classical的`yaml`和`text`支持路由规则的全部类型，因此所有的Mihomo的rule-providers我们都采用`yaml`格式。
 相关文档：[https://wiki.metacubex.one/en/config/rule-providers/?h=classical](https://wiki.metacubex.one/en/config/rule-providers/?h=classical)
-
-Mihomo的引用方法：
 ```yaml
 rule-providers:
   Apple_Classical:
@@ -32,10 +32,11 @@ rule-providers:
     format: yaml
 ```
 
+
+### sing-box的引用方法：
+
 sing-box内核的二进制文件`srs`支持路由规则的全部类型，因此所有的sing-box的rule-set我们同时提供`srs`和`json`文件格式。
 相关文档：[https://sing-box.sagernet.org/configuration/route/rule/](https://sing-box.sagernet.org/configuration/route/rule/)
-
-sing-box的引用方法：
 
 ```json
 

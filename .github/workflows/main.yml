@@ -139,36 +139,9 @@ jobs:
           ls -R publish
 
       #
-      # 8. Clone 'release' branch into previous_release
-      #
-      - name: Clone 'release' branch
-        run: |
-          git clone -b release https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git previous_release
-
-      #
-      # 9. Compare 'publish' with 'previous_release'
-      #
-      - name: Compare directories
-        id: compare
-        run: |
-          if [ -d previous_release ]; then
-            if diff -qr publish previous_release > changes.diff; then
-              echo "No changes detected."
-              echo "::set-output name=changes::false"
-            else
-              echo "Changes detected."
-              echo "::set-output name=changes::true"
-            fi
-          else
-            echo "Release branch not found."
-            echo "::set-output name=changes::true"
-          fi
-
-      #
-      # 10. Commit & push to 'release' branch if changes detected
+      # 10. Commit & push to 'release' branch
       #
       - name: Commit and push assets to 'release'
-        if: ${{ steps.compare.outputs.changes == 'true' }}
         run: |
           echo "=== Committing ./publish/ to branch 'release' ==="
           cd publish
@@ -178,7 +151,7 @@ jobs:
           git checkout -b release
           git add .
           git commit -m "Assets from ${{ env.BUILDTIME }}"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.RULE_SINGBOX_MIHOMO_SECRET }}@github.com/${{ github.repository }}"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u origin release
 
       #

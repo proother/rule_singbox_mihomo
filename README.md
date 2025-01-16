@@ -1,6 +1,6 @@
 # README
 
-本仓库会自动从 [@blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 中每日**获取**并**转换**规则，生成适用于 sing-box 的 `json` 和 `srs` 格式，以及适用于 Mihomo 的 `yaml` 格式，并发布在[proother/rule_singbox_mihomo@release](https://github.com/proother/rule_singbox_mihomo/tree/release)。
+本仓库会自动从 [@blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 中每日**获取**并**转换**规则，生成适用于 sing-box 的 `json` 和 `srs` 格式，以及适用于 Mihomo 的 `yaml` 和`list`格式，并发布在[proother/rule_singbox_mihomo@release](https://github.com/proother/rule_singbox_mihomo/tree/release)。
 
 ### 背景
 
@@ -24,10 +24,14 @@ Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社�
 
 ### Mihomo 示例
 
-由于 Mihomo 内核的二进制文件 `msr` 当前的 `behavior` 仅支持 `domain` 和 `ipcidr`，而经典模式（classical）的 `yaml` 和 `text` 支持所有类型的路由规则，因此我们为 Mihomo 的所有规则提供程序（rule-providers）都采用了 `yaml` 格式。
+由于 Mihomo 内核的二进制文件 `msr` 当前的 `behavior` 仅支持 `domain` 和 `ipcidr`，而classical的 `yaml` 和 `text` 支持所有类型的路由规则，因此我们为 Mihomo 的rule-providers）同时提供 `yaml` 和`list`文件格式。
 
 相关文档：[https://wiki.metacubex.one/en/config/rule-providers/?h=classical](https://wiki.metacubex.one/en/config/rule-providers/?h=classical)
 
+| 文件格式              | format写法                                                                                                                              |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| *.yaml        | yaml                                                 |
+| *.list        | text                                                 |
 ```yaml
 rule-providers:
   Apple_Classical:
@@ -39,26 +43,31 @@ rule-providers:
     format: yaml
   Microsoft:
     type: http
-    path: ./ruleset/Microsoft.yaml
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Microsoft.yaml"
+    path: ./ruleset/Microsoft.list
+    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Microsoft.list"
     interval: 86400
     behavior: classical
-    format: yaml
+    format: text
   OpenAI:
     type: http
-    path: ./ruleset/OpenAI.yaml
-    url: "https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/OpenAI.yaml"
+    path: ./ruleset/OpenAI.list
+    url: "https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/OpenAI.list"
     interval: 86400
     behavior: classical
-    format: yaml
+    format: text
 ```
 
 
 ### sing-box 示例：
 
 sing-box内核的二进制文件`srs`支持路由规则的全部类型，因此所有的sing-box的rule-set我们同时提供`srs`和`json`文件格式。
+
 相关文档：[https://sing-box.sagernet.org/configuration/route/rule/](https://sing-box.sagernet.org/configuration/route/rule/)
 
+| 文件格式              | format写法                                                                                                                              |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| *.srs        | binary                                                 |
+| *.json        | source                                                 |
 ```json
 
  "rule_set": [

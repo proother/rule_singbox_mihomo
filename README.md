@@ -1,6 +1,6 @@
 # README
 
-## Introduction
+
 This repository automatically **fetches** and **converts** daily rules from [@blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) into `json` and `srs` for sing-box, `yaml` for Mihomo.
 
 

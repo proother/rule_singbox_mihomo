@@ -48,5 +48,4 @@ sing-box的引用方法：
         "url": "https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/OpenAI.srs"
       }
     ]
-  }
 ```

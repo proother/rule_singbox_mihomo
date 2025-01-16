@@ -76,7 +76,7 @@ jobs:
           ls -al community/data_source
 
       #
-      # 5. Convert YAML to sing rules
+      # 5. Convert YAML to sing rules (Updated Step)
       #
       - name: Convert YAML to sing rules
         run: |
@@ -86,14 +86,26 @@ jobs:
           go run . clash -i ../community/data_source -o ../sing-rule -t sing-box
           cd ../sing-rule
 
-          for dir in */; do
-              dir_name=$(basename "$dir")
-              if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-                  # Preserve the original filename (e.g., Apple_Classical.json)
-                  mv "$dir/classical.json" "${dir_name}.json"
-                  mv "$dir/classical.srs" "${dir_name}.srs"
-                  rm -rf "$dir"
+          # Restore original filenames (case-sensitive)
+          for file in *.json *.srs; do
+            # Extract the base name (without extension)
+            base_name=$(basename "$file" .json)
+            base_name=$(basename "$base_name" .srs)
+
+            # Find the original YAML file in community/data_source
+            original_yaml=$(find ../community/data_source -type f -iname "${base_name}.yaml" -print -quit)
+
+            if [[ -n "$original_yaml" ]]; then
+              # Extract the original filename (without extension)
+              original_name=$(basename "$original_yaml" .yaml)
+
+              # Rename the JSON/SRS file to match the original filename
+              if [[ "$file" == *.json ]]; then
+                mv "$file" "${original_name}.json"
+              elif [[ "$file" == *.srs ]]; then
+                mv "$file" "${original_name}.srs"
               fi
+            fi
           done
 
           echo "=== Final files in sing-rule ==="
@@ -159,6 +171,7 @@ jobs:
             echo "Purging $filename..."
             curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${filename}"
           done
+
       #
       # 10. Victory! (optional)
       #

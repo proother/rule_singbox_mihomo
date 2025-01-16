@@ -1,3 +1,5 @@
+Mihomo内核的二进制文件`msr`目前`behavior`仅支持 `domain`/`ipcidr`，`classical`的`yaml`和`text`支持路由规则的全部类型，因此所有的Mihomo的rule-providers我们都采用`yaml`格式。
+
 Mihomo的引用方法：
 ```yaml
 rule-providers:
@@ -23,6 +25,8 @@ rule-providers:
     behavior: classical
     format: yaml
 ```
+
+sing-box内核的二进制文件`srs`支持路由规则的全部类型，因此所有的sing-box的rule-set我们同时提供`srs`和`json`文件格式。
 
 sing-box的引用方法：
 

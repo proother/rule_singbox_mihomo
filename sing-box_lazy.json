@@ -2,6 +2,7 @@
 // sing-box懒人配置
 // 国外常用服务单独分流：YouTube，Netflix，Disney+，HBO，Spotify，Telegram，PayPal，Twitter，Facebook，Google，TikTok，GitHub，ChatGPT。
 // 国内常用服务单独分流：苹果服务，微软服务，哔哩哔哩，网易云音乐，游戏平台，亚马逊，百度，豆瓣，微信，抖音，新浪，知乎，小红书。
+// 食用之前，请删掉本配置里的所有注释，不然无法使用。
   "route": {
     "auto_detect_interface": true,
     "rule_set": [

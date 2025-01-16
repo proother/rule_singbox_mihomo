@@ -37,7 +37,7 @@ jobs:
         with:
           repository: MetaCubeX/meta-rules-converter
           path: converter
-          
+
       - name: Checkout Loyalsoldier/domain-list-custom
         uses: actions/checkout@v4
         with:
@@ -54,24 +54,26 @@ jobs:
           cache-dependency-path: ./custom/go.sum
 
       #
-      # 4. Copy .yaml files
+      # 4. Copy files to data source directory
       #
-      - name: Add data for sing-box (copy yaml)
+      - name: Copy files to data source directory
         run: |
-          echo "=== Gathering all .yaml files ==="
-          mkdir -p community/sing-data
+          echo "=== Copying necessary files to data source directory ==="
+          mkdir -p community/data_source
 
+          # Copy .yaml files
+          echo "=== Copying .yaml files ==="
           for dir in $(find ios_rule_script/rule/Clash -type d); do
             if ls "$dir"/*_Classical.yaml 2>/dev/null; then
-              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml' -exec cp {} community/sing-data/ \;
+              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
             else
               dir_name=$(basename "$dir")
-              find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -exec cp {} community/sing-data/ \;
+              find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
             fi
           done
 
-          echo "=== Copied files in community/sing-data ==="
-          ls -al community/sing-data
+          echo "=== Files in community/data_source ==="
+          ls -al community/data_source
 
       #
       # 5. Convert YAML to sing rules
@@ -81,7 +83,7 @@ jobs:
           echo "=== Converting .yaml to sing rules ==="
           mkdir -p sing-rule
           cd converter
-          go run . clash -i ../community/sing-data -o ../sing-rule -t sing-box
+          go run . clash -i ../community/data_source -o ../sing-rule -t sing-box
           cd ../sing-rule
 
           for dir in */; do
@@ -103,20 +105,23 @@ jobs:
           echo "=== Final files in sing-rule ==="
           ls -al
 
-      # 4. Add data (copy & transform .list files)
       #
-      - name: Add data for meta (copy list)
+      # 6. Process YAML files for meta-rule
+      #
+      - name: Process YAML files for meta-rule
         run: |
-          echo "=== Gathering all .list files ==="
+          echo "=== Processing YAML files for meta-rule ==="
           mkdir -p meta-rule
-          cp ios_rule_script/rule/Clash/*/*.list meta-rule/
+          cp community/data_source/*.yaml meta-rule/
 
-      - name: Remove comments from list files in meta-rule
-        run: |
-          echo "=== Removing comments from list files ==="
-          for file in meta-rule/*.list; do
+          # Remove comments from YAML files
+          echo "=== Removing comments from YAML files ==="
+          for file in meta-rule/*.yaml; do
             sed '/^#/d;/^$/d' "$file" > tmp && mv tmp "$file"
           done
+
+          echo "=== Final files in meta-rule ==="
+          ls -al meta-rule
 
       #
       # 7. Gather artifacts into publish folder
@@ -125,7 +130,7 @@ jobs:
         run: |
           echo "=== Collecting final artifacts into ./publish/ ==="
           mkdir -p publish
-          
+
           # Move sing-rule and meta-rule into publish/
           cp -r sing-rule publish/sing-rule
           cp -r meta-rule publish/meta-rule
@@ -134,9 +139,36 @@ jobs:
           ls -R publish
 
       #
-      # 8. Commit & push to 'release' branch
+      # 8. Clone 'release' branch into previous_release
+      #
+      - name: Clone 'release' branch
+        run: |
+          git clone -b release https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git previous_release
+
+      #
+      # 9. Compare 'publish' with 'previous_release'
+      #
+      - name: Compare directories
+        id: compare
+        run: |
+          if [ -d previous_release ]; then
+            if diff -qr publish previous_release > changes.diff; then
+              echo "No changes detected."
+              echo "::set-output name=changes::false"
+            else
+              echo "Changes detected."
+              echo "::set-output name=changes::true"
+            fi
+          else
+            echo "Release branch not found."
+            echo "::set-output name=changes::true"
+          fi
+
+      #
+      # 10. Commit & push to 'release' branch if changes detected
       #
       - name: Commit and push assets to 'release'
+        if: ${{ steps.compare.outputs.changes == 'true' }}
         run: |
           echo "=== Committing ./publish/ to branch 'release' ==="
           cd publish
@@ -146,53 +178,20 @@ jobs:
           git checkout -b release
           git add .
           git commit -m "Assets from ${{ env.BUILDTIME }}"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git remote add origin "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}"
           git push -f -u origin release
 
-      - name: Compare meta-rule and sing-rule files
-        run: |
-          # Extract basenames from meta-rule
-          meta_basenames=$(find publish/meta-rule/ -type f -name "*.list" | sed 's/\.list$//g' | sed 's|publish/meta-rule/||g' | sort)
-          
-          # Extract basenames from sing-rule
-          json_basenames=$(find publish/sing-rule/ -type f -name "*.json" | sed 's/\.json$//g' | sed 's|publish/sing-rule/||g' | sort)
-          srs_basenames=$(find publish/sing-rule/ -type f -name "*.srs" | sed 's/\.srs$//g' | sed 's|publish/sing-rule/||g' | sort)
-          
-          # Find missing files
-          missing_json=$(comm -23 <(echo "$meta_basenames" | sort) <(echo "$json_basenames" | sort))
-          missing_srs=$(comm -23 <(echo "$meta_basenames" | sort) <(echo "$srs_basenames" | sort))
-          
-          # Find extra basenames
-          sing_basenames=$(comm -12 <(echo "$json_basenames" | sort) <(echo "$srs_basenames" | sort))
-          extra_basenames=$(comm -13 <(echo "$meta_basenames" | sort) <(echo "$sing_basenames" | sort))
-          
-          # Find incomplete pairs
-          only_json=$(comm -23 <(echo "$json_basenames" | sort) <(echo "$srs_basenames" | sort))
-          only_srs=$(comm -23 <(echo "$srs_basenames" | sort) <(echo "$json_basenames" | sort))
-          
-          # Output results
-          echo "Missing .json files:"
-          echo "$missing_json"
-          echo "Missing .srs files:"
-          echo "$missing_srs"
-          echo "Extra basenames in sing-rule:"
-          echo "$extra_basenames"
-          echo "Basenames with only .json:"
-          echo "$only_json"
-          echo "Basenames with only .srs:"
-          echo "$only_srs"
-        shell: bash
-
       #
-      # 9. Purge jsdelivr CDN (optional)
+      # 11. Purge jsdelivr CDN if changes detected
       #
       - name: Purge jsdelivr CDN
+        if: ${{ steps.compare.outputs.changes == 'true' }}
         run: |
           echo "=== Purging jsDelivr cache for files in ./publish/ ==="
           for file in $(find publish -type f); do
             filename=$(basename "$file")
             echo "Purging $filename..."
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${filename}"
+            curl -i "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@release/${filename}"
           done
 
       - name: Done

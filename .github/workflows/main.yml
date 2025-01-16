@@ -139,7 +139,7 @@ jobs:
           ls -R publish
 
       #
-      # 10. Commit & push to 'release' branch
+      # 8. Commit & push to 'release' branch
       #
       - name: Commit and push assets to 'release'
         run: |
@@ -155,17 +155,18 @@ jobs:
           git push -f -u origin release
 
       #
-      # 11. Purge jsdelivr CDN if changes detected
+      # 9. Purge jsdelivr CDN (optional)
       #
       - name: Purge jsdelivr CDN
-        if: ${{ steps.compare.outputs.changes == 'true' }}
         run: |
           echo "=== Purging jsDelivr cache for files in ./publish/ ==="
           for file in $(find publish -type f); do
             filename=$(basename "$file")
             echo "Purging $filename..."
-            curl -i "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@release/${filename}"
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${filename}"
           done
-
+      #
+      # 10. Victory! (optional)
+      #
       - name: Done
         run: echo "All steps completed!"

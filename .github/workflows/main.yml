@@ -118,19 +118,26 @@ jobs:
       #
       # 6. Process YAML files for meta-rule
       #
+		  
       - name: Process YAML files for meta-rule
         run: |
           echo "=== Processing YAML files for meta-rule ==="
           mkdir -p meta-rule
           cp community/data_source/*.yaml meta-rule/
-      
+          
+          echo "=== Removing comments and empty lines from YAML files ==="
+          for yaml_file in meta-rule/*.yaml; do
+            # Remove comments (lines starting with '#') and empty lines
+            sed '/^#/d; /^$/d' "$yaml_file" > tmp && mv tmp "$yaml_file"
+          done
+          
           echo "=== Converting YAML to LIST files ==="
           for yaml_file in meta-rule/*.yaml; do
             list_file="${yaml_file%.yaml}.list"
             # Skip the first line, remove leading '- ' prefix, and eliminate empty lines
             tail -n +2 "$yaml_file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "$list_file"
           done
-      
+          
           echo "=== Final files in meta-rule ==="
           ls -al meta-rule
 

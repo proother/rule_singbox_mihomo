@@ -24,7 +24,7 @@ Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社�
 
 ### Mihomo 示例
 
-由于 Mihomo 内核的二进制文件 `msr` 当前的 `behavior` 仅支持 `domain` 和 `ipcidr`，而classical的 `yaml` 和 `text` 支持所有类型的路由规则，因此我们为 Mihomo 的rule-providers）同时提供 `yaml` 和`list`文件格式。
+由于 Mihomo 内核的二进制文件 `msr` 当前的behavior仅支持domain和ipcidr，而classical的 `yaml` 和 `text` 支持所有类型的路由规则，因此我们为Mihomo的rule-providers同时提供 `yaml` 和`list`文件格式。
 
 相关文档：[https://wiki.metacubex.one/en/config/rule-providers/?h=classical](https://wiki.metacubex.one/en/config/rule-providers/?h=classical)
 

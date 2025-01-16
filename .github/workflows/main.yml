@@ -111,6 +111,13 @@ jobs:
           mkdir -p meta-rule
           cp ios_rule_script/rule/Clash/*/*.list meta-rule/
 
+      - name: Remove comments from list files in meta-rule
+        run: |
+          echo "=== Removing comments from list files ==="
+          for file in meta-rule/*.list; do
+            sed '/^#/d;/^$/d' "$file" > tmp && mv tmp "$file"
+          done
+
       #
       # 7. Gather artifacts into publish folder
       #
@@ -122,6 +129,8 @@ jobs:
           # Move sing-rule and meta-rule into publish/
           cp -r sing-rule publish/sing-rule
           cp -r meta-rule publish/meta-rule
+          echo "=== sing-rule file count: $(find sing-rule -type f | wc -l) ==="
+          echo "=== meta-rule file count: $(find meta-rule -type f | wc -l) ==="
           ls -R publish
 
       #

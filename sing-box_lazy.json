@@ -1,0 +1,305 @@
+{
+// sing-box懒人配置
+// 国外常用服务单独分流：YouTube，Netflix，Disney+，HBO，Spotify，Telegram，PayPal，Twitter，Facebook，Google，TikTok，GitHub，ChatGPT。
+// 国内常用服务单独分流：苹果服务，微软服务，哔哩哔哩，网易云音乐，游戏平台，亚马逊，百度，豆瓣，微信，抖音，新浪，知乎，小红书。
+  "route": {
+    "auto_detect_interface": true,
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "Apple",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Apple_Classical.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "BiliBili",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/BiliBili.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "NetEaseMusic",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/NetEaseMusic.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Baidu",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Baidu.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "DouBan",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/DouBan.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "WeChat",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/WeChat.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "DouYin",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/DouYin.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Sina",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Sina.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Zhihu",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Zhihu.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "XiaoHongShu",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/XiaoHongShu.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "YouTube",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/YouTube.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Netflix",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Netflix_Classical.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Disney",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Disney.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "HBO",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/HBO.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Spotify",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Spotify.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Telegram",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Telegram.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "PayPal",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/PayPal.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Twitter",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Twitter.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Facebook",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Facebook.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Amazon",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Amazon.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "OpenAI",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/OpenAI.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Sony",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Sony.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Nintendo",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Nintendo.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Epic",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Epic.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "SteamCN",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/SteamCN.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Steam",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Steam.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Game",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Game.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "GitHub",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/GitHub.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Microsoft",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Microsoft.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Google",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Google.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "TikTok",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/TikTok.srs"
+      },
+// 官方geoip geosite 建议保留
+      {
+        "format": "binary",
+        "tag": "geoip-cn",
+        "type": "remote",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs"
+      },
+      {
+        "format": "binary",
+        "tag": "geosite-geolocation-cn",
+        "type": "remote",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-cn.srs"
+      },
+      {
+        "format": "binary",
+        "tag": "geosite-geolocation-!cn",
+        "type": "remote",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs"
+      }
+    ],
+    "rules": [
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "protocol": "dns"
+          },
+          {
+            "port": 53
+          }
+        ],
+        "outbound": "dns-out"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "Direct",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "Global",
+// 请将oubound 配置为你的代理服务器
+        "outbound": "Proxy"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 853
+          },
+          {
+            "network": "udp",
+            "port": 443
+          },
+          {
+            "protocol": "stun"
+          }
+        ],
+        "outbound": "block"
+      },
+      {
+        "outbound": "direct",
+        "rule_set": [
+          "Apple",
+          "BiliBili",
+          "NetEaseMusic",
+          "Baidu",
+          "DouBan",
+          "WeChat",
+          "DouYin",
+          "Sina",
+          "Zhihu",
+          "XiaoHongShu",
+          "Microsoft",
+          "Sony",
+          "Nintendo",
+          "Epic",
+          "SteamCN",
+          "geoip-cn",
+          "geosite-geolocation-cn"
+        ]
+      },
+      {
+        "rule_set": [
+          "YouTube",
+          "Netflix",
+          "Disney",
+          "HBO",
+          "Spotify",
+          "Telegram",
+          "PayPal",
+          "Twitter",
+          "Facebook",
+          "Amazon",
+          "OpenAI",
+          "Steam",
+          "Game",
+          "GitHub",
+          "Google",
+          "TikTok",
+          "geosite-geolocation-!cn"
+        ],
+// 请将oubound 配置为你的代理服务器
+        "outbound": "Proxy"
+      }
+    ]
+  }
+}

@@ -152,48 +152,35 @@ jobs:
       - name: Compare meta-rule and sing-rule files
         run: |
           # Extract basenames from meta-rule
-          if [ -n "$(ls publish/meta-rule/*.list 2>/dev/null)" ]; then
-            meta_basenames=$(ls publish/meta-rule/*.list | sed 's/\.list$//' | sort)
-          else
-            meta_basenames=""
-          fi
-      
+          meta_basenames=$(find publish/meta-rule/ -type f -name "*.list" | sed 's/\.list$//g' | sed 's|publish/meta-rule/||g' | sort)
+          
           # Extract basenames from sing-rule
-          if [ -n "$(ls publish/sing-rule/*.json 2>/dev/null)" ]; then
-            sing_json_basenames=$(ls publish/sing-rule/*.json | sed 's/\.json$//' | sort)
-          else
-            sing_json_basenames=""
-          fi
-      
-          if [ -n "$(ls publish/sing-rule/*.srs 2>/dev/null)" ]; then
-            sing_srs_basenames=$(ls publish/sing-rule/*.srs | sed 's/\.srs$//' | sort)
-          else
-            sing_srs_basenames=""
-          fi
-      
+          json_basenames=$(find publish/sing-rule/ -type f -name "*.json" | sed 's/\.json$//g' | sed 's|publish/sing-rule/||g' | sort)
+          srs_basenames=$(find publish/sing-rule/ -type f -name "*.srs" | sed 's/\.srs$//g' | sed 's|publish/sing-rule/||g' | sort)
+          
           # Find missing files
-          missing_json=$(comm -23 <(echo "$meta_basenames") <(echo "$sing_json_basenames"))
-          missing_srs=$(comm -23 <(echo "$meta_basenames") <(echo "$sing_srs_basenames"))
-      
-          # Combine sing_json_basenames and sing_srs_basenames
-          sing_all_basenames=$(echo "$sing_json_basenames $sing_srs_basenames" | tr ' ' '\n' | sort | uniq)
-      
-          # Find extra basenames in sing-rule
-          extra_basenames=$(comm -13 <(echo "$meta_basenames") <(echo "$sing_all_basenames"))
-      
+          missing_json=$(comm -23 <(echo "$meta_basenames" | sort) <(echo "$json_basenames" | sort))
+          missing_srs=$(comm -23 <(echo "$meta_basenames" | sort) <(echo "$srs_basenames" | sort))
+          
+          # Find extra basenames
+          sing_basenames=$(comm -12 <(echo "$json_basenames" | sort) <(echo "$srs_basenames" | sort))
+          extra_basenames=$(comm -13 <(echo "$meta_basenames" | sort) <(echo "$sing_basenames" | sort))
+          
+          # Find incomplete pairs
+          only_json=$(comm -23 <(echo "$json_basenames" | sort) <(echo "$srs_basenames" | sort))
+          only_srs=$(comm -23 <(echo "$srs_basenames" | sort) <(echo "$json_basenames" | sort))
+          
           # Output results
-          echo "Basenames in meta-rule but missing .json in sing-rule:"
+          echo "Missing .json files:"
           echo "$missing_json"
-      
-          echo "Basenames in meta-rule but missing .srs in sing-rule:"
+          echo "Missing .srs files:"
           echo "$missing_srs"
-      
-          echo "Extra basenames in sing-rule not present in meta-rule:"
+          echo "Extra basenames in sing-rule:"
           echo "$extra_basenames"
-      
-          # Optional: Log file counts
-          echo "meta-rule file count: $(ls publish/meta-rule/*.list | wc -l)"
-          echo "sing-rule file count: $(ls publish/sing-rule/*.json publish/sing-rule/*.srs | wc -l)"
+          echo "Basenames with only .json:"
+          echo "$only_json"
+          echo "Basenames with only .srs:"
+          echo "$only_srs"
         shell: bash
 
       #

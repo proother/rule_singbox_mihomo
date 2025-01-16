@@ -86,26 +86,28 @@ jobs:
           go run . clash -i ../community/data_source -o ../sing-rule -t sing-box
           cd ../sing-rule
 
-          # Restore original filenames (case-sensitive)
-          for file in *.json *.srs; do
-            # Extract the base name (without extension)
-            base_name=$(basename "$file" .json)
-            base_name=$(basename "$base_name" .srs)
+          # Move files from subdirectories to the root of sing-rule
+          for dir in */; do
+            dir_name=$(basename "$dir")
+            if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
+              # Find the original YAML file in community/data_source
+              original_yaml=$(find ../community/data_source -type f -iname "${dir_name}.yaml" -print -quit)
 
-            # Find the original YAML file in community/data_source
-            original_yaml=$(find ../community/data_source -type f -iname "${base_name}.yaml" -print -quit)
+              if [[ -n "$original_yaml" ]]; then
+                # Extract the original filename (without extension)
+                original_name=$(basename "$original_yaml" .yaml)
 
-            if [[ -n "$original_yaml" ]]; then
-              # Extract the original filename (without extension)
-              original_name=$(basename "$original_yaml" .yaml)
-
-              # Rename the JSON/SRS file to match the original filename
-              if [[ "$file" == *.json ]]; then
-                mv "$file" "${original_name}.json"
-              elif [[ "$file" == *.srs ]]; then
-                mv "$file" "${original_name}.srs"
+                # Move and rename the JSON/SRS files to match the original filename
+                mv "$dir/classical.json" "${original_name}.json"
+                mv "$dir/classical.srs" "${original_name}.srs"
+              else
+                # Fallback to directory name if original YAML is not found
+                mv "$dir/classical.json" "${dir_name}.json"
+                mv "$dir/classical.srs" "${dir_name}.srs"
               fi
             fi
+            # Remove the empty subdirectory
+            rm -rf "$dir"
           done
 
           echo "=== Final files in sing-rule ==="

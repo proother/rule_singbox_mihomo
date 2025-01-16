@@ -308,7 +308,7 @@ rule-providers:
     behavior: classical
     format: text
 rules:
-  #RULE-SET 规则
+  #RULE-SET 规则，请将下方的所有PROXY配置为你的代理服务器
   - RULE-SET,Apple,DIRECT
   - RULE-SET,BiliBili,DIRECT
   - RULE-SET,NetEaseMusic,DIRECT
@@ -342,13 +342,13 @@ rules:
   - RULE-SET,TikTok,PROXY
 
   #GEOSITE 规则，来自官方geosite.db,建议保留
-  - GEOSITE,geolocation-!cn,PROXY
+  - GEOSITE,geolocation-!cn,PROXY # 请将PROXY配置为你的代理服务器
   - GEOSITE,cn,DIRECT
 
   #GEOIP 规则，来自官方geoip.db,建议保留
   - GEOIP,private,DIRECT,no-resolve
   - GEOIP,CN,DIRECT
-  - DST-PORT,80/8080/443/8443,PROXY
+  - DST-PORT,80/8080/443/8443,PROXY # 请将PROXY配置为你的代理服务器
   #MATCH 匹配所有请求用来兜底,建议保留
   - MATCH,DIRECT
 ```

@@ -1,6 +1,6 @@
 # README
 
-本仓库会自动从 [@blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 中每日**获取**并**转换**规则，生成适用于 sing-box 的 `json` 和 `srs` 格式，以及适用于 Mihomo 的 `yaml` 和`list`格式，并发布在[proother/rule_singbox_mihomo@release](https://github.com/proother/rule_singbox_mihomo/tree/release)。
+本仓库每日会自动从 [@blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)  (specifically the `rule/Clash`)**获取**每个目录里主要的`yaml`文件，然后**转换**生成适用于 sing-box 的 `json` 和 `srs` 格式，以及适用于 Mihomo 的 `yaml` 和`list`格式，并发布在[proother/rule_singbox_mihomo@release](https://github.com/proother/rule_singbox_mihomo/tree/release)。
 
 ### 背景
 

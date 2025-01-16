@@ -90,7 +90,7 @@ sing-box内核的二进制文件`srs`支持路由规则的全部类型，因此�
 # 国外常用服务单独分流：YouTube，Netflix，Disney+，HBO，Spotify，Telegram，PayPal，Twitter，Facebook，Google，TikTok，GitHub，ChatGPT。
 # 国内常用服务单独分流：苹果服务，微软服务，哔哩哔哩，网易云音乐，游戏平台，亚马逊，百度，豆瓣，微信，抖音，新浪，知乎，小红书。
 rule-providers:
-  Apple_Classical:
+  Apple:
     type: http
     path: ./ruleset/Apple_Classical.list
     url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Apple_Classical.list"
@@ -167,7 +167,7 @@ rule-providers:
     interval: 86400
     behavior: classical
     format: text
-  Netflix_Classical:
+  Netflix:
     type: http
     path: ./ruleset/Netflix_Classical.list
     url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Netflix_Classical.list"
@@ -309,7 +309,7 @@ rule-providers:
     format: text
 rules:
   #RULE-SET 规则
-  - RULE-SET,Apple_Classical,DIRECT
+  - RULE-SET,Apple,DIRECT
   - RULE-SET,BiliBili,DIRECT
   - RULE-SET,NetEaseMusic,DIRECT
   - RULE-SET,Baidu,DIRECT
@@ -325,7 +325,7 @@ rules:
   - RULE-SET,Epic,DIRECT
   - RULE-SET,SteamCN,DIRECT
   - RULE-SET,YouTube,PROXY
-  - RULE-SET,Netflix_Classical,PROXY
+  - RULE-SET,Netflix,PROXY
   - RULE-SET,Disney,PROXY
   - RULE-SET,HBO,PROXY
   - RULE-SET,Spotify,PROXY

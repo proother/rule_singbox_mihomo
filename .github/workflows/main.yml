@@ -178,7 +178,7 @@ jobs:
           git checkout -b release
           git add .
           git commit -m "Assets from ${{ env.BUILDTIME }}"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.RULE_SINGBOX_MIHOMO_SECRET }}@github.com/proother/rule_singbox_mihomo"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.RULE_SINGBOX_MIHOMO_SECRET }}@github.com/${{ github.repository }}"
           git push -f -u origin release
 
       #

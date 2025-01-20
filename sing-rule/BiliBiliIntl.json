@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "domain_suffix": "bilibili.tv",
+      "package_name": "com.bstar.intl"
+    }
+  ]
+}

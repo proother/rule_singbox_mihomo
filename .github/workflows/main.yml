@@ -85,7 +85,10 @@ jobs:
           echo "=== Converting .yaml to sing rules ==="
           mkdir -p sing-rule
           cd converter
-          go run . clash -i ../community/data_source -o ../sing-rule -t sing-box
+          # Build the converter
+          go build -o meta-converter .
+          # Use the built binary
+          ./meta-converter clash -f ../community/data_source -o ../sing-rule -t sing-box
           cd ../sing-rule
 
           # Move files from subdirectories to the root of sing-rule

@@ -159,11 +159,79 @@ jobs:
           ls -R publish
 
       #
-      # 8. Commit & push to 'release' branch
+      # 7.5. Create ZIP archives
       #
-      - name: Commit and push assets to 'release'
+      - name: Create ZIP archives
         run: |
-          echo "=== Committing ./publish/ to branch 'release' ==="
+          echo "=== Creating ZIP archives ==="
+          mkdir -p release-assets
+          
+          # Sing-box rules
+          echo "=== Zipping sing-box rules ==="
+          cd sing-rule
+          if ls *.srs 1> /dev/null 2>&1; then
+            zip ../release-assets/sing-rules-srs.zip *.srs
+            echo "Created sing-rules-srs.zip"
+          fi
+          if ls *.json 1> /dev/null 2>&1; then
+            zip ../release-assets/sing-rules-json.zip *.json
+            echo "Created sing-rules-json.zip"
+          fi
+          cd ..
+          
+          # Meta rules
+          echo "=== Zipping meta rules ==="
+          cd meta-rule
+          if ls *.list 1> /dev/null 2>&1; then
+            zip ../release-assets/meta-rules-list.zip *.list
+            echo "Created meta-rules-list.zip"
+          fi
+          if ls *.yaml 1> /dev/null 2>&1; then
+            zip ../release-assets/meta-rules-yaml.zip *.yaml
+            echo "Created meta-rules-yaml.zip"
+          fi
+          cd ..
+          
+          echo "=== Release assets created ==="
+          ls -al release-assets/
+
+      #
+      # 8. Create GitHub Release
+      #
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.BUILDTIME }}
+          name: Release ${{ env.BUILDTIME }}
+          body: |
+            ## 📦 Rule Packages
+            
+            ### Sing-box Rules
+            - `sing-rules-srs.zip` - Sing-box binary rule files (.srs)
+            - `sing-rules-json.zip` - Sing-box JSON rule files (.json)
+            
+            ### Meta Rules
+            - `meta-rules-list.zip` - Meta list rule files (.list)
+            - `meta-rules-yaml.zip` - Meta YAML rule files (.yaml)
+            
+            ### Build Information
+            - Build Time: ${{ env.BUILDTIME }} (Asia/Shanghai)
+            - Workflow Run: [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            ### Data Sources
+            - Rules from [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)
+            - Converter by [MetaCubeX/meta-rules-converter](https://github.com/MetaCubeX/meta-rules-converter)
+          files: |
+            release-assets/*
+          fail_on_unmatched_files: false
+          generate_release_notes: false
+
+      #
+      # 8.5. Also push to 'release' branch for backward compatibility
+      #
+      - name: Push to release branch
+        run: |
+          echo "=== Pushing to branch 'release' for backward compatibility ==="
           cd publish
           git init
           git config user.name "github-actions[bot]"

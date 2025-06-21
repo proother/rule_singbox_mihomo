@@ -24,14 +24,20 @@ Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社�
 
 ### Mihomo 示例
 
-由于 Mihomo 内核的二进制文件 `msr` 当前的behavior仅支持domain和ipcidr，而classical的 `yaml` 和 `text` 支持所有类型的路由规则，因此我们为Mihomo的rule-providers同时提供 `yaml` 和`list`文件格式。
+由于 Mihomo 内核支持多种rule-provider格式，我们为Mihomo同时提供 `yaml` 和 `list` 文件格式。根据官方文档，Mihomo还支持 `mrs` 二进制格式（仅限domain/ipcidr behavior），但我们当前主要提供classical behavior的规则。
 
-相关文档：[https://wiki.metacubex.one/en/config/rule-providers/?h=classical](https://wiki.metacubex.one/en/config/rule-providers/?h=classical)
+相关文档：[https://wiki.metacubex.one/config/rule-providers/#format](https://wiki.metacubex.one/config/rule-providers/#format)
 
-| 文件格式              | format写法                                                                                                                              |
-|---------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| *.yaml        | yaml                                                 |
-| *.list        | text                                                 |
+| 文件格式              | format写法 | 支持的behavior | 性能特点 |
+|---------------------|------------|----------------|----------|
+| *.yaml              | yaml       | classical/domain/ipcidr | 📖 默认格式，可读性好 |
+| *.list              | text       | classical/domain/ipcidr | ⚡ 文本格式，加载快 |
+| *.mrs               | mrs        | domain/ipcidr | 🚀 二进制格式，最高性能 |
+
+**注意**：我们当前提供的是classical behavior规则（支持所有规则类型），因此推荐使用 `yaml` 或 `text` 格式。如需 `mrs` 格式，可使用mihomo官方转换工具：
+```bash
+mihomo convert-ruleset domain/ipcidr yaml/text source.yaml target.mrs
+```
 
 
 ```yaml

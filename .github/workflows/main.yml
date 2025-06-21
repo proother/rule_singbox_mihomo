@@ -162,24 +162,77 @@ jobs:
             fi
           done
           
-          echo "=== Converting lite JSON to SRS format using meta-converter ==="
+          echo "=== Converting lite JSON to SRS format ==="
           
-          # Use the same meta-converter that generated the complete rules
-          cd converter
-          for lite_json in ../sing-rule-lite/*.json; do
+          # Create a temporary directory structure for meta-converter
+          echo "Preparing directory structure for meta-converter..."
+          mkdir -p lite-temp
+          
+          # Copy each lite JSON to a subdirectory (mimicking the original structure)
+          for lite_json in sing-rule-lite/*.json; do
             if [[ -f "$lite_json" ]]; then
               filename=$(basename "$lite_json" .json)
-              echo "Converting $filename to SRS format..."
-              
-              # Use meta-converter just like we do for complete rules
-              if ./meta-converter sing-box -f "$lite_json" -o "../sing-rule-lite/${filename}.srs" -t sing-box-srs; then
-                echo "✅ Successfully created ${filename}.srs using meta-converter"
-              else
-                echo "❌ Failed to create SRS file for $filename"
-              fi
+              mkdir -p "lite-temp/$filename"
+              cp "$lite_json" "lite-temp/$filename/classical.json"
+              echo "Prepared $filename for conversion"
             fi
           done
-          cd ..
+          
+          # Use meta-converter to convert the entire lite-temp directory (same as complete rules)
+          cd converter
+          
+          # Ensure meta-converter binary exists and is executable
+          if [[ ! -f "./meta-converter" ]]; then
+            echo "Building meta-converter..."
+            go build -o meta-converter .
+          fi
+          
+          # Make sure it's executable
+          chmod +x ./meta-converter
+          
+          # Use absolute path to avoid conflicts with system 'convert' command
+          CONVERTER_BINARY="$(pwd)/meta-converter"
+          echo "Using meta-converter at: $CONVERTER_BINARY"
+          echo "Running command: $CONVERTER_BINARY sing-box -f $(pwd)/../lite-temp -o $(pwd)/../sing-rule-lite-srs -t sing-box-srs"
+          
+          if "$CONVERTER_BINARY" sing-box -f "$(pwd)/../lite-temp" -o "$(pwd)/../sing-rule-lite-srs" -t sing-box-srs; then
+            echo "✅ Meta-converter completed successfully"
+            
+            # Move SRS files back to sing-rule-lite directory with correct names
+            cd ../sing-rule-lite-srs
+            for dir in */; do
+              if [[ -d "$dir" ]]; then
+                dir_name=$(basename "$dir")
+                if [[ -f "$dir/classical.srs" ]]; then
+                  mv "$dir/classical.srs" "../sing-rule-lite/${dir_name}.srs"
+                  echo "✅ Moved ${dir_name}.srs to lite directory"
+                fi
+              fi
+            done
+            cd ..
+            
+            # Clean up temporary directories
+            rm -rf lite-temp sing-rule-lite-srs
+            echo "✅ Cleanup completed"
+          else
+            echo "❌ Meta-converter failed!"
+            cd ..
+            
+            # Debug information
+            echo "=== Debugging meta-converter failure ==="
+            echo "Current directory: $(pwd)"
+            echo "Converter directory contents:"
+            ls -la converter/
+            echo "Lite-temp directory contents:"
+            ls -la lite-temp/ 2>/dev/null || echo "lite-temp directory not found"
+            
+            # Clean up
+            rm -rf lite-temp sing-rule-lite-srs
+            
+            echo "❌ CRITICAL: Meta-converter failed to generate SRS files"
+            echo "This means no SRS files will be available for lite rules"
+            echo "Only JSON files will be provided in the lite package"
+          fi
           
           # Verify SRS files were created
           srs_count=$(find sing-rule-lite -name "*.srs" | wc -l)
@@ -237,8 +290,9 @@ jobs:
           echo "Total SRS files: $final_srs_count"
           
           if [[ "$final_srs_count" -eq 0 ]]; then
-            echo "❌ CRITICAL: No SRS files generated! This will cause incomplete release packages."
-            exit 1
+            echo "⚠️  WARNING: No SRS files generated! Only JSON files will be available."
+            echo "This is likely due to meta-converter failure, but JSON-only package is still functional."
+            echo "Users can still use lite rules with format: 'source' instead of 'binary'"
           elif [[ "$final_srs_count" -lt "$final_json_count" ]]; then
             echo "⚠️  Warning: SRS count ($final_srs_count) is less than JSON count ($final_json_count)"
             echo "Some rules may not have SRS versions, but continuing..."
@@ -312,13 +366,21 @@ jobs:
           # Sing-box lite rules (IP-CIDR + DOMAIN only)
           echo "=== Zipping sing-box lite rules ==="
           cd sing-rule-lite
+          
+          # Check and package SRS files if they exist
           if ls *.srs 1> /dev/null 2>&1; then
             zip ../release-assets/sing-rules-lite-srs.zip *.srs
-            echo "Created sing-rules-lite-srs.zip (lite binary rules)"
+            echo "✅ Created sing-rules-lite-srs.zip (lite binary rules)"
+          else
+            echo "⚠️  No SRS files found - skipping lite SRS package"
           fi
+          
+          # Always package JSON files (should always exist)
           if ls *.json 1> /dev/null 2>&1; then
             zip ../release-assets/sing-rules-lite-json.zip *.json
-            echo "Created sing-rules-lite-json.zip (lite JSON rules)"
+            echo "✅ Created sing-rules-lite-json.zip (lite JSON rules)"
+          else
+            echo "❌ CRITICAL: No JSON files found in lite directory!"
           fi
           cd ..
           

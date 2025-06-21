@@ -136,27 +136,17 @@ jobs:
               filename=$(basename "$json_file" .json)
               echo "Processing $filename for lite version..."
               
-              # Filter rules to keep only ip_cidr and domain types
+              # Filter rules to keep ONLY ip_cidr and domain fields - defensive approach
               jq '
                 {
                   version: .version,
                   rules: [
                     .rules[] | 
-                    select(
-                      has("ip_cidr") or 
-                      has("domain") or
-                      (has("type") and .type == "logical")
-                    ) |
-                    if has("type") and .type == "logical" then
-                      . + {
-                        rules: [
-                          .rules[]? | 
-                          select(has("ip_cidr") or has("domain"))
-                        ]
-                      }
-                    else
-                      .
-                    end
+                    # Build new object explicitly with ONLY allowed fields
+                    # This guarantees no other fields can appear
+                    with_entries(select(.key == "ip_cidr" or .key == "domain")) |
+                    # Only keep rules that have at least one of our target fields
+                    select(keys | length > 0)
                   ]
                 }
               ' "$json_file" > "sing-rule-lite/${filename}.json"
@@ -195,15 +185,34 @@ jobs:
           echo "=== Lite rules summary ==="
           echo "Total lite rule files created: $(find sing-rule-lite -name "*.json" | wc -l)"
           echo "Files with IP-CIDR and DOMAIN rules only:"
+          
+          # Validate that lite rules only contain ip_cidr and domain fields
+          validation_failed=false
           for lite_file in sing-rule-lite/*.json; do
             if [[ -f "$lite_file" ]]; then
               filename=$(basename "$lite_file" .json)
               ip_count=$(jq '[.rules[] | select(has("ip_cidr"))] | length' "$lite_file")
               domain_count=$(jq '[.rules[] | select(has("domain"))] | length' "$lite_file")
               total_count=$(jq '.rules | length' "$lite_file")
-              echo "  $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN)"
+              
+              # Check for any unexpected fields in rules
+              unexpected_fields=$(jq -r '[.rules[] | keys | .[] | select(. != "ip_cidr" and . != "domain")] | unique | .[]' "$lite_file" 2>/dev/null || true)
+              
+              if [[ -n "$unexpected_fields" ]]; then
+                echo "  ❌ $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN) - UNEXPECTED FIELDS: $unexpected_fields"
+                validation_failed=true
+              else
+                echo "  ✅ $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN) - CLEAN"
+              fi
             fi
           done
+          
+          if [[ "$validation_failed" == "true" ]]; then
+            echo "❌ VALIDATION FAILED: Some lite rules contain unexpected fields!"
+            exit 1
+          else
+            echo "✅ VALIDATION PASSED: All lite rules contain only ip_cidr and domain fields"
+          fi
           
           echo "=== Final lite files ==="
           ls -al sing-rule-lite/

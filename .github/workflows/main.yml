@@ -542,6 +542,13 @@ jobs:
           # 🔥 用户发现：meta-rules-converter/input/geosite.go 确实有MRS实现！
           # 我们应该使用geosite子命令，而不是clash子命令
           
+          echo "🔍 Verifying meta-converter capabilities..."
+          echo "Available meta-converter commands:"
+          ./meta-converter --help || echo "Meta-converter help failed"
+          
+          echo "📋 Checking geosite subcommand availability:"
+          ./meta-converter geosite --help 2>&1 || echo "Geosite subcommand not available or failed"
+          
           echo "📚 Creating temporary geosite.dat for MRS generation..."
           
           # 首先，我们需要为mihomo生成一个临时的geosite.dat文件
@@ -552,18 +559,49 @@ jobs:
             echo "✅ Found domain-list-community data, building geosite.dat..."
             cd ../custom
             
-            # 使用domain-list-custom构建geosite.dat
-            if go run ./ --datapath=../community/data --outputname=temp-geosite.dat 2>&1; then
-              echo "✅ Successfully built temporary geosite.dat"
+                         # 使用domain-list-custom构建geosite.dat
+             echo "🔧 Attempting to build geosite.dat..."
+             echo "Working directory: $(pwd)"
+             echo "Available files: $(ls -la)"
+             
+             if go run ./ --datapath=../community/data --outputname=temp-geosite.dat 2>&1; then
+               echo "✅ Successfully built temporary geosite.dat"
+               
+               # 检查生成的文件
+               if [[ -f "temp-geosite.dat" ]]; then
+                 echo "📊 Generated geosite.dat info:"
+                 echo "  Size: $(stat -c%s temp-geosite.dat 2>/dev/null || echo "unknown") bytes"
+                 echo "  File type: $(file temp-geosite.dat 2>/dev/null || echo "unknown")"
+                 
+                 # 移动到converter目录使用
+                 mv temp-geosite.dat ../converter/
+                 cd ../converter
+                 
+                 echo "✅ Moved geosite.dat to converter directory"
+               else
+                 echo "❌ ERROR: temp-geosite.dat not found after build"
+                 cd ../converter
+                 echo "⚠️  Continuing without geosite.dat..."
+               fi
               
-              # 移动到converter目录使用
-              mv temp-geosite.dat ../converter/
-              cd ../converter
-              
-              # 🚀 现在使用正确的geosite子命令生成MRS文件！
-              echo "=== Using geosite subcommand to generate MRS files ==="
-              if ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs 2>&1; then
-                echo "🎉 SUCCESS: MRS generation using geosite subcommand!"
+                             # 🚀 现在使用正确的geosite子命令生成MRS文件！
+               echo "=== Using geosite subcommand to generate MRS files ==="
+               echo "🔍 Debug info before geosite conversion:"
+               echo "  Current directory: $(pwd)"
+               echo "  Available files: $(ls -la)"
+               echo "  Geosite.dat exists: $(test -f temp-geosite.dat && echo "YES" || echo "NO")"
+               if [[ -f "temp-geosite.dat" ]]; then
+                 echo "  Geosite.dat size: $(stat -c%s temp-geosite.dat 2>/dev/null || echo "unknown") bytes"
+               fi
+               
+               echo "📝 Testing meta-converter geosite command..."
+               echo "Command: ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs"
+               
+               # 运行命令并捕获所有输出
+               if ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs 2>&1 | tee geosite_conversion.log; then
+                 echo "🎉 SUCCESS: MRS generation using geosite subcommand!"
+                 echo "📋 Conversion log:"
+                 cat geosite_conversion.log | sed 's/^/  /'
                 
                 if [[ -d "../meta-rule-mrs" ]]; then
                   echo "=== Analyzing geosite MRS output ==="
@@ -593,23 +631,68 @@ jobs:
                   done
                 fi
                 
-                # 清理临时目录
-                rm -rf ../meta-rule-mrs
-              else
-                echo "⚠️  Geosite MRS conversion failed, keeping manual YAML/LIST files"
-                echo "📝 Note: This might be due to geosite.dat format or missing data"
-              fi
+                                 # 清理临时目录
+                 rm -rf ../meta-rule-mrs
+               else
+                 echo "❌ CRITICAL: Geosite MRS conversion failed!"
+                 echo "📋 Error log:"
+                 cat geosite_conversion.log | sed 's/^/  /' || echo "  No error log available"
+                 
+                 echo "🔍 Debugging failed conversion:"
+                 echo "  Exit code: $?"
+                 echo "  Output directory exists: $(test -d ../meta-rule-mrs && echo "YES" || echo "NO")"
+                 if [[ -d "../meta-rule-mrs" ]]; then
+                   echo "  Files in output directory:"
+                   find ../meta-rule-mrs -type f | head -20 | sed 's/^/    /'
+                 fi
+                 
+                 echo "📝 Possible causes:"
+                 echo "  1. geosite.dat format incompatible"
+                 echo "  2. meta-converter geosite subcommand parameters wrong"
+                 echo "  3. Missing dependencies or data"
+                 echo "  4. Tool version compatibility issues"
+                 
+                 echo "⚠️  Continuing with manual YAML/LIST files..."
+               fi
               
-              # 清理临时geosite.dat
-              rm -f temp-geosite.dat
-            else
-              echo "⚠️  Failed to build temporary geosite.dat"
-              echo "ℹ️  Continuing with manual YAML/LIST generation"
-            fi
-          else
-            echo "⚠️  No domain-list-community data available for geosite.dat generation"
-            echo "ℹ️  Continuing with manual YAML/LIST generation"
-          fi
+                             # 清理临时geosite.dat和日志
+               rm -f temp-geosite.dat geosite_conversion.log
+             else
+               echo "❌ CRITICAL: Failed to build temporary geosite.dat"
+               echo "🔍 Debug information:"
+               echo "  Current directory: $(pwd)"
+               echo "  Go version: $(go version 2>/dev/null || echo "Go not available")"
+               echo "  Available data directories:"
+               find ../community -name "data" -type d 2>/dev/null | sed 's/^/    /' || echo "    No data directories found"
+               echo "  Sample data files:"
+               find ../community/data -name "*.txt" -o -name "*.list" 2>/dev/null | head -10 | sed 's/^/    /' || echo "    No data files found"
+               
+               echo "📝 Possible causes:"
+               echo "  1. domain-list-custom build dependencies missing"
+               echo "  2. ../community/data directory structure incorrect"
+               echo "  3. Go compilation errors"
+               echo "  4. Insufficient data for geosite.dat generation"
+               
+               echo "⚠️  Continuing with manual YAML/LIST generation..."
+               cd ../converter
+             fi
+                     else
+             echo "❌ CRITICAL: No domain-list-community data available for geosite.dat generation"
+             echo "🔍 Debug: Expected directory structure:"
+             echo "  ../community/data/ should contain domain list files"
+             echo "  ../custom/ should contain domain-list-custom Go project"
+             
+             echo "🔍 Actual directory structure:"
+             echo "Available directories:"
+             find .. -maxdepth 2 -type d | sort | sed 's/^/    /'
+             
+             echo "📝 This explains why MRS generation is not working:"
+             echo "  1. geosite subcommand needs .dat file input"
+             echo "  2. .dat file generation requires domain-list-community data"
+             echo "  3. Without proper data structure, MRS generation fails"
+             
+             echo "⚠️  Continuing with manual YAML/LIST generation..."
+           fi
           
           cd ..
           

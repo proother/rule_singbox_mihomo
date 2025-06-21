@@ -165,7 +165,7 @@ jobs:
           echo "=== Creating lite YAML and converting to SRS format ==="
           
           # Step 1: Create lite YAML files from original YAML files (before JSON conversion)
-          echo "Creating lite YAML files from original sources..."
+          echo "Creating lite YAML files from original sources (empty files will be cleaned up later)..."
           mkdir -p lite-yaml-source
           
           # Process each original YAML file to create lite version
@@ -183,14 +183,8 @@ jobs:
                 grep -E "^\s*-\s*IP-CIDR," "$yaml_file" || true
               } > "lite-yaml-source/${filename}.yaml"
               
-              # Check if the lite YAML has any rules
-              rule_count=$(grep -c "^\s*-\s*" "lite-yaml-source/${filename}.yaml" 2>/dev/null || echo "0")
-              if [[ "$rule_count" -eq 0 ]]; then
-                echo "No lite rules found in $filename, removing empty file"
-                rm "lite-yaml-source/${filename}.yaml"
-              else
-                echo "Created lite YAML for $filename with $rule_count rules"
-              fi
+              # Always create the lite YAML file, let final JSON check handle empty cases
+              echo "Created lite YAML for $filename (will verify rules after conversion)"
             fi
           done
           
@@ -320,6 +314,47 @@ jobs:
           else
             echo "✅ All good: Both JSON and SRS files are present"
           fi
+          
+          echo "=== Final cleanup: Removing empty lite files ==="
+          # Final cleanup - remove any files that only contain version but no rules
+          # This is the definitive check using the actual JSON output from meta-converter
+          removed_count=0
+          for lite_file in sing-rule-lite/*.json; do
+            if [[ -f "$lite_file" ]]; then
+              filename=$(basename "$lite_file")
+              rule_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file" 2>/dev/null || echo "0")
+              
+              if [[ "$rule_count" -eq 0 ]]; then
+                echo "🗑️  Removing empty lite file: $filename (no rules found)"
+                rm "$lite_file"
+                
+                # Also remove corresponding SRS file if it exists
+                srs_file="${lite_file%.json}.srs"
+                if [[ -f "$srs_file" ]]; then
+                  echo "🗑️  Also removing corresponding SRS file: $(basename "$srs_file")"
+                  rm "$srs_file"
+                fi
+                
+                removed_count=$((removed_count + 1))
+              fi
+            fi
+          done
+          
+          if [[ "$removed_count" -gt 0 ]]; then
+            echo "🧹 Cleaned up $removed_count empty lite rule files"
+            
+            # Recount final files after cleanup
+            final_json_count_after_cleanup=$(find sing-rule-lite -name "*.json" | wc -l)
+            final_srs_count_after_cleanup=$(find sing-rule-lite -name "*.srs" | wc -l)
+            echo "=== After cleanup ==="
+            echo "JSON files: $final_json_count_after_cleanup"
+            echo "SRS files: $final_srs_count_after_cleanup"
+          else
+            echo "✅ No empty lite files found - all files contain rules"
+          fi
+          
+          echo "=== Final lite directory contents ==="
+          ls -al sing-rule-lite/ || echo "Lite directory is empty"
 
       #
       # 6. Process YAML files for meta-rule

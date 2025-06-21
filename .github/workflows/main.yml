@@ -67,10 +67,11 @@ jobs:
       - name: Check if release already exists
         id: check_existing
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           echo "=== [DEBUG] Checking for existing release in proother/sing-box-lib..."
           echo "TAG='${TAG}' (length=${#TAG})"
+          echo "Using token: ${{ secrets.PERSONAL_TOKEN && 'PERSONAL_TOKEN' || 'GITHUB_TOKEN' }}"
       
           # Install gh CLI if not already available
           which gh >/dev/null 2>&1 || { 
@@ -100,9 +101,10 @@ jobs:
           steps.check_existing.outputs.skip_release == 'true' &&
           github.event.inputs.delete_if_exists == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           echo "Attempting to delete existing release '${TAG}'..."
+          echo "Using token: ${{ secrets.PERSONAL_TOKEN && 'PERSONAL_TOKEN (enhanced permissions)' || 'GITHUB_TOKEN (limited permissions)' }}"
           
           # Check if we have proper permissions first
           if ! gh auth status; then
@@ -116,7 +118,12 @@ jobs:
             echo "✅ Successfully deleted release '${TAG}'"
             echo "was_deleted=true" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ Failed to delete release '${TAG}' - may be due to permissions or protection"
+            echo "⚠️ Failed to delete release '${TAG}'"
+            if [[ -z "${{ secrets.PERSONAL_TOKEN }}" ]]; then
+              echo "💡 Tip: Consider adding a PERSONAL_TOKEN secret with enhanced permissions"
+              echo "💡 Go to Settings → Developer settings → Personal access tokens"
+              echo "💡 Create a token with 'repo' and 'delete_repo' permissions"
+            fi
             echo "⚠️ Continuing with build anyway..."
             echo "was_deleted=false" >> $GITHUB_OUTPUT
           fi
@@ -133,10 +140,10 @@ jobs:
           if [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" && "${{ steps.delete_release.outputs.was_deleted }}" == "true" ]]; then
             echo "✅ Release was successfully deleted, will rebuild"
             echo "skip_release=false" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" && "${{ github.event.inputs.delete_if_exists }}" == "true" && "${{ steps.delete_release.outputs.was_deleted }}" != "true" ]]; then
-            echo "⚠️ Release exists, delete was requested but failed"
-            echo "⚠️ You may need to manually delete the release or use a personal access token"
-            echo "skip_release=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" && "${{ github.event.inputs.delete_if_exists }}" == "true" ]]; then
+            echo "⚠️ Release exists, delete was requested but may have failed"
+            echo "🔄 Will proceed with build anyway (force overwrite mode)"
+            echo "skip_release=false" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" ]]; then
             echo "ℹ️ Release exists and deletion was not requested, skipping build"
             echo "skip_release=true" >> $GITHUB_OUTPUT

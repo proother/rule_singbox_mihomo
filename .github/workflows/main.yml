@@ -183,11 +183,12 @@ jobs:
                 grep -E "^\s*-\s*IP-CIDR," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
               } > "lite-yaml-source/${filename}.yaml"
               
-              # Validate and clean up the generated YAML
+              # Validate and clean up the generated YAML (but keep the file structure)
               rule_count=$(grep -c "^\s*-\s*" "lite-yaml-source/${filename}.yaml" 2>/dev/null || echo "0")
               if [[ "$rule_count" -eq 0 ]]; then
-                echo "No rules extracted for $filename, removing empty YAML"
-                rm "lite-yaml-source/${filename}.yaml"
+                echo "No rules extracted for $filename, but keeping file for meta-converter compatibility"
+                # Keep empty YAML with just payload header for meta-converter
+                echo "payload:" > "lite-yaml-source/${filename}.yaml"
               else
                 # Clean up the YAML: remove empty lines and ensure proper format
                 sed -i '/^$/d; /^[[:space:]]*$/d' "lite-yaml-source/${filename}.yaml"
@@ -307,13 +308,21 @@ jobs:
               echo "   This suggests some YAML files were not processed by meta-converter"
             fi
             
-            success_rate=$((successful_conversions * 100 / total_yaml_files))
-            echo "📊 SRS conversion success rate: ${success_rate}%"
+            if [[ "$total_yaml_files" -gt 0 ]]; then
+              success_rate=$((successful_conversions * 100 / total_yaml_files))
+              echo "📊 SRS conversion success rate: ${success_rate}%"
+            else
+              success_rate=0
+              echo "📊 SRS conversion success rate: N/A (no YAML input files found)"
+            fi
             
-            if [[ "$success_rate" -lt 70 ]]; then
+            if [[ "$total_yaml_files" -gt 0 && "$success_rate" -lt 70 ]]; then
               echo "🚨 LOW SUCCESS RATE DETECTED!"
               echo "   This may indicate issues with YAML format or meta-converter compatibility"
               echo "   Consider investigating sample failed conversions"
+            elif [[ "$total_yaml_files" -eq 0 ]]; then
+              echo "🚨 WARNING: No YAML files processed by meta-converter!"
+              echo "   This suggests an issue with YAML generation or file paths"
             fi
             
             # Clean up temporary directories

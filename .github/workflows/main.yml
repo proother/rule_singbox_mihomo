@@ -209,24 +209,37 @@ jobs:
             
             # Step 3: Replace our filtered JSON with the properly generated ones and add SRS files
             cd ../sing-rule-lite-converted
+            successful_conversions=0
+            failed_srs_conversions=0
+            
             for dir in */; do
               if [[ -d "$dir" ]]; then
                 dir_name=$(basename "$dir")
                 
-                # Replace the JSON file with the properly generated one
-                if [[ -f "$dir/classical.json" ]]; then
+                # Check if both JSON and SRS were generated
+                if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
+                  # Both files exist - successful conversion
                   mv "$dir/classical.json" "../sing-rule-lite/${dir_name}.json"
-                  echo "✅ Updated ${dir_name}.json with meta-converter output"
-                fi
-                
-                # Move SRS file to lite directory
-                if [[ -f "$dir/classical.srs" ]]; then
                   mv "$dir/classical.srs" "../sing-rule-lite/${dir_name}.srs"
-                  echo "✅ Added ${dir_name}.srs to lite directory"
+                  echo "✅ Successfully converted ${dir_name}: JSON + SRS"
+                  successful_conversions=$((successful_conversions + 1))
+                elif [[ -f "$dir/classical.json" ]]; then
+                  # Only JSON exists - SRS conversion failed
+                  echo "⚠️  ${dir_name}: JSON generated but SRS conversion failed"
+                  mv "$dir/classical.json" "../sing-rule-lite/${dir_name}.json"
+                  failed_srs_conversions=$((failed_srs_conversions + 1))
+                else
+                  # Neither file exists - complete failure
+                  echo "❌ ${dir_name}: Complete conversion failure (no JSON or SRS)"
                 fi
               fi
             done
             cd ..
+            
+            echo "=== Meta-converter conversion summary ==="
+            echo "✅ Successful (JSON + SRS): $successful_conversions"
+            echo "⚠️  Partial (JSON only): $failed_srs_conversions"
+            echo "❌ Total failures: $(( $(ls -1d lite-yaml-source/*.yaml 2>/dev/null | wc -l) - successful_conversions - failed_srs_conversions ))"
             
             # Clean up temporary directories
             rm -rf lite-yaml-source sing-rule-lite-converted
@@ -318,7 +331,7 @@ jobs:
           echo "=== Final cleanup: Removing empty lite files ==="
           # Final cleanup - remove any files that only contain version but no rules
           # This is the definitive check using the actual JSON output from meta-converter
-          removed_count=0
+          removed_empty_count=0
           for lite_file in sing-rule-lite/*.json; do
             if [[ -f "$lite_file" ]]; then
               filename=$(basename "$lite_file")
@@ -335,22 +348,50 @@ jobs:
                   rm "$srs_file"
                 fi
                 
-                removed_count=$((removed_count + 1))
+                removed_empty_count=$((removed_empty_count + 1))
               fi
             fi
           done
           
-          if [[ "$removed_count" -gt 0 ]]; then
-            echo "🧹 Cleaned up $removed_count empty lite rule files"
-            
-            # Recount final files after cleanup
-            final_json_count_after_cleanup=$(find sing-rule-lite -name "*.json" | wc -l)
-            final_srs_count_after_cleanup=$(find sing-rule-lite -name "*.srs" | wc -l)
-            echo "=== After cleanup ==="
-            echo "JSON files: $final_json_count_after_cleanup"
-            echo "SRS files: $final_srs_count_after_cleanup"
+          if [[ "$removed_empty_count" -gt 0 ]]; then
+            echo "🧹 Cleaned up $removed_empty_count empty lite rule files"
           else
             echo "✅ No empty lite files found - all files contain rules"
+          fi
+          
+          # Additional cleanup: Handle JSON/SRS file count mismatch
+          echo "=== Checking JSON/SRS file synchronization ==="
+          final_json_count_after_cleanup=$(find sing-rule-lite -name "*.json" | wc -l)
+          final_srs_count_after_cleanup=$(find sing-rule-lite -name "*.srs" | wc -l)
+          echo "JSON files: $final_json_count_after_cleanup"
+          echo "SRS files: $final_srs_count_after_cleanup"
+          
+          if [[ "$final_srs_count_after_cleanup" -lt "$final_json_count_after_cleanup" ]]; then
+            echo "⚠️  Detected mismatch: $final_json_count_after_cleanup JSON files vs $final_srs_count_after_cleanup SRS files"
+            
+            # Find JSON files without corresponding SRS files
+            orphaned_json_count=0
+            for json_file in sing-rule-lite/*.json; do
+              if [[ -f "$json_file" ]]; then
+                srs_file="${json_file%.json}.srs"
+                if [[ ! -f "$srs_file" ]]; then
+                  filename=$(basename "$json_file" .json)
+                  echo "🔍 Found JSON without SRS: $filename"
+                  orphaned_json_count=$((orphaned_json_count + 1))
+                fi
+              fi
+            done
+            
+            echo "📊 Summary:"
+            echo "  - Total JSON files: $final_json_count_after_cleanup"
+            echo "  - Total SRS files: $final_srs_count_after_cleanup"
+            echo "  - JSON files without SRS: $orphaned_json_count"
+            echo "  - This means $((final_srs_count_after_cleanup * 100 / final_json_count_after_cleanup))% of lite rules have both JSON and SRS formats"
+            echo ""
+            echo "ℹ️  Note: JSON files without SRS can still be used with format: 'source' in sing-box config"
+            echo "ℹ️  SRS files provide better performance but some rules may not be convertible to binary format"
+          else
+            echo "✅ Perfect match: All JSON files have corresponding SRS files"
           fi
           
           echo "=== Final lite directory contents ==="

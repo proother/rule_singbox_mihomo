@@ -627,7 +627,8 @@ jobs:
              echo "Working directory: $(pwd)"
              echo "Available files: $(ls -la)"
              
-             if go run ./ --datapath=../community/data --outputname=temp-geosite.dat 2>&1; then
+             # 修复参数：使用-datname而不是-outputname
+             if go run ./ --datapath=../community/data --datname=temp-geosite.dat 2>&1; then
                echo "✅ Successfully built temporary geosite.dat"
                
                # 检查生成的文件
@@ -657,69 +658,72 @@ jobs:
                  echo "  Geosite.dat size: $(stat -c%s temp-geosite.dat 2>/dev/null || echo "unknown") bytes"
                fi
                
-               echo "📝 Testing meta-converter geosite command..."
-               echo "Command: ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs"
-               
-               # 运行命令并捕获所有输出
-               if ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs 2>&1 | tee geosite_conversion.log; then
-                 echo "🎉 SUCCESS: MRS generation using geosite subcommand!"
-                 echo "📋 Conversion log:"
-                 cat geosite_conversion.log | sed 's/^/  /'
-                
-                if [[ -d "../meta-rule-mrs" ]]; then
-                  echo "=== Analyzing geosite MRS output ==="
-                  mrs_generated=$(find ../meta-rule-mrs -name "*.mrs" | wc -l)
-                  yaml_generated=$(find ../meta-rule-mrs -name "*.yaml" | wc -l)
-                  
-                  echo "📊 Geosite conversion results:"
-                  echo "  🚀 MRS files: $mrs_generated"
-                  echo "  📄 YAML files: $yaml_generated"
-                  
-                  if [[ "$mrs_generated" -gt 0 ]]; then
-                    echo "🎉 BREAKTHROUGH: Successfully generated $mrs_generated MRS files!"
-                    find ../meta-rule-mrs -name "*.mrs" -exec cp {} ../meta-rule/ \;
-                    echo "✅ Copied MRS files to meta-rule directory"
-                  fi
-                  
-                  if [[ "$yaml_generated" -gt 0 ]]; then
-                    echo "✅ Also generated $yaml_generated YAML files from geosite"
-                    # 可选：如果geosite生成的YAML更好，可以替换手动生成的
-                    # find ../meta-rule-mrs -name "*.yaml" -exec cp {} ../meta-rule/ \;
-                  fi
-                  
-                  # 显示示例文件
-                  echo "=== Sample MRS files generated ==="
-                  find ../meta-rule-mrs -name "*.mrs" | head -10 | while read file; do
-                    echo "  🚀 $(basename "$file")"
-                  done
-                fi
-                
-                                 # 清理临时目录
-                 rm -rf ../meta-rule-mrs
-               else
-                 echo "❌ CRITICAL: Geosite MRS conversion failed!"
-                 echo "📋 Error log:"
-                 cat geosite_conversion.log | sed 's/^/  /' || echo "  No error log available"
-                 
-                 echo "🔍 Debugging failed conversion:"
-                 echo "  Exit code: $?"
-                 echo "  Output directory exists: $(test -d ../meta-rule-mrs && echo "YES" || echo "NO")"
-                 if [[ -d "../meta-rule-mrs" ]]; then
-                   echo "  Files in output directory:"
-                   find ../meta-rule-mrs -type f | head -20 | sed 's/^/    /'
-                 fi
-                 
-                 echo "📝 Possible causes:"
-                 echo "  1. geosite.dat format incompatible"
-                 echo "  2. meta-converter geosite subcommand parameters wrong"
-                 echo "  3. Missing dependencies or data"
-                 echo "  4. Tool version compatibility issues"
-                 
-                 echo "⚠️  Continuing with manual YAML/LIST files..."
+               echo "📝 Testing meta-converter geosite command with different targets..."
+               echo "🎯 Trying geosite with mihomo target:"
+               if ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs-mihomo -t mihomo 2>&1; then
+                 mrs_mihomo=$(find ../meta-rule-mrs-mihomo -name "*.mrs" | wc -l)
+                 echo "  ✅ Geosite with mihomo target: $mrs_mihomo MRS files"
+               else  
+                 echo "  ❌ Geosite with mihomo target failed"
                fi
-              
-                             # 清理临时geosite.dat和日志
-               rm -f temp-geosite.dat geosite_conversion.log
+               
+               echo "🎯 Trying geosite without target parameter:"
+               if ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs-default 2>&1; then
+                 mrs_default=$(find ../meta-rule-mrs-default -name "*.mrs" | wc -l)
+                 echo "  ✅ Geosite without target: $mrs_default MRS files"
+               else
+                 echo "  ❌ Geosite without target failed"
+               fi
+               
+               echo "🎯 Trying geosite with clash target:"
+               if ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs-clash -t clash 2>&1; then
+                 mrs_clash=$(find ../meta-rule-mrs-clash -name "*.mrs" | wc -l)
+                 echo "  ✅ Geosite with clash target: $mrs_clash MRS files"
+               else
+                 echo "  ❌ Geosite with clash target failed"
+               fi
+               
+               # 选择最成功的结果
+               best_mrs_count=0
+               best_source=""
+               for test_dir in ../meta-rule-mrs-mihomo ../meta-rule-mrs-default ../meta-rule-mrs-clash; do
+                 if [[ -d "$test_dir" ]]; then
+                   count=$(find "$test_dir" -name "*.mrs" | wc -l)
+                   if [[ "$count" -gt "$best_mrs_count" ]]; then
+                     best_mrs_count=$count
+                     best_source="$test_dir"
+                   fi
+                 fi
+               done
+               
+                              echo "📊 Best result: $best_mrs_count MRS files from $best_source"
+               
+               # 使用最佳结果
+               if [[ "$best_mrs_count" -gt 0 && -n "$best_source" ]]; then
+                 echo "🎉 SUCCESS: Found working MRS generation method!"
+                 echo "✅ Generated $best_mrs_count MRS files using geosite subcommand"
+                 
+                 # 复制MRS文件到meta-rule目录
+                 find "$best_source" -name "*.mrs" -exec cp {} ../meta-rule/ \;
+                 echo "✅ Copied $best_mrs_count MRS files to meta-rule directory"
+                 
+                 # 显示示例文件
+                 echo "=== Sample MRS files generated ==="
+                 find ../meta-rule -name "*.mrs" | head -10 | while read file; do
+                   echo "  🚀 $(basename "$file")"
+                 done
+               else
+                 echo "❌ All geosite methods failed to generate MRS files"
+                 echo "📝 Possible causes:"
+                 echo "  1. geosite.dat format incompatible with meta-converter"
+                 echo "  2. MRS generation requires specific data structure"
+                 echo "  3. Tool version compatibility issues"
+                 echo "⚠️  Continuing with YAML/LIST files only..."
+                               fi
+               
+                # 清理临时目录和文件
+                rm -f temp-geosite.dat
+                rm -rf ../meta-rule-mrs-*
              else
                echo "❌ CRITICAL: Failed to build temporary geosite.dat"
                echo "🔍 Debug information:"

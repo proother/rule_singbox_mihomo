@@ -542,21 +542,84 @@ jobs:
           # 🔥 用户发现：meta-rules-converter/input/geosite.go 确实有MRS实现！
           # 我们应该使用geosite子命令，而不是clash子命令
           
-          echo "🔍 Verifying meta-converter capabilities..."
-          echo "Available meta-converter commands:"
+          echo "🔍 COMPREHENSIVE meta-converter testing..."
+          echo "=== Available meta-converter commands ==="
           ./meta-converter --help || echo "Meta-converter help failed"
           
-          echo "📋 Checking geosite subcommand availability:"
-          ./meta-converter geosite --help 2>&1 || echo "Geosite subcommand not available or failed"
+          echo "=== Testing all possible subcommands ==="
+          echo "1. Testing geosite subcommand:"
+          ./meta-converter geosite --help 2>&1 || echo "  ❌ Geosite subcommand failed"
           
-          echo "📚 Creating temporary geosite.dat for MRS generation..."
+          echo "2. Testing clash subcommand:"
+          ./meta-converter clash --help 2>&1 || echo "  ❌ Clash subcommand failed"
           
-          # 首先，我们需要为mihomo生成一个临时的geosite.dat文件
-          # 因为geosite子命令需要.dat格式输入
+          echo "3. Testing if there are other subcommands:"
+          ./meta-converter 2>&1 | grep -A 20 "Available Commands:" || echo "  No command list found"
           
-          # 检查是否有可用的domain-list-community数据
+          echo "=== Attempting DIRECT MRS generation with clash command ==="
+          echo "4. Testing clash command with mihomo target:"
+          if ./meta-converter clash -f ../community/data_source -o ../test-mrs-1 -t mihomo 2>&1; then
+            echo "  ✅ Clash with -t mihomo succeeded"
+            find ../test-mrs-1 -name "*.mrs" | head -5 || echo "  No MRS files found"
+          else
+            echo "  ❌ Clash with -t mihomo failed"
+          fi
+          
+          echo "5. Testing clash command without target parameter:"
+          if ./meta-converter clash -f ../community/data_source -o ../test-mrs-2 2>&1; then
+            echo "  ✅ Clash without target succeeded"
+            find ../test-mrs-2 -name "*.mrs" | head -5 || echo "  No MRS files found"
+          else
+            echo "  ❌ Clash without target failed"
+          fi
+          
+          echo "6. Testing clash command with different target types:"
+          for target in "meta" "clash" "mihomo-meta" "mrs" "binary"; do
+            echo "  Testing target: $target"
+            if ./meta-converter clash -f ../community/data_source -o ../test-mrs-$target -t $target 2>&1 | head -3; then
+              mrs_found=$(find ../test-mrs-$target -name "*.mrs" | wc -l 2>/dev/null || echo "0")
+              echo "    Result: $mrs_found MRS files found"
+            fi
+          done
+          
+          # 清理测试目录
+          rm -rf ../test-mrs-*
+          
+          echo "=== Simplified MRS generation approach ==="
+          echo "📝 Based on user insight: meta-converter should directly support MRS output"
+          echo "🎯 Let's try the most direct methods first"
+          
+          # 尝试最直接的方法：从YAML文件直接生成MRS
+          echo "=== Method 1: Direct conversion from YAML files ==="
+          if [[ -d "../meta-rule" ]]; then
+            echo "Found meta-rule directory with YAML files"
+            yaml_files=$(find ../meta-rule -name "*.yaml" | wc -l)
+            echo "Available YAML files: $yaml_files"
+            
+            if [[ "$yaml_files" -gt 0 ]]; then
+              echo "Attempting direct YAML to MRS conversion..."
+              # 尝试用clash命令直接从YAML转换
+              if ./meta-converter clash -f ../meta-rule -o ../meta-rule-mrs-direct 2>&1; then
+                echo "✅ Direct YAML conversion succeeded!"
+                mrs_direct=$(find ../meta-rule-mrs-direct -name "*.mrs" | wc -l)
+                echo "MRS files generated: $mrs_direct"
+                
+                if [[ "$mrs_direct" -gt 0 ]]; then
+                  echo "🎉 SUCCESS: Found direct method to generate MRS!"
+                  find ../meta-rule-mrs-direct -name "*.mrs" -exec cp {} ../meta-rule/ \;
+                  echo "✅ Copied $mrs_direct MRS files to meta-rule directory"
+                fi
+              else
+                echo "❌ Direct YAML conversion failed"
+              fi
+              rm -rf ../meta-rule-mrs-direct
+            fi
+          fi
+          
+          # 备用方法：检查geosite.dat方式（如果直接方法失败）
+          echo "=== Method 2: Fallback to geosite.dat approach ==="
           if [[ -d "../community" ]]; then
-            echo "✅ Found domain-list-community data, building geosite.dat..."
+            echo "Attempting geosite.dat generation as fallback..."
             cd ../custom
             
                          # 使用domain-list-custom构建geosite.dat

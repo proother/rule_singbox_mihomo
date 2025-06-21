@@ -537,9 +537,36 @@ jobs:
           done
           
           echo "=== Installing mihomo for MRS format generation ==="
-          # Download mihomo binary for mrs conversion
-          wget -O mihomo https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64
+          # Download mihomo binary for mrs conversion using GitHub API to get correct URL
+          echo "Fetching latest mihomo release info..."
+          DOWNLOAD_URL=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | \
+            jq -r '.assets[] | select(.name | contains("linux-amd64") and (contains(".gz") or contains(".tar.gz"))) | .browser_download_url' | head -1)
+          
+          if [[ -z "$DOWNLOAD_URL" || "$DOWNLOAD_URL" == "null" ]]; then
+            echo "❌ Could not find mihomo linux-amd64 download URL, trying alternative method..."
+            # Fallback: try common filename patterns
+            MIHOMO_VERSION=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r '.tag_name')
+            DOWNLOAD_URL="https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-amd64-${MIHOMO_VERSION}.gz"
+          fi
+          
+          echo "Download URL: $DOWNLOAD_URL"
+          wget -O mihomo_download "$DOWNLOAD_URL"
+          
+          # Handle different compression formats
+          if [[ "$DOWNLOAD_URL" == *.tar.gz ]]; then
+            tar -xzf mihomo_download
+            # Find the binary file
+            find . -name "*mihomo*" -type f -executable | head -1 | xargs -I {} mv {} mihomo
+          elif [[ "$DOWNLOAD_URL" == *.gz ]]; then
+            gunzip mihomo_download
+            mv mihomo_download mihomo 2>/dev/null || mv mihomo_download.gz mihomo 2>/dev/null || mv mihomo_download* mihomo
+          else
+            mv mihomo_download mihomo
+          fi
+          
           chmod +x mihomo
+          echo "✅ Mihomo binary installed successfully"
+          ./mihomo version || echo "⚠️  Could not get mihomo version, but binary exists"
           
           echo "=== Creating domain/ipcidr behavior YAML files for MRS conversion ==="
           mkdir -p meta-rule-domain meta-rule-ipcidr

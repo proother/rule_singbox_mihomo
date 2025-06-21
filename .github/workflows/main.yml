@@ -164,42 +164,51 @@ jobs:
           
           echo "=== Converting lite JSON to SRS format ==="
           
-          # Create a temporary directory structure for meta-converter
-          echo "Preparing directory structure for meta-converter..."
-          mkdir -p lite-temp
+          # Step 1: Convert lite JSON back to YAML format (since meta-converter needs YAML input)
+          echo "Converting lite JSON files back to YAML for meta-converter..."
+          mkdir -p lite-yaml-source
           
-          # Copy each lite JSON to a subdirectory (mimicking the original structure)
           for lite_json in sing-rule-lite/*.json; do
             if [[ -f "$lite_json" ]]; then
               filename=$(basename "$lite_json" .json)
-              mkdir -p "lite-temp/$filename"
-              cp "$lite_json" "lite-temp/$filename/classical.json"
-              echo "Prepared $filename for conversion"
+              echo "Converting $filename.json to YAML..."
+              
+              # Convert JSON rules back to YAML format that meta-converter expects
+              {
+                echo "payload:"
+                jq -r '.rules[] | 
+                  if has("domain") then
+                    .domain[] | "  - DOMAIN," + .
+                  else empty end,
+                  if has("ip_cidr") then  
+                    .ip_cidr[] | "  - IP-CIDR," + .
+                  else empty end
+                ' "$lite_json"
+              } > "lite-yaml-source/${filename}.yaml"
+              
+              echo "Created lite-yaml-source/${filename}.yaml"
             fi
           done
           
-          # Use meta-converter to convert the entire lite-temp directory (same as complete rules)
+          echo "=== Generated YAML files ==="
+          ls -la lite-yaml-source/
+          
+          # Step 2: Use meta-converter to convert YAML to sing-box format (same as complete rules)
           cd converter
           
-          # Ensure meta-converter binary exists and is executable
+          # Ensure meta-converter binary exists
           if [[ ! -f "./meta-converter" ]]; then
             echo "Building meta-converter..."
             go build -o meta-converter .
           fi
           
-          # Make sure it's executable
-          chmod +x ./meta-converter
-          
-          # Use absolute path to avoid conflicts with system 'convert' command
-          CONVERTER_BINARY="$(pwd)/meta-converter"
-          echo "Using meta-converter at: $CONVERTER_BINARY"
-          echo "Running command: $CONVERTER_BINARY sing-box -f $(pwd)/../lite-temp -o $(pwd)/../sing-rule-lite-srs -t sing-box-srs"
-          
-          if "$CONVERTER_BINARY" sing-box -f "$(pwd)/../lite-temp" -o "$(pwd)/../sing-rule-lite-srs" -t sing-box-srs; then
+          echo "Converting YAML to sing-box format (JSON + SRS)..."
+          # Use the same method as complete rules: clash YAML -> sing-box
+          if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box; then
             echo "✅ Meta-converter completed successfully"
             
-            # Move SRS files back to sing-rule-lite directory with correct names
-            cd ../sing-rule-lite-srs
+            # Step 3: Move SRS files to lite directory 
+            cd ../sing-rule-lite-converted
             for dir in */; do
               if [[ -d "$dir" ]]; then
                 dir_name=$(basename "$dir")
@@ -212,24 +221,23 @@ jobs:
             cd ..
             
             # Clean up temporary directories
-            rm -rf lite-temp sing-rule-lite-srs
+            rm -rf lite-yaml-source sing-rule-lite-converted
             echo "✅ Cleanup completed"
           else
-            echo "❌ Meta-converter failed!"
+            echo "❌ Meta-converter failed to convert YAML to SRS!"
             cd ..
             
             # Debug information
             echo "=== Debugging meta-converter failure ==="
-            echo "Current directory: $(pwd)"
-            echo "Converter directory contents:"
-            ls -la converter/
-            echo "Lite-temp directory contents:"
-            ls -la lite-temp/ 2>/dev/null || echo "lite-temp directory not found"
+            echo "YAML source files:"
+            ls -la lite-yaml-source/ 2>/dev/null || echo "No YAML source files"
+            echo "Sample YAML content:"
+            head -10 lite-yaml-source/*.yaml 2>/dev/null || echo "No YAML files to show"
             
             # Clean up
-            rm -rf lite-temp sing-rule-lite-srs
+            rm -rf lite-yaml-source sing-rule-lite-converted
             
-            echo "❌ CRITICAL: Meta-converter failed to generate SRS files"
+            echo "❌ CRITICAL: Meta-converter failed to generate SRS files from YAML"
             echo "This means no SRS files will be available for lite rules"
             echo "Only JSON files will be provided in the lite package"
           fi

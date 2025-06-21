@@ -18,6 +18,12 @@ on:
   schedule:
     - cron: "10 12 * * *"
 
+# Grant permissions for the workflow
+permissions:
+  contents: write
+  packages: write
+  actions: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
@@ -96,23 +102,46 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Deleting existing release '${TAG}'..."
-          gh release delete "${TAG}" -R proother/sing-box-lib -y --cleanup-tag 
-          echo "Successfully deleted release '${TAG}'."
-          echo "was_deleted=true" >> $GITHUB_OUTPUT
+          echo "Attempting to delete existing release '${TAG}'..."
           
+          # Check if we have proper permissions first
+          if ! gh auth status; then
+            echo "❌ GitHub CLI authentication failed"
+            echo "was_deleted=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Attempt to delete the release with better error handling
+          if gh release delete "${TAG}" -R proother/sing-box-lib -y --cleanup-tag 2>/dev/null; then
+            echo "✅ Successfully deleted release '${TAG}'"
+            echo "was_deleted=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Failed to delete release '${TAG}' - may be due to permissions or protection"
+            echo "⚠️ Continuing with build anyway..."
+            echo "was_deleted=false" >> $GITHUB_OUTPUT
+          fi
+
       # 5) Final decision on whether to proceed with build
       - name: Final build decision
         id: final_check
         run: |
+          echo "=== Final Build Decision ==="
+          echo "Release exists: ${{ steps.check_existing.outputs.skip_release }}"
+          echo "Delete requested: ${{ github.event.inputs.delete_if_exists }}"
+          echo "Was deleted: ${{ steps.delete_release.outputs.was_deleted }}"
+          
           if [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" && "${{ steps.delete_release.outputs.was_deleted }}" == "true" ]]; then
-            echo "Release was deleted, will rebuild"
+            echo "✅ Release was successfully deleted, will rebuild"
             echo "skip_release=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" && "${{ github.event.inputs.delete_if_exists }}" == "true" && "${{ steps.delete_release.outputs.was_deleted }}" != "true" ]]; then
+            echo "⚠️ Release exists, delete was requested but failed"
+            echo "⚠️ You may need to manually delete the release or use a personal access token"
+            echo "skip_release=true" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" ]]; then
-            echo "Release exists and was not deleted, skipping build"
+            echo "ℹ️ Release exists and deletion was not requested, skipping build"
             echo "skip_release=true" >> $GITHUB_OUTPUT
           else
-            echo "Release does not exist, will build"
+            echo "✅ Release does not exist, will build"
             echo "skip_release=false" >> $GITHUB_OUTPUT
           fi
 

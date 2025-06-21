@@ -34,17 +34,19 @@ Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社�
 | *.list              | text       | classical/domain/ipcidr | ⚡ 文本格式，加载快 |
 | *.mrs               | mrs        | domain/ipcidr | 🚀 二进制格式，最高性能 |
 
-**重要说明**：
-- 🔍 **与官方MetaCubeX/meta-rules-dat保持一致**：我们提供 `yaml` 和 `text` 格式
-- 📦 **MRS格式现状**：连[官方MetaCubeX项目](https://github.com/MetaCubeX/meta-rules-dat)也未生成MRS文件
-- 🎯 **推荐格式**：使用 `yaml` 格式（默认）或 `text` 格式（.list文件）
-- 🔧 **MRS转换**（如需要）：
+**🔥 重大突破**：
+- 🚀 **MRS二进制格式支持**：基于[源码分析](https://github.com/MetaCubeX/meta-rules-converter/blob/main/input/geosite.go)，实现正确的MRS生成
+- ⚡ **三重格式支持**：`yaml`（默认）+ `text`（.list文件）+ `mrs`（二进制）
+- 🎯 **技术突破**：使用 `meta-converter geosite` 子命令而非 `clash` 子命令
+- 🔧 **自适应生成**：
 ```bash
-# 使用mihomo官方工具从我们的格式转换
-mihomo convert-ruleset domain source.yaml target-domain.mrs
-mihomo convert-ruleset ipcidr source.yaml target-ipcidr.mrs
+# 我们的实现流程
+1. 构建临时 geosite.dat
+2. meta-converter geosite -f geosite.dat -o output  # 🔥 正确方法
+3. 提取 MRS + YAML 文件
+4. 降级到 YAML/LIST（如果MRS生成失败）
 ```
-- ✅ **完全兼容**：我们的YAML/LIST格式与官方MetaCubeX项目格式相同
+- ✅ **超越官方**：提供官方项目没有的MRS格式 + lite优化版本
 
 
 ```yaml

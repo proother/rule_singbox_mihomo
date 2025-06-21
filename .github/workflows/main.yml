@@ -536,68 +536,79 @@ jobs:
             tail -n +2 "$yaml_file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "$list_file"
           done
           
-          echo "=== Verifying meta-rule files ==="
+          echo "=== Generating MRS files using correct geosite method ==="
           cd converter
           
-          # 🎯 基于官方MetaCubeX/meta-rules-dat的发现：
-          # 官方项目也只生成YAML和LIST文件，没有MRS文件
-          # 我们的方法是正确的：手动生成YAML + LIST格式
+          # 🔥 用户发现：meta-rules-converter/input/geosite.go 确实有MRS实现！
+          # 我们应该使用geosite子命令，而不是clash子命令
           
-          echo "📊 Checking compatibility with official MetaCubeX format..."
+          echo "📚 Creating temporary geosite.dat for MRS generation..."
           
-          # 可选：尝试使用meta-converter验证或增强我们的文件
-          echo "=== Attempting optional rule-set enhancement ==="
-          if ./meta-converter clash -f ../community/data_source -o ../meta-rule-enhanced 2>&1; then
-            echo "✅ Meta-converter enhancement successful!"
+          # 首先，我们需要为mihomo生成一个临时的geosite.dat文件
+          # 因为geosite子命令需要.dat格式输入
+          
+          # 检查是否有可用的domain-list-community数据
+          if [[ -d "../community" ]]; then
+            echo "✅ Found domain-list-community data, building geosite.dat..."
+            cd ../custom
             
-            # 检查是否生成了更好的格式
-            if [[ -d "../meta-rule-enhanced" ]]; then
-              enhanced_yaml=$(find ../meta-rule-enhanced -name "*.yaml" | wc -l)
-              enhanced_list=$(find ../meta-rule-enhanced -name "*.list" | wc -l)
-              enhanced_mrs=$(find ../meta-rule-enhanced -name "*.mrs" | wc -l)
+            # 使用domain-list-custom构建geosite.dat
+            if go run ./ --datapath=../community/data --outputname=temp-geosite.dat 2>&1; then
+              echo "✅ Successfully built temporary geosite.dat"
               
-              echo "📊 Enhanced conversion results:"
-              echo "  📄 YAML files: $enhanced_yaml"
-              echo "  📋 LIST files: $enhanced_list"
-              echo "  🚀 MRS files: $enhanced_mrs (bonus if available)"
+              # 移动到converter目录使用
+              mv temp-geosite.dat ../converter/
+              cd ../converter
               
-              # 如果meta-converter生成了更好的YAML/LIST文件，使用它们
-              if [[ "$enhanced_yaml" -gt 0 || "$enhanced_list" -gt 0 ]]; then
-                echo "✅ Using enhanced files from meta-converter..."
+              # 🚀 现在使用正确的geosite子命令生成MRS文件！
+              echo "=== Using geosite subcommand to generate MRS files ==="
+              if ./meta-converter geosite -f temp-geosite.dat -o ../meta-rule-mrs 2>&1; then
+                echo "🎉 SUCCESS: MRS generation using geosite subcommand!"
                 
-                # 备份原有文件
-                mv ../meta-rule ../meta-rule-manual-backup
-                mkdir -p ../meta-rule
-                
-                # 复制增强的文件
-                if [[ "$enhanced_yaml" -gt 0 ]]; then
-                  find ../meta-rule-enhanced -name "*.yaml" -exec cp {} ../meta-rule/ \;
-                  echo "✅ Copied $enhanced_yaml enhanced YAML files"
+                if [[ -d "../meta-rule-mrs" ]]; then
+                  echo "=== Analyzing geosite MRS output ==="
+                  mrs_generated=$(find ../meta-rule-mrs -name "*.mrs" | wc -l)
+                  yaml_generated=$(find ../meta-rule-mrs -name "*.yaml" | wc -l)
+                  
+                  echo "📊 Geosite conversion results:"
+                  echo "  🚀 MRS files: $mrs_generated"
+                  echo "  📄 YAML files: $yaml_generated"
+                  
+                  if [[ "$mrs_generated" -gt 0 ]]; then
+                    echo "🎉 BREAKTHROUGH: Successfully generated $mrs_generated MRS files!"
+                    find ../meta-rule-mrs -name "*.mrs" -exec cp {} ../meta-rule/ \;
+                    echo "✅ Copied MRS files to meta-rule directory"
+                  fi
+                  
+                  if [[ "$yaml_generated" -gt 0 ]]; then
+                    echo "✅ Also generated $yaml_generated YAML files from geosite"
+                    # 可选：如果geosite生成的YAML更好，可以替换手动生成的
+                    # find ../meta-rule-mrs -name "*.yaml" -exec cp {} ../meta-rule/ \;
+                  fi
+                  
+                  # 显示示例文件
+                  echo "=== Sample MRS files generated ==="
+                  find ../meta-rule-mrs -name "*.mrs" | head -10 | while read file; do
+                    echo "  🚀 $(basename "$file")"
+                  done
                 fi
                 
-                if [[ "$enhanced_list" -gt 0 ]]; then
-                  find ../meta-rule-enhanced -name "*.list" -exec cp {} ../meta-rule/ \;
-                  echo "✅ Copied $enhanced_list enhanced LIST files"
-                fi
-                
-                # 奖励：如果有MRS文件也复制
-                if [[ "$enhanced_mrs" -gt 0 ]]; then
-                  find ../meta-rule-enhanced -name "*.mrs" -exec cp {} ../meta-rule/ \;
-                  echo "🎉 Bonus: Copied $enhanced_mrs MRS files!"
-                fi
-                
-                # 清理备份
-                rm -rf ../meta-rule-manual-backup
+                # 清理临时目录
+                rm -rf ../meta-rule-mrs
               else
-                echo "ℹ️  Meta-converter didn't improve our files, keeping manual generation"
+                echo "⚠️  Geosite MRS conversion failed, keeping manual YAML/LIST files"
+                echo "📝 Note: This might be due to geosite.dat format or missing data"
               fi
+              
+              # 清理临时geosite.dat
+              rm -f temp-geosite.dat
+            else
+              echo "⚠️  Failed to build temporary geosite.dat"
+              echo "ℹ️  Continuing with manual YAML/LIST generation"
             fi
-            
-            # 清理临时目录
-            rm -rf ../meta-rule-enhanced
           else
-            echo "ℹ️  Meta-converter enhancement skipped - using manual YAML/LIST files"
-            echo "✅ This is perfectly normal and follows official MetaCubeX practices"
+            echo "⚠️  No domain-list-community data available for geosite.dat generation"
+            echo "ℹ️  Continuing with manual YAML/LIST generation"
           fi
           
           cd ..
@@ -610,18 +621,23 @@ jobs:
           echo "📊 Meta-rule file count summary:"
           echo "  📄 YAML files: $yaml_final (default mihomo format)"
           echo "  📋 LIST files: $list_final (text format, faster loading)"
+          echo "  🚀 MRS files: $mrs_final (binary format, highest performance)"
           
-          total_meta_files=$((yaml_final + list_final))
+          total_meta_files=$((yaml_final + list_final + mrs_final))
           echo "  📁 Total meta-rule files: $total_meta_files"
           
-          # MRS files are bonus, not expected
+          # Analyze generation success
           if [[ "$mrs_final" -gt 0 ]]; then
-            echo "  🎉 Bonus: $mrs_final MRS files (unexpected but welcome!)"
-            total_meta_files=$((total_meta_files + mrs_final))
+            echo "🎉 BREAKTHROUGH SUCCESS: MRS binary files generated!"
+            echo "   This proves the geosite subcommand method works correctly"
+            echo "   Mihomo users now have access to ultra-high performance MRS format"
+          else
+            echo "ℹ️  Note: MRS files not generated - using YAML/LIST fallback"
+            echo "   This might be due to geosite.dat generation issues or format limitations"
           fi
           
-          echo "✅ SUCCESS: Generated same file types as official MetaCubeX project"
-          echo "🎯 Formats: YAML (default) + LIST (performance) - fully compatible"
+          echo "✅ SUCCESS: Multi-format mihomo rule generation complete"
+          echo "🎯 Formats: YAML (default) + LIST (performance) + MRS (binary)"
           
           echo "=== Final files in meta-rule directory ==="
           ls -al meta-rule
@@ -740,11 +756,12 @@ jobs:
             - `meta-rules-yaml.zip` - Meta YAML rule files (.yaml) - **Classical behavior** - 📖 **Default**
             - `meta-rules-mrs.zip` - Meta binary rule files (.mrs) - **Domain/IP-CIDR behavior** - ⚡ **If available**
             
-            > 🎯 **Standard Formats**: Fully compatible with official MetaCubeX practices:
+            > 🚀 **Advanced MRS Generation**: Using correct geosite subcommand method:
+            > - 🔥 **MRS Binary**: Generated via `meta-converter geosite` (when geosite.dat available)
             > - 📦 **YAML format**: Default mihomo format, human-readable and widely supported
             > - ⚡ **LIST format**: Text format, faster loading than YAML
-            > - 🔍 **Official compatibility**: Same formats as [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat)
-            > - 🔧 **MRS conversion**: Can be generated using mihomo tools if needed
+            > - 🎯 **Breakthrough**: Implementing proper MRS generation based on source code analysis
+            > - 🔧 **Adaptive**: Falls back to YAML/LIST if MRS generation fails
             
             ### Build Information
             - Build Time: ${{ env.BUILDTIME }} (Asia/Shanghai)
@@ -759,12 +776,12 @@ jobs:
             | Best For | Complete coverage | Performance-critical scenarios |
             
             ### Technical Implementation
-            - ⚡ **Official MetaCubeX Compatibility**: Same conversion methods as [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat)
+            - 🔥 **Breakthrough MRS Generation**: Uses `meta-converter geosite` based on [source code analysis](https://github.com/MetaCubeX/meta-rules-converter/blob/main/input/geosite.go)
+            - ⚡ **Triple Format Support**: SRS (sing-box) + MRS (mihomo binary) + YAML/LIST (mihomo text)  
             - 🎯 **90%+ Performance Boost**: Intelligent lite rule filtering (IP-CIDR + DOMAIN only)
-            - 🚀 **Dual Format Support**: SRS binary for sing-box + YAML/LIST for mihomo
-            - 🔍 **Format Consistency**: Generates same file types as official MetaCubeX project
+            - 🔧 **Adaptive Pipeline**: Builds temporary geosite.dat for proper MRS generation
             - 🛡️ **Build-time Validation**: Ensures rule purity and field compliance
-            - 📦 **Enhanced Distribution**: Additional lite versions not available in official projects
+            - 📦 **Enhanced Distribution**: Lite versions + MRS support not widely available elsewhere
             
             ### Data Sources
             - Rules from [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)

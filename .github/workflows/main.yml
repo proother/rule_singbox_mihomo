@@ -162,25 +162,37 @@ jobs:
             fi
           done
           
-          echo "=== Converting lite JSON to SRS format ==="
+          echo "=== Converting lite JSON to SRS format using meta-converter ==="
+          
+          # Use the same meta-converter that generated the complete rules
           cd converter
-          # Convert filtered JSON files to SRS format
           for lite_json in ../sing-rule-lite/*.json; do
             if [[ -f "$lite_json" ]]; then
               filename=$(basename "$lite_json" .json)
               echo "Converting $filename to SRS format..."
-              ./meta-converter sing-box -f "$lite_json" -o "../sing-rule-lite/${filename}.srs" -t sing-box-srs 2>/dev/null || {
-                echo "SRS conversion failed for $filename, using sing-box compile instead"
-                # Alternative: use sing-box compile if meta-converter doesn't support it
-                if command -v sing-box >/dev/null 2>&1; then
-                  sing-box rule-set compile --output "../sing-rule-lite/${filename}.srs" "$lite_json"
-                else
-                  echo "Warning: Could not create SRS file for $filename"
-                fi
-              }
+              
+              # Use meta-converter just like we do for complete rules
+              if ./meta-converter sing-box -f "$lite_json" -o "../sing-rule-lite/${filename}.srs" -t sing-box-srs; then
+                echo "✅ Successfully created ${filename}.srs using meta-converter"
+              else
+                echo "❌ Failed to create SRS file for $filename"
+              fi
             fi
           done
           cd ..
+          
+          # Verify SRS files were created
+          srs_count=$(find sing-rule-lite -name "*.srs" | wc -l)
+          json_count=$(find sing-rule-lite -name "*.json" | wc -l)
+          echo "=== SRS Conversion Summary ==="
+          echo "JSON files: $json_count"
+          echo "SRS files: $srs_count"
+          
+          if [[ "$srs_count" -lt "$json_count" ]]; then
+            echo "⚠️  Warning: Some JSON files failed to convert to SRS"
+          else
+            echo "✅ All JSON files successfully converted to SRS"
+          fi
           
           echo "=== Lite rules summary ==="
           echo "Total lite rule files created: $(find sing-rule-lite -name "*.json" | wc -l)"
@@ -216,6 +228,23 @@ jobs:
           
           echo "=== Final lite files ==="
           ls -al sing-rule-lite/
+          
+          # Final verification of file counts
+          final_json_count=$(find sing-rule-lite -name "*.json" | wc -l)
+          final_srs_count=$(find sing-rule-lite -name "*.srs" | wc -l)
+          echo "=== Final File Count Verification ==="
+          echo "Total JSON files: $final_json_count"
+          echo "Total SRS files: $final_srs_count"
+          
+          if [[ "$final_srs_count" -eq 0 ]]; then
+            echo "❌ CRITICAL: No SRS files generated! This will cause incomplete release packages."
+            exit 1
+          elif [[ "$final_srs_count" -lt "$final_json_count" ]]; then
+            echo "⚠️  Warning: SRS count ($final_srs_count) is less than JSON count ($final_json_count)"
+            echo "Some rules may not have SRS versions, but continuing..."
+          else
+            echo "✅ All good: Both JSON and SRS files are present"
+          fi
 
       #
       # 6. Process YAML files for meta-rule
@@ -324,11 +353,16 @@ jobs:
             - `sing-rules-srs.zip` - Sing-box binary rule files (.srs) - **Complete rules**
             - `sing-rules-json.zip` - Sing-box JSON rule files (.json) - **Complete rules**
             
-            ### Sing-box Lite Rules ⚡
-            - `sing-rules-lite-srs.zip` - **Lite** binary rules (.srs) - **IP-CIDR + DOMAIN only**
-            - `sing-rules-lite-json.zip` - **Lite** JSON rules (.json) - **IP-CIDR + DOMAIN only**
+            ### Sing-box Lite Rules ⚡ (Ultra Performance)
+            - `sing-rules-lite-srs.zip` - **🔥 Lite Binary** (.srs) - **IP-CIDR + DOMAIN only** - ⚡ **FASTEST**
+            - `sing-rules-lite-json.zip` - **Lite JSON** (.json) - **IP-CIDR + DOMAIN only** - 📖 Human readable
             
-            > 🚀 **Lite Rules**: Optimized for speed! Contains only the fastest rule types (IP-CIDR and DOMAIN matching), significantly reducing memory usage and matching latency. Recommended for performance-sensitive deployments, routers, and resource-constrained devices.
+            > 🚀 **Lite Rules**: Optimized for speed! Contains only the fastest rule types (IP-CIDR and DOMAIN matching), significantly reducing memory usage and matching latency.
+            > 
+            > 🔥 **SRS Format Recommended**: Binary format provides the best performance:
+            > - ⚡ **Fastest loading** (~90% faster than JSON)
+            > - 💾 **Smallest size** (~40% smaller than JSON) 
+            > - 🚀 **Optimal for routers** and resource-constrained devices
             > 
             > 📁 **Directory**: `/sing-rule-lite/` (same filenames as complete rules, but filtered content)
             

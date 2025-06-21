@@ -279,24 +279,49 @@ jobs:
                 echo "🔍 Checking $dir_name:"
                 ls -la "$dir/" | sed 's/^/  /'
                 
+                # Meta-converter converts filenames to lowercase, so we need to find the original case
+                # First, find the corresponding original JSON file to get the correct case
+                original_json=""
+                for lite_json in ../sing-rule-lite/*.json; do
+                  if [[ -f "$lite_json" ]]; then
+                    lite_basename=$(basename "$lite_json" .json)
+                    # Compare lowercase versions to handle case mismatch
+                    if [[ "${lite_basename,,}" == "${dir_name,,}" ]]; then
+                      original_json="$lite_json"
+                      break
+                    fi
+                  fi
+                done
+                
+                if [[ -n "$original_json" ]]; then
+                  original_basename=$(basename "$original_json" .json)
+                  echo "🔗 Mapping meta-converter output '$dir_name' to original filename '$original_basename'"
+                else
+                  # Fallback to directory name if no match found
+                  original_basename="$dir_name"
+                  echo "⚠️  No original filename match found for '$dir_name', using as-is"
+                fi
+                
                 # Check if both JSON and SRS were generated
                 if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
                   # Both files exist - successful conversion
-                  mv "$dir/classical.json" "../sing-rule-lite/${dir_name}.json"
-                  mv "$dir/classical.srs" "../sing-rule-lite/${dir_name}.srs"
-                  echo "✅ Successfully converted ${dir_name}: JSON + SRS"
+                  # Replace the existing JSON with the meta-converter generated one
+                  mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
+                  mv "$dir/classical.srs" "../sing-rule-lite/${original_basename}.srs"
+                  echo "✅ Successfully converted ${original_basename}: JSON + SRS"
                   successful_conversions=$((successful_conversions + 1))
                 elif [[ -f "$dir/classical.json" ]]; then
                   # Only JSON exists - SRS conversion failed
-                  echo "⚠️  ${dir_name}: JSON generated but SRS conversion failed"
+                  echo "⚠️  ${original_basename}: JSON generated but SRS conversion failed"
                   # Check JSON content to see if it's empty
                   json_rules=$(jq '.rules | length' "$dir/classical.json" 2>/dev/null || echo "parse_error")
                   echo "   JSON rules count: $json_rules"
-                  mv "$dir/classical.json" "../sing-rule-lite/${dir_name}.json"
+                  # Replace the existing JSON with the meta-converter generated one
+                  mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
                   failed_srs_conversions=$((failed_srs_conversions + 1))
                 else
                   # Neither file exists - complete failure
-                  echo "❌ ${dir_name}: Complete conversion failure (no JSON or SRS)"
+                  echo "❌ ${original_basename}: Complete conversion failure (no JSON or SRS)"
                   total_failure_count=$((total_failure_count + 1))
                 fi
               fi

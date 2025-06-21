@@ -174,17 +174,25 @@ jobs:
               filename=$(basename "$yaml_file" .yaml)
               echo "Creating lite version of $filename..."
               
-              # Extract only DOMAIN and IP-CIDR rules from original YAML
+              # Extract only DOMAIN and IP-CIDR rules from original YAML with better formatting
               {
                 echo "payload:"
-                # Extract DOMAIN rules
-                grep -E "^\s*-\s*DOMAIN," "$yaml_file" || true
-                # Extract IP-CIDR rules  
-                grep -E "^\s*-\s*IP-CIDR," "$yaml_file" || true
+                # Extract DOMAIN rules with proper indentation
+                grep -E "^\s*-\s*DOMAIN," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
+                # Extract IP-CIDR rules with proper indentation
+                grep -E "^\s*-\s*IP-CIDR," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
               } > "lite-yaml-source/${filename}.yaml"
               
-              # Always create the lite YAML file, let final JSON check handle empty cases
-              echo "Created lite YAML for $filename (will verify rules after conversion)"
+              # Validate and clean up the generated YAML
+              rule_count=$(grep -c "^\s*-\s*" "lite-yaml-source/${filename}.yaml" 2>/dev/null || echo "0")
+              if [[ "$rule_count" -eq 0 ]]; then
+                echo "No rules extracted for $filename, removing empty YAML"
+                rm "lite-yaml-source/${filename}.yaml"
+              else
+                # Clean up the YAML: remove empty lines and ensure proper format
+                sed -i '/^$/d; /^[[:space:]]*$/d' "lite-yaml-source/${filename}.yaml"
+                echo "Created lite YAML for $filename with $rule_count rules (cleaned and formatted)"
+              fi
             fi
           done
           

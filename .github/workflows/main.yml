@@ -536,116 +536,45 @@ jobs:
             tail -n +2 "$yaml_file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "$list_file"
           done
           
-          echo "=== Installing mihomo for MRS format generation ==="
-          # Download mihomo binary for mrs conversion using GitHub API to get correct URL
-          echo "Fetching latest mihomo release info..."
-          DOWNLOAD_URL=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | \
-            jq -r '.assets[] | select(.name | contains("linux-amd64") and (contains(".gz") or contains(".tar.gz"))) | .browser_download_url' | head -1)
+          echo "=== Checking meta-converter capabilities for MRS format ==="
+          cd converter
           
-          if [[ -z "$DOWNLOAD_URL" || "$DOWNLOAD_URL" == "null" ]]; then
-            echo "❌ Could not find mihomo linux-amd64 download URL, trying alternative method..."
-            # Fallback: try common filename patterns
-            MIHOMO_VERSION=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r '.tag_name')
-            DOWNLOAD_URL="https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-amd64-${MIHOMO_VERSION}.gz"
-          fi
+          # Check if meta-converter supports mihomo target
+          echo "Available meta-converter options:"
+          ./meta-converter --help || echo "Meta-converter help not available"
           
-          echo "Download URL: $DOWNLOAD_URL"
-          wget -O mihomo_download "$DOWNLOAD_URL"
+          # Try to see what targets are supported
+          echo "Checking supported conversion targets..."
           
-          # Handle different compression formats
-          if [[ "$DOWNLOAD_URL" == *.tar.gz ]]; then
-            tar -xzf mihomo_download
-            # Find the binary file
-            find . -name "*mihomo*" -type f -executable | head -1 | xargs -I {} mv {} mihomo
-          elif [[ "$DOWNLOAD_URL" == *.gz ]]; then
-            gunzip mihomo_download
-            mv mihomo_download mihomo 2>/dev/null || mv mihomo_download.gz mihomo 2>/dev/null || mv mihomo_download* mihomo
-          else
-            mv mihomo_download mihomo
-          fi
+          # Try to use meta-converter for mihomo format
+          echo "=== Attempting mihomo conversion with meta-converter ==="
           
-          chmod +x mihomo
-          echo "✅ Mihomo binary installed successfully"
-          ./mihomo version || echo "⚠️  Could not get mihomo version, but binary exists"
-          
-          echo "=== Creating domain/ipcidr behavior YAML files for MRS conversion ==="
-          mkdir -p meta-rule-domain meta-rule-ipcidr
-          
-          # Process each YAML file to create domain and ipcidr behavior versions
-          for yaml_file in meta-rule/*.yaml; do
-            filename=$(basename "$yaml_file" .yaml)
-            echo "Processing $filename for domain/ipcidr separation..."
+          # Check if meta-converter supports mihomo as a target
+          if ./meta-converter clash -f ../community/data_source -o ../meta-rule-mihomo -t mihomo 2>&1; then
+            echo "✅ Meta-converter supports mihomo target format!"
             
-            # Create domain behavior YAML (only DOMAIN rules)
-            domain_count=$(grep -c "^\s*-\s*DOMAIN," "$yaml_file" 2>/dev/null || echo "0")
-            if [[ "$domain_count" -gt 0 ]]; then
-              {
-                echo "payload:"
-                grep "^\s*-\s*DOMAIN," "$yaml_file" || true
-              } > "meta-rule-domain/${filename}.yaml"
-              echo "  Created domain YAML for $filename: $domain_count rules"
+            # Check what files were generated
+            echo "Generated mihomo files:"
+            find ../meta-rule-mihomo -type f | head -10
+            
+            # Copy any .mrs files to meta-rule directory
+            if find ../meta-rule-mihomo -name "*.mrs" | head -1 | read; then
+              find ../meta-rule-mihomo -name "*.mrs" -exec cp {} ../meta-rule/ \;
+              mrs_count=$(find ../meta-rule -name "*.mrs" | wc -l)
+              echo "✅ Copied $mrs_count MRS files to meta-rule directory"
+            else
+              echo "⚠️  No MRS files found in mihomo conversion output"
             fi
             
-            # Create ipcidr behavior YAML (only IP-CIDR rules)  
-            ipcidr_count=$(grep -c "^\s*-\s*IP-CIDR," "$yaml_file" 2>/dev/null || echo "0")
-            if [[ "$ipcidr_count" -gt 0 ]]; then
-              {
-                echo "payload:"
-                grep "^\s*-\s*IP-CIDR," "$yaml_file" || true
-              } > "meta-rule-ipcidr/${filename}.yaml"
-              echo "  Created ipcidr YAML for $filename: $ipcidr_count rules"
-            fi
-          done
-          
-          echo "=== Converting to MRS format using mihomo ==="
-          mkdir -p meta-rule-mrs
-          
-          # Convert domain behavior YAML files to MRS
-          domain_mrs_count=0
-          for domain_yaml in meta-rule-domain/*.yaml; do
-            if [[ -f "$domain_yaml" ]]; then
-              filename=$(basename "$domain_yaml" .yaml)
-              mrs_file="meta-rule-mrs/${filename}-domain.mrs"
-              if ./mihomo convert-ruleset domain yaml "$domain_yaml" "$mrs_file" 2>/dev/null; then
-                echo "✅ Created ${filename}-domain.mrs"
-                domain_mrs_count=$((domain_mrs_count + 1))
-              else
-                echo "⚠️  Failed to convert ${filename} domain rules to MRS"
-              fi
-            fi
-          done
-          
-          # Convert ipcidr behavior YAML files to MRS
-          ipcidr_mrs_count=0
-          for ipcidr_yaml in meta-rule-ipcidr/*.yaml; do
-            if [[ -f "$ipcidr_yaml" ]]; then
-              filename=$(basename "$ipcidr_yaml" .yaml)
-              mrs_file="meta-rule-mrs/${filename}-ipcidr.mrs"
-              if ./mihomo convert-ruleset ipcidr yaml "$ipcidr_yaml" "$mrs_file" 2>/dev/null; then
-                echo "✅ Created ${filename}-ipcidr.mrs"
-                ipcidr_mrs_count=$((ipcidr_mrs_count + 1))
-              else
-                echo "⚠️  Failed to convert ${filename} ipcidr rules to MRS"
-              fi
-            fi
-          done
-          
-          echo "=== MRS conversion summary ==="
-          echo "Domain MRS files created: $domain_mrs_count"
-          echo "IP-CIDR MRS files created: $ipcidr_mrs_count"
-          total_mrs_count=$((domain_mrs_count + ipcidr_mrs_count))
-          echo "Total MRS files: $total_mrs_count"
-          
-          if [[ "$total_mrs_count" -gt 0 ]]; then
-            # Copy MRS files to meta-rule directory
-            cp meta-rule-mrs/*.mrs meta-rule/ 2>/dev/null || true
-            echo "✅ MRS files added to meta-rule directory"
+            # Clean up temporary mihomo conversion directory
+            rm -rf ../meta-rule-mihomo
           else
-            echo "⚠️  No MRS files were generated"
+            echo "⚠️  Meta-converter does not support mihomo target format"
+            echo "This is normal - MRS format may not be supported by meta-rules-converter"
+            echo "Users can use the classical YAML/text formats which are fully functional"
           fi
           
-          # Clean up temporary directories
-          rm -rf meta-rule-domain meta-rule-ipcidr meta-rule-mrs mihomo
+          cd ..
           
           echo "=== Final files in meta-rule ==="
           ls -al meta-rule

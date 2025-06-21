@@ -34,10 +34,15 @@ Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社�
 | *.list              | text       | classical/domain/ipcidr | ⚡ 文本格式，加载快 |
 | *.mrs               | mrs        | domain/ipcidr | 🚀 二进制格式，最高性能 |
 
-**注意**：我们当前提供的是classical behavior规则（支持所有规则类型），因此推荐使用 `yaml` 或 `text` 格式。如需 `mrs` 格式，可使用mihomo官方转换工具：
+**注意**：
+- 我们提供的是classical behavior规则（支持所有规则类型），推荐使用 `yaml` 或 `text` 格式
+- `mrs` 格式需要domain/ipcidr behavior，可使用mihomo官方工具转换：
 ```bash
-mihomo convert-ruleset domain/ipcidr yaml/text source.yaml target.mrs
+# 从我们的yaml/list格式转换为mrs
+mihomo convert-ruleset domain source.yaml target-domain.mrs
+mihomo convert-ruleset ipcidr source.yaml target-ipcidr.mrs
 ```
+- 根据MetaCubeX官方实践，meta-rules-converter主要输出yaml/list格式，MRS需要额外工具处理
 
 
 ```yaml

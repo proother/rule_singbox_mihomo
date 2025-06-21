@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "hmma.baidu.com",
+        "ios-pclog.i4.cn",
+        "js.users.51.la",
+        "mc.51.la",
+        "o33249.ingest.sentry.io",
+        "opencloud.wostore.cn",
+        "p1-play.edge4k.com",
+        "p1-play.kgslb.com",
+        "p2-play.edge4k.com",
+        "play.kakao.com",
+        "safebrowsing.googleapis.com",
+        "safebrowsing.urlsec.qq.com",
+        "track.58.com",
+        "track.tenjin.com",
+        "track.tenjin.io",
+        "tracking.intl.miui.com",
+        "tracklog.58.com",
+        "wc.51.la",
+        "zgsdk.zhugeio.com"
+      ],
+      "ip_cidr": [
+        "0.0.0.1/32",
+        "109.123.233.251/32",
+        "157.148.47.204/32",
+        "185.193.38.148/32",
+        "219.143.187.136/32",
+        "34.215.155.61/32",
+        "35.194.26.233/32",
+        "35.239.57.233/32",
+        "44.228.85.26/32",
+        "45.32.105.134/32",
+        "77.162.125.199/32"
+      ]
+    }
+  ]
+}

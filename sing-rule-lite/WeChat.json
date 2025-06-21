@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "apd-pcdnwxlogin.teg.tencent-cloud.net",
+        "btrace.qq.com",
+        "dldir1.qq.com",
+        "slife.xy-asia.com",
+        "soup.v.qq.com",
+        "vweixinf.tc.qq.com",
+        "weixin110.qq.com",
+        "wup.imtt.qq.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "cwtv-amd-akamai.akamaized.net",
+        "edge.cwtv-vod-ext.top.comcast.net"
+      ]
+    }
+  ]
+}

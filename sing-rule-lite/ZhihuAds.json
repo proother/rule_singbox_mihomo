@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "appcloud2.in.zhihu.com",
+        "mqtt.zhihu.com",
+        "sugar.zhihu.com"
+      ],
+      "ip_cidr": "118.89.204.198/32"
+    }
+  ]
+}

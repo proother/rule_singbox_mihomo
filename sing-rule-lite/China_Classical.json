@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "analytics.strava.com",
+        "blzddist1-a.akamaihd.net",
+        "cdn.angruo.com",
+        "client.amplifi.com",
+        "download.jetbrains.com",
+        "download.microsoft.com",
+        "images-cn.ssl-images-amazon.com",
+        "ip.istatmenus.app",
+        "kc.kexinshe.com",
+        "ntservicepack.microsoft.com",
+        "origin-a.akamaihd.ne",
+        "origin-a.akamaihd.net",
+        "sms.imagetasks.com",
+        "steamcommunity-a.akamaihd.net",
+        "weixin.com",
+        "www.libvideo.com",
+        "www.yxssp.com"
+      ],
+      "ip_cidr": [
+        "1.255.62.0/24",
+        "101.32.104.0/21",
+        "101.32.118.0/23",
+        "101.32.96.0/20",
+        "119.28.28.28/32",
+        "120.195.181.180/32",
+        "129.226.0.0/16",
+        "182.254.116.0/24",
+        "183.128.0.0/11",
+        "183.131.48.0/20",
+        "185.188.32.0/22",
+        "185.188.32.0/24",
+        "185.188.33.0/24",
+        "185.188.34.0/24",
+        "185.188.35.0/24",
+        "203.205.238.0/23",
+        "203.205.254.0/23"
+      ]
+    }
+  ]
+}

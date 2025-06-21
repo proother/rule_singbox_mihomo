@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "account.synology.com",
+        "global.quickconnect.cn",
+        "sns.synology.com"
+      ]
+    }
+  ]
+}

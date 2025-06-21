@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "clubhouse.pubnub.com",
+        "clubhouseprod.s3.amazonaws.com"
+      ]
+    }
+  ]
+}

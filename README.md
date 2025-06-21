@@ -42,6 +42,7 @@ mihomo convert-ruleset domain/ipcidr yaml/text source.yaml target.mrs
 
 ```yaml
 rule-providers:
+  # Classical behavior - 支持所有规则类型 (推荐)
   Apple_Classical:
     type: http
     path: ./ruleset/Apple_Classical.yaml
@@ -56,6 +57,22 @@ rule-providers:
     interval: 86400
     behavior: classical
     format: text
+  
+  # MRS binary format - 🔥 最高性能 (仅限domain/ipcidr behavior)
+  Google_Domain:
+    type: http
+    path: ./ruleset/Google-domain.mrs
+    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Google-domain.mrs"
+    interval: 86400
+    behavior: domain
+    format: mrs
+  China_IPCIDR:
+    type: http
+    path: ./ruleset/China-ipcidr.mrs
+    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/China_Classical-ipcidr.mrs"
+    interval: 86400
+    behavior: ipcidr
+    format: mrs
 ```
 
 

@@ -193,6 +193,30 @@ jobs:
           echo "Sample lite YAML content:"
           head -5 lite-yaml-source/*.yaml 2>/dev/null || echo "No YAML files to show"
           
+          echo "=== Debug: Detailed YAML format check ==="
+          # Check a few sample files for proper format
+          sample_count=0
+          for yaml_file in lite-yaml-source/*.yaml; do
+            if [[ -f "$yaml_file" && "$sample_count" -lt 3 ]]; then
+              filename=$(basename "$yaml_file")
+              echo "--- Checking $filename ---"
+              echo "File size: $(wc -l < "$yaml_file") lines"
+              echo "First 10 lines:"
+              head -10 "$yaml_file" | sed 's/^/  /'
+              
+              # Check for common YAML issues
+              rule_count=$(grep -c "^\s*-\s*" "$yaml_file" 2>/dev/null || echo "0")
+              domain_count=$(grep -c "^\s*-\s*DOMAIN," "$yaml_file" 2>/dev/null || echo "0")
+              ipcidr_count=$(grep -c "^\s*-\s*IP-CIDR," "$yaml_file" 2>/dev/null || echo "0")
+              
+              echo "  Rules found: $rule_count (DOMAIN: $domain_count, IP-CIDR: $ipcidr_count)"
+              echo "  Has payload header: $(head -1 "$yaml_file" | grep -q "payload:" && echo "✅ Yes" || echo "❌ No")"
+              echo ""
+              
+              sample_count=$((sample_count + 1))
+            fi
+          done
+          
           # Step 2: Use meta-converter to convert lite YAML to sing-box format
           cd converter
           
@@ -203,18 +227,40 @@ jobs:
           fi
           
           echo "Converting lite YAML to sing-box format (JSON + SRS)..."
+          echo "=== Debug: Checking lite YAML files before conversion ==="
+          echo "Total lite YAML files: $(find ../lite-yaml-source -name "*.yaml" | wc -l)"
+          echo "Sample file sizes:"
+          find ../lite-yaml-source -name "*.yaml" -exec wc -l {} \; | head -10
+          
           # Use the same method as complete rules: clash YAML -> sing-box
-          if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box; then
+          echo "=== Running meta-converter with verbose output ==="
+          if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box 2>&1; then
             echo "✅ Meta-converter completed successfully"
             
             # Step 3: Replace our filtered JSON with the properly generated ones and add SRS files
             cd ../sing-rule-lite-converted
+            
+            echo "=== Debug: Checking meta-converter output structure ==="
+            echo "Output directories created: $(find . -maxdepth 1 -type d | wc -l)"
+            echo "Sample directory contents:"
+            for dir in $(find . -maxdepth 1 -type d | head -5); do
+              if [[ "$dir" != "." ]]; then
+                echo "Directory: $dir"
+                ls -la "$dir/" 2>/dev/null || echo "  (empty or inaccessible)"
+              fi
+            done
+            
             successful_conversions=0
             failed_srs_conversions=0
+            total_failure_count=0
             
             for dir in */; do
               if [[ -d "$dir" ]]; then
                 dir_name=$(basename "$dir")
+                
+                # Debug: Show what files exist in this directory
+                echo "🔍 Checking $dir_name:"
+                ls -la "$dir/" | sed 's/^/  /'
                 
                 # Check if both JSON and SRS were generated
                 if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
@@ -226,20 +272,41 @@ jobs:
                 elif [[ -f "$dir/classical.json" ]]; then
                   # Only JSON exists - SRS conversion failed
                   echo "⚠️  ${dir_name}: JSON generated but SRS conversion failed"
+                  # Check JSON content to see if it's empty
+                  json_rules=$(jq '.rules | length' "$dir/classical.json" 2>/dev/null || echo "parse_error")
+                  echo "   JSON rules count: $json_rules"
                   mv "$dir/classical.json" "../sing-rule-lite/${dir_name}.json"
                   failed_srs_conversions=$((failed_srs_conversions + 1))
                 else
                   # Neither file exists - complete failure
                   echo "❌ ${dir_name}: Complete conversion failure (no JSON or SRS)"
+                  total_failure_count=$((total_failure_count + 1))
                 fi
               fi
             done
             cd ..
             
             echo "=== Meta-converter conversion summary ==="
+            total_yaml_files=$(find ../lite-yaml-source -name "*.yaml" | wc -l)
+            echo "📂 Total YAML input files: $total_yaml_files"
             echo "✅ Successful (JSON + SRS): $successful_conversions"
             echo "⚠️  Partial (JSON only): $failed_srs_conversions"
-            echo "❌ Total failures: $(( $(ls -1d lite-yaml-source/*.yaml 2>/dev/null | wc -l) - successful_conversions - failed_srs_conversions ))"
+            echo "❌ Complete failures: $total_failure_count"
+            echo "🔢 Total processed: $((successful_conversions + failed_srs_conversions + total_failure_count))"
+            
+            if [[ "$((successful_conversions + failed_srs_conversions + total_failure_count))" -ne "$total_yaml_files" ]]; then
+              echo "🚨 WARNING: Input/output count mismatch detected!"
+              echo "   This suggests some YAML files were not processed by meta-converter"
+            fi
+            
+            success_rate=$((successful_conversions * 100 / total_yaml_files))
+            echo "📊 SRS conversion success rate: ${success_rate}%"
+            
+            if [[ "$success_rate" -lt 70 ]]; then
+              echo "🚨 LOW SUCCESS RATE DETECTED!"
+              echo "   This may indicate issues with YAML format or meta-converter compatibility"
+              echo "   Consider investigating sample failed conversions"
+            fi
             
             # Clean up temporary directories
             rm -rf lite-yaml-source sing-rule-lite-converted

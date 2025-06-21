@@ -200,7 +200,15 @@ jobs:
           echo "=== Generated lite YAML files ==="
           ls -la lite-yaml-source/
           echo "Sample lite YAML content:"
-          head -5 lite-yaml-source/*.yaml 2>/dev/null || echo "No YAML files to show"
+          # Show first few YAML files to avoid pipe errors
+          yaml_count=0
+          for yaml_file in lite-yaml-source/*.yaml; do
+            if [[ -f "$yaml_file" && "$yaml_count" -lt 3 ]]; then
+              echo "==> $(basename "$yaml_file") <=="
+              head -5 "$yaml_file" 2>/dev/null
+              yaml_count=$((yaml_count + 1))
+            fi
+          done
           
           echo "=== Debug: Detailed YAML format check ==="
           # Check a few sample files for proper format

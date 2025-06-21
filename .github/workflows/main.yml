@@ -151,8 +151,8 @@ jobs:
                 }
               ' "$json_file" > "sing-rule-lite/${filename}.json"
               
-              # Check if the filtered file has any rules
-              rule_count=$(jq '.rules | length' "sing-rule-lite/${filename}.json")
+              # Check if the filtered file has any rules (handle null safely)
+              rule_count=$(jq '.rules | if . == null then 0 else length end' "sing-rule-lite/${filename}.json")
               if [[ "$rule_count" -eq 0 ]]; then
                 echo "No lite rules found in $filename, removing empty file"
                 rm "sing-rule-lite/${filename}.json"
@@ -277,12 +277,12 @@ jobs:
           for lite_file in sing-rule-lite/*.json; do
             if [[ -f "$lite_file" ]]; then
               filename=$(basename "$lite_file" .json)
-              ip_count=$(jq '[.rules[] | select(has("ip_cidr"))] | length' "$lite_file")
-              domain_count=$(jq '[.rules[] | select(has("domain"))] | length' "$lite_file")
-              total_count=$(jq '.rules | length' "$lite_file")
+              ip_count=$(jq '[.rules[]? // empty | select(. != null and has("ip_cidr"))] | length' "$lite_file")
+              domain_count=$(jq '[.rules[]? // empty | select(. != null and has("domain"))] | length' "$lite_file")
+              total_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file")
               
-              # Check for any unexpected fields in rules
-              unexpected_fields=$(jq -r '[.rules[] | keys | .[] | select(. != "ip_cidr" and . != "domain")] | unique | .[]' "$lite_file" 2>/dev/null || true)
+              # Check for any unexpected fields in rules (handle null values safely)
+              unexpected_fields=$(jq -r '[.rules[]? // empty | select(. != null) | keys[]? // empty | select(. != "ip_cidr" and . != "domain")] | unique | .[]?' "$lite_file" 2>/dev/null || true)
               
               if [[ -n "$unexpected_fields" ]]; then
                 echo "  ❌ $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN) - UNEXPECTED FIELDS: $unexpected_fields"

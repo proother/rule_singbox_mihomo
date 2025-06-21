@@ -162,38 +162,44 @@ jobs:
             fi
           done
           
-          echo "=== Converting lite JSON to SRS format ==="
+          echo "=== Creating lite YAML and converting to SRS format ==="
           
-          # Step 1: Convert lite JSON back to YAML format (since meta-converter needs YAML input)
-          echo "Converting lite JSON files back to YAML for meta-converter..."
+          # Step 1: Create lite YAML files from original YAML files (before JSON conversion)
+          echo "Creating lite YAML files from original sources..."
           mkdir -p lite-yaml-source
           
-          for lite_json in sing-rule-lite/*.json; do
-            if [[ -f "$lite_json" ]]; then
-              filename=$(basename "$lite_json" .json)
-              echo "Converting $filename.json to YAML..."
+          # Process each original YAML file to create lite version
+          for yaml_file in community/data_source/*.yaml; do
+            if [[ -f "$yaml_file" ]]; then
+              filename=$(basename "$yaml_file" .yaml)
+              echo "Creating lite version of $filename..."
               
-              # Convert JSON rules back to YAML format that meta-converter expects
+              # Extract only DOMAIN and IP-CIDR rules from original YAML
               {
                 echo "payload:"
-                jq -r '.rules[] | 
-                  if has("domain") then
-                    .domain[] | "  - DOMAIN," + .
-                  else empty end,
-                  if has("ip_cidr") then  
-                    .ip_cidr[] | "  - IP-CIDR," + .
-                  else empty end
-                ' "$lite_json"
+                # Extract DOMAIN rules
+                grep -E "^\s*-\s*DOMAIN," "$yaml_file" || true
+                # Extract IP-CIDR rules  
+                grep -E "^\s*-\s*IP-CIDR," "$yaml_file" || true
               } > "lite-yaml-source/${filename}.yaml"
               
-              echo "Created lite-yaml-source/${filename}.yaml"
+              # Check if the lite YAML has any rules
+              rule_count=$(grep -c "^\s*-\s*" "lite-yaml-source/${filename}.yaml" 2>/dev/null || echo "0")
+              if [[ "$rule_count" -eq 0 ]]; then
+                echo "No lite rules found in $filename, removing empty file"
+                rm "lite-yaml-source/${filename}.yaml"
+              else
+                echo "Created lite YAML for $filename with $rule_count rules"
+              fi
             fi
           done
           
-          echo "=== Generated YAML files ==="
+          echo "=== Generated lite YAML files ==="
           ls -la lite-yaml-source/
+          echo "Sample lite YAML content:"
+          head -5 lite-yaml-source/*.yaml 2>/dev/null || echo "No YAML files to show"
           
-          # Step 2: Use meta-converter to convert YAML to sing-box format (same as complete rules)
+          # Step 2: Use meta-converter to convert lite YAML to sing-box format
           cd converter
           
           # Ensure meta-converter binary exists
@@ -202,19 +208,27 @@ jobs:
             go build -o meta-converter .
           fi
           
-          echo "Converting YAML to sing-box format (JSON + SRS)..."
+          echo "Converting lite YAML to sing-box format (JSON + SRS)..."
           # Use the same method as complete rules: clash YAML -> sing-box
           if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box; then
             echo "✅ Meta-converter completed successfully"
             
-            # Step 3: Move SRS files to lite directory 
+            # Step 3: Replace our filtered JSON with the properly generated ones and add SRS files
             cd ../sing-rule-lite-converted
             for dir in */; do
               if [[ -d "$dir" ]]; then
                 dir_name=$(basename "$dir")
+                
+                # Replace the JSON file with the properly generated one
+                if [[ -f "$dir/classical.json" ]]; then
+                  mv "$dir/classical.json" "../sing-rule-lite/${dir_name}.json"
+                  echo "✅ Updated ${dir_name}.json with meta-converter output"
+                fi
+                
+                # Move SRS file to lite directory
                 if [[ -f "$dir/classical.srs" ]]; then
                   mv "$dir/classical.srs" "../sing-rule-lite/${dir_name}.srs"
-                  echo "✅ Moved ${dir_name}.srs to lite directory"
+                  echo "✅ Added ${dir_name}.srs to lite directory"
                 fi
               fi
             done
@@ -224,12 +238,12 @@ jobs:
             rm -rf lite-yaml-source sing-rule-lite-converted
             echo "✅ Cleanup completed"
           else
-            echo "❌ Meta-converter failed to convert YAML to SRS!"
+            echo "❌ Meta-converter failed to convert lite YAML!"
             cd ..
             
             # Debug information
             echo "=== Debugging meta-converter failure ==="
-            echo "YAML source files:"
+            echo "Lite YAML source files:"
             ls -la lite-yaml-source/ 2>/dev/null || echo "No YAML source files"
             echo "Sample YAML content:"
             head -10 lite-yaml-source/*.yaml 2>/dev/null || echo "No YAML files to show"
@@ -237,9 +251,8 @@ jobs:
             # Clean up
             rm -rf lite-yaml-source sing-rule-lite-converted
             
-            echo "❌ CRITICAL: Meta-converter failed to generate SRS files from YAML"
-            echo "This means no SRS files will be available for lite rules"
-            echo "Only JSON files will be provided in the lite package"
+            echo "❌ CRITICAL: Meta-converter failed to generate SRS files from lite YAML"
+            echo "Keeping the previously generated JSON files, but no SRS files available"
           fi
           
           # Verify SRS files were created

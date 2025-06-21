@@ -1,500 +1,262 @@
-name: Release Libraries
+name: Convert Workflow
 
 on:
-  # (1) Manual trigger
+  push:
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Git Tag to checkout (e.g. v1.10.5 or v1.11.0-beta.22)"
-        required: true
-        type: string
-      delete_if_exists:
-        description: "If 'true', delete existing release/tag before recreating"
-        required: false
-        type: boolean
-        default: false
-
-  # (2) Daily cron job at 12:10 UTC
   schedule:
-    - cron: "10 12 * * *"
+    - cron: '0 12 * * *'
 
-# Grant permissions for the workflow
 permissions:
   contents: write
-  packages: write
-  actions: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: true
 
 jobs:
-  check_release:
-    name: Check if release exists
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.set_tag.outputs.tag }}
-      skip_release: ${{ steps.final_check.outputs.skip_release }}
-    steps:
-      # 1) Get the stable latest sing-box release (only if triggered by schedule)
-      - name: Get stable latest sing-box release
-        if: ${{ github.event_name == 'schedule' }}
-        id: get_latest_release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // `getLatestRelease` excludes prereleases/drafts automatically
-            const { data: latest } = await github.rest.repos.getLatestRelease({
-              owner: 'SagerNet',
-              repo: 'sing-box'
-            })
-            core.setOutput('latest_tag', latest.tag_name)
 
-      # 2) Define the TAG based on trigger type (schedule or manual)
-      - name: Define TAG
-        id: set_tag
-        run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            TAG="${{ steps.get_latest_release.outputs.latest_tag }}"
-          else
-            TAG="${{ github.event.inputs.tag }}"
-          fi
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "TAG=${TAG}" >> $GITHUB_ENV
+    steps:
+      #
+      # 1. Set variables
+      #
+      - name: Set variables
         shell: bash
-
-      # 3) Check if release already exists to avoid duplicate work
-      - name: Check if release already exists
-        id: check_existing
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          echo "=== [DEBUG] Checking for existing release in proother/sing-box-lib..."
-          echo "TAG='${TAG}' (length=${#TAG})"
-          echo "Using token: ${{ secrets.PERSONAL_TOKEN && 'PERSONAL_TOKEN' || 'GITHUB_TOKEN' }}"
-      
-          # Install gh CLI if not already available
-          which gh >/dev/null 2>&1 || { 
-            apt-get update && apt-get install -y gh jq
-          }
-          
-          existing_release=$(
-            gh release list --json tagName -R proother/sing-box-lib --limit 100 \
-              | jq -r '.[].tagName' \
-              | grep -x "${TAG}" \
-              | wc -l
-          )
-          
-          if [ "$existing_release" -gt 0 ]; then
-            echo "Release/tag '${TAG}' already exists. Skipping."
-            echo "skip_release=true" >> $GITHUB_OUTPUT
-          else
-            echo "Release/tag '${TAG}' does not exist. Proceeding with build."
-            echo "skip_release=false" >> $GITHUB_OUTPUT
-          fi
+          echo "GOAMD64=v3" >> $GITHUB_ENV
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+          echo "TAG_NAME=$(TZ=Asia/Shanghai date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
 
-      # 4) Conditionally delete the existing release if user wants that
-      - name: Delete existing release if user requested
-        id: delete_release
-        if: >
-          github.event_name == 'workflow_dispatch' &&
-          steps.check_existing.outputs.skip_release == 'true' &&
-          github.event.inputs.delete_if_exists == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN || secrets.GITHUB_TOKEN }}
+      #
+      # 2. Check out repositories
+      #
+      - name: Checkout blackmatrix7/ios_rule_script
+        uses: actions/checkout@v4
+        with:
+          repository: blackmatrix7/ios_rule_script
+          path: ios_rule_script
+
+      - name: Checkout MetaCubeX/meta-rules-converter
+        uses: actions/checkout@v4
+        with:
+          repository: MetaCubeX/meta-rules-converter
+          path: converter
+
+      - name: Checkout Loyalsoldier/domain-list-custom
+        uses: actions/checkout@v4
+        with:
+          repository: Loyalsoldier/domain-list-custom
+          path: custom
+
+      #
+      # 3. Setup Go
+      #
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: ./custom/go.sum
+
+      #
+      # 4. Copy files to data source directory
+      #
+      - name: Copy files to data source directory
         run: |
-          echo "Attempting to delete existing release '${TAG}'..."
-          echo "Using token: ${{ secrets.PERSONAL_TOKEN && 'PERSONAL_TOKEN (enhanced permissions)' || 'GITHUB_TOKEN (limited permissions)' }}"
-          
-          # Check if we have proper permissions first
-          if ! gh auth status; then
-            echo "❌ GitHub CLI authentication failed"
-            echo "was_deleted=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          # Attempt to delete the release with better error handling
-          if gh release delete "${TAG}" -R proother/sing-box-lib -y --cleanup-tag 2>/dev/null; then
-            echo "✅ Successfully deleted release '${TAG}'"
-            echo "was_deleted=true" >> $GITHUB_OUTPUT
-          else
-            echo "⚠️ Failed to delete release '${TAG}'"
-            if [[ -z "${{ secrets.PERSONAL_TOKEN }}" ]]; then
-              echo "💡 Tip: Consider adding a PERSONAL_TOKEN secret with enhanced permissions"
-              echo "💡 Go to Settings → Developer settings → Personal access tokens"
-              echo "💡 Create a token with 'repo' and 'delete_repo' permissions"
+          echo "=== Copying necessary files to data source directory ==="
+          mkdir -p community/data_source
+
+          # Copy .yaml files
+          echo "=== Copying .yaml files ==="
+          for dir in $(find ios_rule_script/rule/Clash -type d); do
+            if ls "$dir"/*_Classical.yaml 2>/dev/null; then
+              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
+            else
+              dir_name=$(basename "$dir")
+              find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
             fi
-            echo "⚠️ Continuing with build anyway..."
-            echo "was_deleted=false" >> $GITHUB_OUTPUT
-          fi
+          done
 
-      # 5) Final decision on whether to proceed with build
-      - name: Final build decision
-        id: final_check
+          echo "=== Files in community/data_source ==="
+          ls -al community/data_source
+
+      #
+      # 5. Convert YAML to sing rules (Updated Step)
+      #
+      - name: Convert YAML to sing rules
         run: |
-          echo "=== Final Build Decision ==="
-          echo "Release exists: ${{ steps.check_existing.outputs.skip_release }}"
-          echo "Delete requested: ${{ github.event.inputs.delete_if_exists }}"
-          echo "Was deleted: ${{ steps.delete_release.outputs.was_deleted }}"
-          
-          if [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" && "${{ steps.delete_release.outputs.was_deleted }}" == "true" ]]; then
-            echo "✅ Release was successfully deleted, will rebuild"
-            echo "skip_release=false" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" && "${{ github.event.inputs.delete_if_exists }}" == "true" ]]; then
-            echo "⚠️ Release exists, delete was requested but may have failed"
-            echo "🔄 Will proceed with build anyway (force overwrite mode)"
-            echo "skip_release=false" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.check_existing.outputs.skip_release }}" == "true" ]]; then
-            echo "ℹ️ Release exists and deletion was not requested, skipping build"
-            echo "skip_release=true" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Release does not exist, will build"
-            echo "skip_release=false" >> $GITHUB_OUTPUT
-          fi
+          echo "=== Converting .yaml to sing rules ==="
+          mkdir -p sing-rule
+          cd converter
+          # Build the converter
+          go build -o meta-converter .
+          # Use the built binary
+          ./meta-converter clash -f ../community/data_source -o ../sing-rule -t sing-box
+          cd ../sing-rule
 
-  build_apple:
-    name: Build Apple Libraries
-    needs: check_release
-    if: needs.check_release.outputs.skip_release == 'false'
-    runs-on: macos-15
-    outputs:
-      ios_checksum: ${{ steps.build_libraries.outputs.ios_checksum }}
-      apple_universal_checksum: ${{ steps.build_libraries.outputs.apple_universal_checksum }}
-    steps:
-      - name: Checkout current repository
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4
-        with:
-          fetch-depth: 0
+          # Move files from subdirectories to the root of sing-rule
+          for dir in */; do
+            dir_name=$(basename "$dir")
+            if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
+              # Find the original YAML file in community/data_source
+              original_yaml=$(find ../community/data_source -type f -iname "${dir_name}.yaml" -print -quit)
 
-      - name: Checkout sing-box
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4
-        with:
-          repository: 'SagerNet/sing-box'
-          path: 'box'
-          ref: ${{ needs.check_release.outputs.tag }}
-          submodules: 'recursive'
-          fetch-depth: 0
+              if [[ -n "$original_yaml" ]]; then
+                # Extract the original filename (without extension)
+                original_name=$(basename "$original_yaml" .yaml)
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ^1.24
+                # Move and rename the JSON/SRS files to match the original filename
+                mv "$dir/classical.json" "${original_name}.json"
+                mv "$dir/classical.srs" "${original_name}.srs"
+              else
+                # Fallback to directory name if original YAML is not found
+                mv "$dir/classical.json" "${dir_name}.json"
+                mv "$dir/classical.srs" "${dir_name}.srs"
+              fi
+            fi
+            # Remove the empty subdirectory
+            rm -rf "$dir"
+          done
 
-      - name: Setup Xcode
-        run: |-
-          sudo xcode-select -s /Applications/Xcode_16.2.app
+          echo "=== Final files in sing-rule ==="
+          ls -al
 
-      - name: Set tag
-        run: |-
-          cd box
-          git tag v${{ needs.check_release.outputs.tag }} -f
-
-      - name: Cache Go modules and gomobile
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/go/bin/gomobile
-            ~/go/bin/gobind
-          key: ${{ runner.os }}-go-apple-${{ hashFiles('box/go.sum') }}-gomobile
-          restore-keys: |
-            ${{ runner.os }}-go-apple-
-            ${{ runner.os }}-go-
-
-      - name: Install dependencies
+      #
+      # 6. Process YAML files for meta-rule
+      #
+      - name: Process YAML files for meta-rule
         run: |
-          cd box
-          # Install gomobile and other dependencies
-          make lib_install
-          export PATH="$PATH:$(go env GOPATH)/bin"
-          # Initialize gomobile for iOS/macOS builds
-          gomobile init
+          echo "=== Processing YAML files for meta-rule ==="
+          mkdir -p meta-rule
+          cp community/data_source/*.yaml meta-rule/
           
-          # Verify gomobile installation
-          if ! command -v gomobile &> /dev/null; then
-            echo "Error: gomobile installation failed"
-            exit 1
-          fi
+          echo "=== Removing comments and empty lines from YAML files ==="
+          for yaml_file in meta-rule/*.yaml; do
+            # Remove comments (lines starting with '#') and empty lines
+            sed '/^#/d; /^$/d' "$yaml_file" > tmp && mv tmp "$yaml_file"
+          done
           
-          # Verify gomobile version
-          GOMOBILE_VERSION=$(gomobile version | grep -o "version.*")
-          echo "Using gomobile $GOMOBILE_VERSION"
+          echo "=== Converting YAML to LIST files ==="
+          for yaml_file in meta-rule/*.yaml; do
+            list_file="${yaml_file%.yaml}.list"
+            # Skip the first line, remove leading '- ' prefix, and eliminate empty lines
+            tail -n +2 "$yaml_file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "$list_file"
+          done
+          
+          echo "=== Final files in meta-rule ==="
+          ls -al meta-rule
 
-      - name: Build Apple libraries
-        id: build_libraries
+      #
+      # 7. Gather artifacts into publish folder
+      #
+      - name: Prepare publish artifacts
         run: |
-          cd box
-          export PATH="$PATH:$(go env GOPATH)/bin"
-          
-          # 1. Build iOS library
-          echo "Building iOS library..."
-          if ! go run ./cmd/internal/build_libbox -target apple -platform ios; then
-            echo "Error: iOS library build failed"
-            exit 1
-          fi
-          
-          # Verify iOS framework exists and create zip
-          if [ ! -d "Libbox.xcframework" ]; then
-            echo "Error: iOS build did not produce Libbox.xcframework"
-            exit 1
-          fi
-          
-          zip -ry Libbox-ios.xcframework.zip Libbox.xcframework
-          IOS_CHECKSUM="$(shasum -a 256 Libbox-ios.xcframework.zip | cut -d ' ' -f 1)"
-          echo "ios_checksum=${IOS_CHECKSUM}" >> $GITHUB_OUTPUT
-          echo "✅ iOS library built successfully: ${IOS_CHECKSUM}"
-          
-          # 2. Build Apple universal library
-          echo "Building Apple universal library..."
-          if ! go run ./cmd/internal/build_libbox -target apple; then
-            echo "Error: Apple universal library build failed"
-            exit 1
-          fi
-          
-          # Verify Apple framework exists and create zip
-          if [ ! -d "Libbox.xcframework" ]; then
-            echo "Error: Apple universal build did not produce Libbox.xcframework"
-            exit 1
-          fi
-          
-          zip -ry Libbox-apple.xcframework.zip Libbox.xcframework
-          APPLE_CHECKSUM="$(shasum -a 256 Libbox-apple.xcframework.zip | cut -d ' ' -f 1)"
-          echo "apple_universal_checksum=${APPLE_CHECKSUM}" >> $GITHUB_OUTPUT
-          echo "✅ Apple universal library built successfully: ${APPLE_CHECKSUM}"
-          
-          mkdir -p ../artifacts
-          cp Libbox-ios.xcframework.zip ../artifacts/
-          cp Libbox-apple.xcframework.zip ../artifacts/
+          echo "=== Collecting final artifacts into ./publish/ ==="
+          mkdir -p publish
 
-      - name: Upload Apple artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: apple-libraries
-          path: artifacts
-          retention-days: 1
+          # Move sing-rule and meta-rule into publish/
+          cp -r sing-rule publish/sing-rule
+          cp -r meta-rule publish/meta-rule
+          echo "=== sing-rule file count: $(find sing-rule -type f | wc -l) ==="
+          echo "=== meta-rule file count: $(find meta-rule -type f | wc -l) ==="
+          ls -R publish
 
-  build_android:
-    name: Build Android
-    needs: check_release
-    if: needs.check_release.outputs.skip_release == 'false'
-    runs-on: ubuntu-latest
-    outputs:
-      android_checksum: ${{ steps.build_android.outputs.android_checksum }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4
-        with:
-          fetch-depth: 0
-          submodules: 'recursive'
-          repository: 'SagerNet/sing-box'
-          ref: ${{ needs.check_release.outputs.tag }}
-          
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ^1.24
-          
-      - name: Setup Android NDK
-        id: setup-ndk
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r28
-          local-cache: true
-          
-      - name: Setup OpenJDK
-        run: |-
-          sudo apt update && sudo apt install -y openjdk-17-jdk-headless
-          /usr/lib/jvm/java-17-openjdk-amd64/bin/java --version
-
-      - name: Set tag
-        run: |-
-          git tag v${{ needs.check_release.outputs.tag }} -f
-
-      - name: Apply VPN Detection Obfuscation
+      #
+      # 7.5. Create ZIP archives
+      #
+      - name: Create ZIP archives
         run: |
-          echo "Applying comprehensive VPN detection obfuscation..."
+          echo "=== Creating ZIP archives ==="
+          mkdir -p release-assets
           
-          # Create backup
-          cp experimental/libbox/build_info.go experimental/libbox/build_info.go.backup
-          
-          # Check if file exists and contains expected content
-          if ! [ -f "experimental/libbox/build_info.go" ]; then
-            echo "Error: build_info.go not found"
-            exit 1
+          # Sing-box rules
+          echo "=== Zipping sing-box rules ==="
+          cd sing-rule
+          if ls *.srs 1> /dev/null 2>&1; then
+            zip ../release-assets/sing-rules-srs.zip *.srs
+            echo "Created sing-rules-srs.zip"
           fi
-          
-          echo "=== Phase 1: Core Type Detection Obfuscation ==="
-          
-          # Method 1: Replace sing-box string detection
-          sed -i 's/strings\.Contains(pkgNameLower, "sing-box")/false \/\* obfuscated \*\//' experimental/libbox/build_info.go
-          
-          # Method 2: Comment out the case statement  
-          sed -i 's/case androidVPNCoreTypeSingBox:/\/\/ case androidVPNCoreTypeSingBox: \/\* obfuscated \*\//' experimental/libbox/build_info.go
-          
-          # Method 3: Replace the constant definition
-          sed -i 's/androidVPNCoreTypeSingBox     = "sing-box"/androidVPNCoreTypeSingBox     = "Unknown" \/\* obfuscated \*\//' experimental/libbox/build_info.go
-          
-          echo "=== Phase 2: Module Path Obfuscation ==="
-          
-          # Method 4: Obfuscate module path detection
-          sed -i 's/"github\.com\/sagernet\/sing-box"/"github.com\/unknown\/proxy" \/\* obfuscated \*\//' experimental/libbox/build_info.go
-          
-          # Method 5: Replace sing-box in determineCorePathForPkgs
-          sed -i 's/"sing-box"/"unknown" \/\* obfuscated \*\//' experimental/libbox/build_info.go
-          
-          echo "=== Phase 3: Build Info Obfuscation ==="
-          
-          # Method 6: Obfuscate buildInfo.Path detection
-          sed -i 's/dependencies\[buildInfo\.Path\] = true/\/\/ dependencies[buildInfo.Path] = true \/\* obfuscated \*\//' experimental/libbox/build_info.go
-          
-          # Method 7: Force return obfuscated values early in the function
-          sed -i '/var vpnType AndroidVPNType/a\
-          \t\/\/ Obfuscation: Force unknown type\
-          \tvpnType.CoreType = androidVPNCoreTypeUnknown\
-          \tvpnType.GoVersion = "obfuscated"\
-          \treturn \&vpnType, nil \/\* obfuscated early return \*\/' experimental/libbox/build_info.go
-          
-          echo "=== Phase 4: Verification ==="
-          
-          # Verify the changes were applied
-          if grep -q "obfuscated" experimental/libbox/build_info.go; then
-            echo "✅ Comprehensive VPN detection obfuscation applied successfully"
-            echo "Modified lines:"
-            grep -n "obfuscated" experimental/libbox/build_info.go
-          else
-            echo "❌ No obfuscation was applied, restoring backup"
-            cp experimental/libbox/build_info.go.backup experimental/libbox/build_info.go
-            exit 1
+          if ls *.json 1> /dev/null 2>&1; then
+            zip ../release-assets/sing-rules-json.zip *.json
+            echo "Created sing-rules-json.zip"
           fi
+          cd ..
           
-          # Show diff for verification
-          echo "=== Changes Summary ==="
-          diff -u experimental/libbox/build_info.go.backup experimental/libbox/build_info.go || true
-
-      - name: Cache Go modules and gomobile
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/go/bin/gomobile
-            ~/go/bin/gobind
-          key: ${{ runner.os }}-go-android-${{ hashFiles('go.sum') }}-gomobile
-          restore-keys: |
-            ${{ runner.os }}-go-android-
-            ${{ runner.os }}-go-
-
-      - name: Build library
-        id: build_android
-        run: |-
-          make lib_install
-          export PATH="$PATH:$(go env GOPATH)/bin"
-          make lib_android
+          # Meta rules
+          echo "=== Zipping meta rules ==="
+          cd meta-rule
+          if ls *.list 1> /dev/null 2>&1; then
+            zip ../release-assets/meta-rules-list.zip *.list
+            echo "Created meta-rules-list.zip"
+          fi
+          if ls *.yaml 1> /dev/null 2>&1; then
+            zip ../release-assets/meta-rules-yaml.zip *.yaml
+            echo "Created meta-rules-yaml.zip"
+          fi
+          cd ..
           
-          # Create a directory for packaging
-          mkdir -p artifacts
-          
-          # Package the AAR file with proper directory structure
-          mkdir -p libbox-android
-          cp libbox.aar libbox-android/
-          
-          # Zip the directory for compatibility
-          zip -ry libbox-android.aar.zip libbox-android
-          
-          # Calculate checksum and set output
-          ANDROID_CHECKSUM="$(sha256sum libbox-android.aar.zip | cut -d ' ' -f 1)"
-          echo "android_checksum=${ANDROID_CHECKSUM}" >> $GITHUB_OUTPUT
-          
-          # Copy to artifacts directory for upload
-          cp libbox-android.aar.zip artifacts/
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          
-      - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-library
-          path: artifacts
-          retention-days: 1
+          echo "=== Release assets created ==="
+          ls -al release-assets/
 
-  publish_release:
-    name: Publish Release
-    needs: [check_release, build_apple, build_android]
-    if: needs.check_release.outputs.skip_release == 'false'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout current repository
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4
-        with:
-          fetch-depth: 0
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: Prepare artifacts for release
-        run: |
-          mkdir -p release
-          cp artifacts/Libbox-ios.xcframework.zip release/
-          cp artifacts/Libbox-apple.xcframework.zip release/
-          cp artifacts/libbox-android.aar.zip release/
-          
-          # Set environment variables for next steps
-          echo "IOS_CHECKSUM=${{ needs.build_apple.outputs.ios_checksum }}" >> $GITHUB_ENV
-          echo "APPLE_CHECKSUM=${{ needs.build_apple.outputs.apple_universal_checksum }}" >> $GITHUB_ENV
-          echo "ANDROID_CHECKSUM=${{ needs.build_android.outputs.android_checksum }}" >> $GITHUB_ENV
-          echo "TAG=${{ needs.check_release.outputs.tag }}" >> $GITHUB_ENV
-
-      - name: Update Package.swift for Swift Package Manager
-        run: |
-          echo "Updating Package.swift for tag: ${TAG} with checksum: ${IOS_CHECKSUM}"
-          echo "// swift-tools-version: 5.7" > Package.swift
-          echo "" >> Package.swift
-          echo "import PackageDescription" >> Package.swift
-          echo "" >> Package.swift
-          echo "let package = Package(" >> Package.swift
-          echo "  name: \"Libbox\"," >> Package.swift
-          echo "  platforms: [.iOS(.v12), .macOS(.v11)]," >> Package.swift
-          echo "  products: [" >> Package.swift
-          echo "    .library(name: \"Libbox\", targets: [\"Libbox\"])" >> Package.swift
-          echo "  ]," >> Package.swift
-          echo "  targets: [" >> Package.swift
-          echo "    .binaryTarget(" >> Package.swift
-          echo "      name: \"Libbox\"," >> Package.swift
-          echo "      url: \"https://github.com/proother/sing-box-lib/releases/download/${TAG}/Libbox-ios.xcframework.zip\"," >> Package.swift
-          echo "      checksum: \"${IOS_CHECKSUM}\"" >> Package.swift
-          echo "    )" >> Package.swift
-          echo "  ]" >> Package.swift
-          echo ")" >> Package.swift
-
-      - name: Commit package update
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Libbox Release ${{ env.TAG }}"
-          tagging_message: "${{ env.TAG }}"   
-          commit_user_name: "proother"
-          commit_user_email: "proother@github.com"
-          file_pattern: 'Package.swift'
-
+      #
+      # 8. Create GitHub Release
+      #
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
-          draft: false
-          tag_name: ${{ env.TAG }}
+          tag_name: v${{ env.TAG_NAME }}
+          name: Release ${{ env.BUILDTIME }}
           body: |
-            Compiled from source tag: ${{ env.TAG }}
+            ## 📦 Rule Packages
             
-            ### iOS Library (Libbox-ios.xcframework.zip)
-            SHA256: ${{ env.IOS_CHECKSUM }}
+            ### Sing-box Rules
+            - `sing-rules-srs.zip` - Sing-box binary rule files (.srs)
+            - `sing-rules-json.zip` - Sing-box JSON rule files (.json)
             
-            ### Apple Universal Library (Libbox-apple.xcframework.zip)
-            SHA256: ${{ env.APPLE_CHECKSUM }}
+            ### Meta Rules
+            - `meta-rules-list.zip` - Meta list rule files (.list)
+            - `meta-rules-yaml.zip` - Meta YAML rule files (.yaml)
             
-            ### Android Library (libbox-android.aar.zip)
-            SHA256: ${{ env.ANDROID_CHECKSUM }}
+            ### Build Information
+            - Build Time: ${{ env.BUILDTIME }} (Asia/Shanghai)
+            - Workflow Run: [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            ### Data Sources
+            - Rules from [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)
+            - Converter by [MetaCubeX/meta-rules-converter](https://github.com/MetaCubeX/meta-rules-converter)
           files: |
-            release/Libbox-ios.xcframework.zip
-            release/Libbox-apple.xcframework.zip
-            release/libbox-android.aar.zip
+            release-assets/*
+          fail_on_unmatched_files: false
+          generate_release_notes: false
+
+      #
+      # 8.5. Also push to 'release' branch for backward compatibility
+      #
+      - name: Push to release branch
+        run: |
+          echo "=== Pushing to branch 'release' for backward compatibility ==="
+          cd publish
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "idontknow+github-actions[bot]@users.noreply.github.com"
+          git checkout -b release
+          git add .
+          git commit -m "Assets from ${{ env.BUILDTIME }} (tag: v${{ env.TAG_NAME }})"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin release
+
+      #
+      # 9. Purge jsdelivr CDN (optional)
+      #
+      - name: Purge jsdelivr CDN
+        run: |
+          echo "=== Purging jsDelivr cache for files in ./publish/ ==="
+          for file in $(find publish -type f); do
+            filename=$(basename "$file")
+            echo "Purging $filename..."
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${filename}"
+          done
+
+      #
+      # 10. Victory! (optional)
+      #
+      - name: Done
+        run: echo "All steps completed!"

@@ -1,6 +1,6 @@
 # Rule Singbox Mihomo
 
-> ⚡ **并行构建方案 (Ultra Fast Parallel Build)** - 同时生成适用于 **Sing-box** 和 **Mihomo** 的网络规则文件
+**Mihomo** 的网络规则文件
 
 ## 🚀 特色功能
 
@@ -40,7 +40,7 @@
 # GitHub Raw (稳定)
 https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/
 
-# jsDelivr CDN (国内加速)  
+# jsDelivr CDN (加速)  
 https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/
 ```
 
@@ -103,9 +103,9 @@ graph TD
 - 高质量规则集，适合移动设备和桌面端
 
 ### 🛡️ Mihomo 规则源  
-- **GFWList** (反审查规则)
-- **China Domains** (国内域名白名单)
-- **Google/Apple China** (特殊优化)
+- **GFWList** (中国大陆反审查规则)
+- **China Domains** (中国大陆域名白名单)
+- **Google/Apple China** (中国大陆特殊优化)
 - **v2fly/domain-list-community** (~30,000 规则)
 
 ## ⚡ 性能优势
@@ -131,13 +131,4 @@ graph TD
 
 MIT License - 自由使用和修改
 
----
-
-<div align="center">
-
-**🌟 如果这个项目对你有帮助，请点击 Star 支持一下！**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=proother/rule_singbox_mihomo&type=Date)](https://star-history.com/#proother/rule_singbox_mihomo&Date)
-
-</div>
 

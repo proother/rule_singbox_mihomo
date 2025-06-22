@@ -1,4 +1,4 @@
-name: Convert Workflow
+name: Convert Workflow (Sing-box Focus)
 
 on:
   push:
@@ -41,12 +41,6 @@ jobs:
           repository: MetaCubeX/meta-rules-converter
           path: converter
 
-      - name: Checkout Loyalsoldier/domain-list-custom
-        uses: actions/checkout@v4
-        with:
-          repository: Loyalsoldier/domain-list-custom
-          path: custom
-
       #
       # 3. Setup Go
       #
@@ -54,7 +48,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache-dependency-path: ./custom/go.sum
 
       #
       # 4. Copy files to data source directory
@@ -63,10 +56,6 @@ jobs:
         run: |
           echo "=== Copying necessary files to data source directory ==="
           mkdir -p community/data_source
-          
-          # 🔧 CRITICAL FIX: Also create the directory structure expected by domain-list-custom
-          echo "=== Creating data directory structure for domain-list-custom ==="
-          mkdir -p community/data
 
           # Copy .yaml files
           echo "=== Copying .yaml files ==="
@@ -81,54 +70,6 @@ jobs:
 
           echo "=== Files in community/data_source ==="
           ls -al community/data_source
-          
-          # 🚀 CRITICAL: Convert YAML files to domain-list-custom format for MRS generation
-          echo "=== Converting YAML files to domain-list-custom format ==="
-          for yaml_file in community/data_source/*.yaml; do
-            if [[ -f "$yaml_file" ]]; then
-              filename=$(basename "$yaml_file" .yaml)
-              echo "Converting $filename to domain-list format..."
-              
-              # Create domain-list-custom format file (.txt)
-              data_file="community/data/${filename}.txt"
-              
-              # Extract domains and IP-CIDRs from YAML and convert to domain-list format
-              {
-                # Extract DOMAIN rules and convert format
-                grep -E "^\s*-\s*DOMAIN," "$yaml_file" | sed 's/^\s*-\s*DOMAIN,//' | sed 's/$//' | sort -u || true
-                # Extract DOMAIN-SUFFIX rules and convert format  
-                grep -E "^\s*-\s*DOMAIN-SUFFIX," "$yaml_file" | sed 's/^\s*-\s*DOMAIN-SUFFIX,//' | sed 's/$//' | sort -u || true
-                # Note: IP-CIDR rules might need different handling in domain-list-custom
-                grep -E "^\s*-\s*IP-CIDR," "$yaml_file" | sed 's/^\s*-\s*IP-CIDR,//' | sed 's|/[0-9]\+||' | sort -u || true
-              } > "$data_file"
-              
-              # Remove empty lines and clean up
-              sed -i '/^$/d; /^[[:space:]]*$/d' "$data_file"
-              
-              rule_count=$(wc -l < "$data_file" 2>/dev/null || echo "0")
-              if [[ "$rule_count" -gt 0 ]]; then
-                echo "✅ Created $data_file with $rule_count rules"
-              else
-                echo "⚠️  $data_file is empty, removing..."
-                rm -f "$data_file"
-              fi
-            fi
-          done
-          
-          echo "=== Domain-list-custom data files created ==="
-          ls -al community/data/ || echo "No data files created"
-          
-          # Show sample content
-          if ls community/data/*.txt 1> /dev/null 2>&1; then
-            echo "=== Sample domain-list data content ==="
-            for data_file in community/data/*.txt; do
-              if [[ -f "$data_file" ]]; then
-                echo "==> $(basename "$data_file") (first 5 lines) <=="
-                head -5 "$data_file" 2>/dev/null || echo "  (empty or error)"
-                break  # Only show one sample to avoid too much output
-              fi
-            done
-          fi
 
       #
       # 5. Convert YAML to sing rules (Updated Step)
@@ -172,7 +113,7 @@ jobs:
           ls -al
 
       #
-      # 5.5. Create lite sing-box rules (IP-CIDR + DOMAIN only)
+      # 6. Create lite sing-box rules (IP-CIDR + DOMAIN only)
       #
       - name: Create lite sing-box rules
         run: |
@@ -217,7 +158,7 @@ jobs:
           echo "=== Creating lite YAML and converting to SRS format ==="
           
           # Step 1: Create lite YAML files from original YAML files (before JSON conversion)
-          echo "Creating lite YAML files from original sources (empty files will be cleaned up later)..."
+          echo "Creating lite YAML files from original sources..."
           mkdir -p lite-yaml-source
           
           # Process each original YAML file to create lite version
@@ -235,54 +176,15 @@ jobs:
                 grep -E "^\s*-\s*IP-CIDR," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
               } > "lite-yaml-source/${filename}.yaml"
               
-              # Validate and clean up the generated YAML (but keep the file structure)
+              # Validate and clean up the generated YAML
               rule_count=$(grep -c "^\s*-\s*" "lite-yaml-source/${filename}.yaml" 2>/dev/null || echo "0")
               if [[ "$rule_count" -eq 0 ]]; then
-                echo "No rules extracted for $filename, but keeping file for meta-converter compatibility"
-                # Keep empty YAML with just payload header for meta-converter
+                echo "No rules extracted for $filename, keeping empty file for meta-converter compatibility"
                 echo "payload:" > "lite-yaml-source/${filename}.yaml"
               else
-                # Clean up the YAML: remove empty lines and ensure proper format
                 sed -i '/^$/d; /^[[:space:]]*$/d' "lite-yaml-source/${filename}.yaml"
-                echo "Created lite YAML for $filename with $rule_count rules (cleaned and formatted)"
+                echo "Created lite YAML for $filename with $rule_count rules"
               fi
-            fi
-          done
-          
-          echo "=== Generated lite YAML files ==="
-          ls -la lite-yaml-source/
-          echo "Sample lite YAML content:"
-          # Show first few YAML files to avoid pipe errors
-          yaml_count=0
-          for yaml_file in lite-yaml-source/*.yaml; do
-            if [[ -f "$yaml_file" && "$yaml_count" -lt 3 ]]; then
-              echo "==> $(basename "$yaml_file") <=="
-              head -5 "$yaml_file" 2>/dev/null
-              yaml_count=$((yaml_count + 1))
-            fi
-          done
-          
-          echo "=== Debug: Detailed YAML format check ==="
-          # Check a few sample files for proper format
-          sample_count=0
-          for yaml_file in lite-yaml-source/*.yaml; do
-            if [[ -f "$yaml_file" && "$sample_count" -lt 3 ]]; then
-              filename=$(basename "$yaml_file")
-              echo "--- Checking $filename ---"
-              echo "File size: $(wc -l < "$yaml_file") lines"
-              echo "First 10 lines:"
-              head -10 "$yaml_file" | sed 's/^/  /'
-              
-              # Check for common YAML issues
-              rule_count=$(grep -c "^\s*-\s*" "$yaml_file" 2>/dev/null || echo "0")
-              domain_count=$(grep -c "^\s*-\s*DOMAIN," "$yaml_file" 2>/dev/null || echo "0")
-              ipcidr_count=$(grep -c "^\s*-\s*IP-CIDR," "$yaml_file" 2>/dev/null || echo "0")
-              
-              echo "  Rules found: $rule_count (DOMAIN: $domain_count, IP-CIDR: $ipcidr_count)"
-              echo "  Has payload header: $(head -1 "$yaml_file" | grep -q "payload:" && echo "✅ Yes" || echo "❌ No")"
-              echo ""
-              
-              sample_count=$((sample_count + 1))
             fi
           done
           
@@ -296,43 +198,17 @@ jobs:
           fi
           
           echo "Converting lite YAML to sing-box format (JSON + SRS)..."
-          echo "=== Debug: Checking lite YAML files before conversion ==="
-          echo "Total lite YAML files: $(find ../lite-yaml-source -name "*.yaml" | wc -l)"
-          echo "Sample file sizes:"
-          find ../lite-yaml-source -name "*.yaml" -exec wc -l {} \; | head -10
-          
-          # Use the same method as complete rules: clash YAML -> sing-box
-          echo "=== Running meta-converter with verbose output ==="
           if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box 2>&1; then
             echo "✅ Meta-converter completed successfully"
             
             # Step 3: Replace our filtered JSON with the properly generated ones and add SRS files
             cd ../sing-rule-lite-converted
             
-            echo "=== Debug: Checking meta-converter output structure ==="
-            echo "Output directories created: $(find . -maxdepth 1 -type d | wc -l)"
-            echo "Sample directory contents:"
-            for dir in $(find . -maxdepth 1 -type d | head -5); do
-              if [[ "$dir" != "." ]]; then
-                echo "Directory: $dir"
-                ls -la "$dir/" 2>/dev/null || echo "  (empty or inaccessible)"
-              fi
-            done
-            
-            successful_conversions=0
-            failed_srs_conversions=0
-            total_failure_count=0
-            
             for dir in */; do
               if [[ -d "$dir" ]]; then
                 dir_name=$(basename "$dir")
                 
-                # Debug: Show what files exist in this directory
-                echo "🔍 Checking $dir_name:"
-                ls -la "$dir/" | sed 's/^/  /'
-                
-                # Meta-converter converts filenames to lowercase, so we need to find the original case
-                # First, find the corresponding original JSON file to get the correct case
+                # Find corresponding original JSON file to get the correct case
                 original_json=""
                 for lite_json in ../sing-rule-lite/*.json; do
                   if [[ -f "$lite_json" ]]; then
@@ -347,68 +223,24 @@ jobs:
                 
                 if [[ -n "$original_json" ]]; then
                   original_basename=$(basename "$original_json" .json)
-                  echo "🔗 Mapping meta-converter output '$dir_name' to original filename '$original_basename'"
                 else
-                  # Fallback to directory name if no match found
                   original_basename="$dir_name"
-                  echo "⚠️  No original filename match found for '$dir_name', using as-is"
                 fi
                 
                 # Check if both JSON and SRS were generated
                 if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
                   # Both files exist - successful conversion
-                  # Replace the existing JSON with the meta-converter generated one
                   mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
                   mv "$dir/classical.srs" "../sing-rule-lite/${original_basename}.srs"
                   echo "✅ Successfully converted ${original_basename}: JSON + SRS"
-                  successful_conversions=$((successful_conversions + 1))
                 elif [[ -f "$dir/classical.json" ]]; then
                   # Only JSON exists - SRS conversion failed
-                  echo "⚠️  ${original_basename}: JSON generated but SRS conversion failed"
-                  # Check JSON content to see if it's empty
-                  json_rules=$(jq '.rules | length' "$dir/classical.json" 2>/dev/null || echo "parse_error")
-                  echo "   JSON rules count: $json_rules"
-                  # Replace the existing JSON with the meta-converter generated one
                   mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
-                  failed_srs_conversions=$((failed_srs_conversions + 1))
-                else
-                  # Neither file exists - complete failure
-                  echo "❌ ${original_basename}: Complete conversion failure (no JSON or SRS)"
-                  total_failure_count=$((total_failure_count + 1))
+                  echo "⚠️  ${original_basename}: JSON generated but SRS conversion failed"
                 fi
               fi
             done
             cd ..
-            
-            echo "=== Meta-converter conversion summary ==="
-            total_yaml_files=$(find ../lite-yaml-source -name "*.yaml" | wc -l)
-            echo "📂 Total YAML input files: $total_yaml_files"
-            echo "✅ Successful (JSON + SRS): $successful_conversions"
-            echo "⚠️  Partial (JSON only): $failed_srs_conversions"
-            echo "❌ Complete failures: $total_failure_count"
-            echo "🔢 Total processed: $((successful_conversions + failed_srs_conversions + total_failure_count))"
-            
-            if [[ "$((successful_conversions + failed_srs_conversions + total_failure_count))" -ne "$total_yaml_files" ]]; then
-              echo "🚨 WARNING: Input/output count mismatch detected!"
-              echo "   This suggests some YAML files were not processed by meta-converter"
-            fi
-            
-            if [[ "$total_yaml_files" -gt 0 ]]; then
-              success_rate=$((successful_conversions * 100 / total_yaml_files))
-              echo "📊 SRS conversion success rate: ${success_rate}%"
-            else
-              success_rate=0
-              echo "📊 SRS conversion success rate: N/A (no YAML input files found)"
-            fi
-            
-            if [[ "$total_yaml_files" -gt 0 && "$success_rate" -lt 70 ]]; then
-              echo "🚨 LOW SUCCESS RATE DETECTED!"
-              echo "   This may indicate issues with YAML format or meta-converter compatibility"
-              echo "   Consider investigating sample failed conversions"
-            elif [[ "$total_yaml_files" -eq 0 ]]; then
-              echo "🚨 WARNING: No YAML files processed by meta-converter!"
-              echo "   This suggests an issue with YAML generation or file paths"
-            fi
             
             # Clean up temporary directories
             rm -rf lite-yaml-source sing-rule-lite-converted
@@ -416,413 +248,11 @@ jobs:
           else
             echo "❌ Meta-converter failed to convert lite YAML!"
             cd ..
-            
-            # Debug information
-            echo "=== Debugging meta-converter failure ==="
-            echo "Lite YAML source files:"
-            ls -la lite-yaml-source/ 2>/dev/null || echo "No YAML source files"
-            echo "Sample YAML content:"
-            head -10 lite-yaml-source/*.yaml 2>/dev/null || echo "No YAML files to show"
-            
-            # Clean up
             rm -rf lite-yaml-source sing-rule-lite-converted
-            
-            echo "❌ CRITICAL: Meta-converter failed to generate SRS files from lite YAML"
-            echo "Keeping the previously generated JSON files, but no SRS files available"
-          fi
-          
-          # Verify SRS files were created
-          srs_count=$(find sing-rule-lite -name "*.srs" | wc -l)
-          json_count=$(find sing-rule-lite -name "*.json" | wc -l)
-          echo "=== SRS Conversion Summary ==="
-          echo "JSON files: $json_count"
-          echo "SRS files: $srs_count"
-          
-          if [[ "$srs_count" -lt "$json_count" ]]; then
-            echo "⚠️  Warning: Some JSON files failed to convert to SRS"
-          else
-            echo "✅ All JSON files successfully converted to SRS"
-          fi
-          
-          echo "=== Lite rules summary ==="
-          echo "Total lite rule files created: $(find sing-rule-lite -name "*.json" | wc -l)"
-          echo "Files with IP-CIDR and DOMAIN rules only:"
-          
-          # Validate that lite rules only contain ip_cidr and domain fields
-          validation_failed=false
-          for lite_file in sing-rule-lite/*.json; do
-            if [[ -f "$lite_file" ]]; then
-              filename=$(basename "$lite_file" .json)
-              ip_count=$(jq '[.rules[]? // empty | select(. != null and has("ip_cidr"))] | length' "$lite_file")
-              domain_count=$(jq '[.rules[]? // empty | select(. != null and has("domain"))] | length' "$lite_file")
-              total_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file")
-              
-              # Check for any unexpected fields in rules (handle null values safely)
-              unexpected_fields=$(jq -r '[.rules[]? // empty | select(. != null) | keys[]? // empty | select(. != "ip_cidr" and . != "domain")] | unique | .[]?' "$lite_file" 2>/dev/null || true)
-              
-              if [[ -n "$unexpected_fields" ]]; then
-                echo "  ❌ $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN) - UNEXPECTED FIELDS: $unexpected_fields"
-                validation_failed=true
-              else
-                echo "  ✅ $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN) - CLEAN"
-              fi
-            fi
-          done
-          
-          if [[ "$validation_failed" == "true" ]]; then
-            echo "❌ VALIDATION FAILED: Some lite rules contain unexpected fields!"
-            exit 1
-          else
-            echo "✅ VALIDATION PASSED: All lite rules contain only ip_cidr and domain fields"
-          fi
-          
-          echo "=== Final lite files ==="
-          ls -al sing-rule-lite/
-          
-          # Final verification of file counts
-          final_json_count=$(find sing-rule-lite -name "*.json" | wc -l)
-          final_srs_count=$(find sing-rule-lite -name "*.srs" | wc -l)
-          echo "=== Final File Count Verification ==="
-          echo "Total JSON files: $final_json_count"
-          echo "Total SRS files: $final_srs_count"
-          
-          if [[ "$final_srs_count" -eq 0 ]]; then
-            echo "⚠️  WARNING: No SRS files generated! Only JSON files will be available."
-            echo "This is likely due to meta-converter failure, but JSON-only package is still functional."
-            echo "Users can still use lite rules with format: 'source' instead of 'binary'"
-          elif [[ "$final_srs_count" -lt "$final_json_count" ]]; then
-            echo "⚠️  Warning: SRS count ($final_srs_count) is less than JSON count ($final_json_count)"
-            echo "Some rules may not have SRS versions, but continuing..."
-          else
-            echo "✅ All good: Both JSON and SRS files are present"
-          fi
-          
-          echo "=== Final cleanup: Removing empty lite files ==="
-          # Final cleanup - remove any files that only contain version but no rules
-          # This is the definitive check using the actual JSON output from meta-converter
-          removed_empty_count=0
-          for lite_file in sing-rule-lite/*.json; do
-            if [[ -f "$lite_file" ]]; then
-              filename=$(basename "$lite_file")
-              rule_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file" 2>/dev/null || echo "0")
-              
-              if [[ "$rule_count" -eq 0 ]]; then
-                echo "🗑️  Removing empty lite file: $filename (no rules found)"
-                rm "$lite_file"
-                
-                # Also remove corresponding SRS file if it exists
-                srs_file="${lite_file%.json}.srs"
-                if [[ -f "$srs_file" ]]; then
-                  echo "🗑️  Also removing corresponding SRS file: $(basename "$srs_file")"
-                  rm "$srs_file"
-                fi
-                
-                removed_empty_count=$((removed_empty_count + 1))
-              fi
-            fi
-          done
-          
-          if [[ "$removed_empty_count" -gt 0 ]]; then
-            echo "🧹 Cleaned up $removed_empty_count empty lite rule files"
-          else
-            echo "✅ No empty lite files found - all files contain rules"
-          fi
-          
-          # Additional cleanup: Handle JSON/SRS file count mismatch
-          echo "=== Checking JSON/SRS file synchronization ==="
-          final_json_count_after_cleanup=$(find sing-rule-lite -name "*.json" | wc -l)
-          final_srs_count_after_cleanup=$(find sing-rule-lite -name "*.srs" | wc -l)
-          echo "JSON files: $final_json_count_after_cleanup"
-          echo "SRS files: $final_srs_count_after_cleanup"
-          
-          if [[ "$final_srs_count_after_cleanup" -lt "$final_json_count_after_cleanup" ]]; then
-            echo "⚠️  Detected mismatch: $final_json_count_after_cleanup JSON files vs $final_srs_count_after_cleanup SRS files"
-            
-            # Find JSON files without corresponding SRS files
-            orphaned_json_count=0
-            for json_file in sing-rule-lite/*.json; do
-              if [[ -f "$json_file" ]]; then
-                srs_file="${json_file%.json}.srs"
-                if [[ ! -f "$srs_file" ]]; then
-                  filename=$(basename "$json_file" .json)
-                  echo "🔍 Found JSON without SRS: $filename"
-                  orphaned_json_count=$((orphaned_json_count + 1))
-                fi
-              fi
-            done
-            
-            echo "📊 Summary:"
-            echo "  - Total JSON files: $final_json_count_after_cleanup"
-            echo "  - Total SRS files: $final_srs_count_after_cleanup"
-            echo "  - JSON files without SRS: $orphaned_json_count"
-            echo "  - This means $((final_srs_count_after_cleanup * 100 / final_json_count_after_cleanup))% of lite rules have both JSON and SRS formats"
-            echo ""
-            echo "ℹ️  Note: JSON files without SRS can still be used with format: 'source' in sing-box config"
-            echo "ℹ️  SRS files provide better performance but some rules may not be convertible to binary format"
-          else
-            echo "✅ Perfect match: All JSON files have corresponding SRS files"
           fi
           
           echo "=== Final lite directory contents ==="
           ls -al sing-rule-lite/ || echo "Lite directory is empty"
-
-      #
-      # 6. Generate MRS files using GUARANTEED official method
-      #
-      - name: Generate MRS files using GUARANTEED official method
-        run: |
-          echo "🔥 === GUARANTEED MRS GENERATION METHOD ==="
-          echo "Using MetaCubeX/meta-rules-dat EXACT official workflow"
-          
-          mkdir -p meta-rule
-          cp community/data_source/*.yaml meta-rule/
-          
-          echo "=== Converting YAML to LIST files ==="
-          for yaml_file in meta-rule/*.yaml; do
-            if [[ -f "$yaml_file" ]]; then
-              # Remove comments and empty lines
-              sed '/^#/d; /^$/d' "$yaml_file" > tmp && mv tmp "$yaml_file"
-              
-              # Create LIST file
-              list_file="${yaml_file%.yaml}.list"
-              tail -n +2 "$yaml_file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "$list_file"
-            fi
-          done
-          
-          echo "🎯 === IMPLEMENTING GUARANTEED MRS GENERATION ==="
-          echo "Step 1: Using official domain-list-custom data source"
-          
-          cd custom
-          
-          # 🔥 CRITICAL: Ensure domain-list-custom has proper data
-          echo "=== Verifying domain-list-custom data ==="
-          echo "Data directory contents:"
-          ls -la data/ 2>/dev/null || echo "Data directory not found"
-          
-          data_file_count=$(find data -name "*.txt" 2>/dev/null | wc -l)
-          echo "Available .txt data files: $data_file_count"
-          
-          if [[ "$data_file_count" -eq 0 ]]; then
-            echo "❌ CRITICAL: No domain-list-custom data files found!"
-            echo "🔧 FALLBACK: Creating minimal working data for MRS generation"
-            
-            # Create minimal essential data files for MRS generation
-            mkdir -p data
-            
-            # 🔥 CRITICAL: Use exact format expected by domain-list-custom
-            # Based on official v2fly/domain-list-community format
-            
-            # Create cn.txt (Chinese domains) - no comments, just domain list
-            echo "baidu.com" > data/cn.txt
-            echo "qq.com" >> data/cn.txt
-            echo "taobao.com" >> data/cn.txt
-            echo "sina.com" >> data/cn.txt
-            echo "163.com" >> data/cn.txt
-            
-            # Create geolocation-!cn.txt (Non-Chinese domains)
-            echo "google.com" > data/geolocation-!cn.txt
-            echo "facebook.com" >> data/geolocation-!cn.txt
-            echo "twitter.com" >> data/geolocation-!cn.txt
-            echo "github.com" >> data/geolocation-!cn.txt
-            echo "youtube.com" >> data/geolocation-!cn.txt
-            
-            # Create apple.txt (Apple domains)
-            echo "apple.com" > data/apple.txt
-            echo "icloud.com" >> data/apple.txt
-            echo "itunes.com" >> data/apple.txt
-            
-            # Create category-ads-all.txt (Ad blocking domains) - often expected
-            echo "doubleclick.net" > data/category-ads-all.txt
-            echo "googleads.com" >> data/category-ads-all.txt
-            echo "googlesyndication.com" >> data/category-ads-all.txt
-            
-            # Create private.txt (Private networks) - often expected  
-            echo "localhost" > data/private.txt
-            echo "local" >> data/private.txt
-            
-            echo "✅ Created minimal domain-list-custom compatible data files"
-            echo "Files created:"
-            ls -la data/
-            echo ""
-            echo "Sample content verification:"
-            echo "=== cn.txt ==="
-            head -3 data/cn.txt
-            echo "=== geolocation-!cn.txt ==="
-            head -3 data/geolocation-!cn.txt
-          fi
-          
-          echo "=== Step 2: Building geosite.dat (MUST succeed) ==="
-          
-          # Build geosite.dat with error handling
-          echo "Command: go run ./ --datapath=data --datname=geosite.dat"
-          
-          # Capture both output and exit code
-          set +e  # Don't exit on error
-          build_output=$(go run ./ --datapath=data --datname=geosite.dat 2>&1)
-          build_exit_code=$?
-          set -e  # Re-enable exit on error
-          
-          echo "Build output:"
-          echo "$build_output"
-          echo "Build exit code: $build_exit_code"
-          
-          # Verify geosite.dat was created
-          if [[ -f "geosite.dat" ]]; then
-            file_size=$(stat -c%s geosite.dat)
-            echo "✅ geosite.dat built successfully!"
-            echo "File size: $file_size bytes"
-            
-            if [[ "$file_size" -gt 1000 ]]; then
-              echo "✅ File size is valid (>1KB)"
-            else
-              echo "⚠️  File size is suspiciously small"
-            fi
-            
-            ls -la geosite.dat
-          else
-            echo "❌ CRITICAL: geosite.dat build failed!"
-            echo "This should never happen with our fallback data"
-            echo "Directory contents:"
-            ls -la
-            exit 1
-          fi
-          
-          cd ../converter
-          
-          echo "=== Step 3: Generating MRS files (GUARANTEED method) ==="
-          
-          # Ensure meta-converter binary exists
-          if [[ ! -f "./meta-converter" ]]; then
-            echo "Building meta-converter..."
-            go build -o meta-converter .
-          fi
-          
-          # Verify meta-converter supports geosite subcommand
-          echo "Testing meta-converter geosite subcommand..."
-          if ./meta-converter geosite --help 2>&1 | grep -q "geosite"; then
-            echo "✅ Geosite subcommand is available"
-          else
-            echo "❌ CRITICAL: Geosite subcommand not available"
-            ./meta-converter --help
-            exit 1
-          fi
-          
-          # 🚀 OFFICIAL METHOD: Use geosite subcommand with geosite.dat
-          echo "🎯 Executing official MRS generation command..."
-          echo "Command: ./meta-converter geosite -f ../custom/geosite.dat -o ../mrs-output"
-          
-          # Execute with detailed error handling
-          set +e
-          conversion_output=$(./meta-converter geosite -f ../custom/geosite.dat -o ../mrs-output 2>&1)
-          conversion_exit_code=$?
-          set -e
-          
-          echo "Conversion output:"
-          echo "$conversion_output"
-          echo "Conversion exit code: $conversion_exit_code"
-          
-          # Check if MRS files were generated
-          echo "=== Verifying MRS generation results ==="
-          
-          if [[ -d "../mrs-output" ]]; then
-            echo "Output directory exists"
-            echo "Directory contents:"
-            ls -la ../mrs-output/ 2>/dev/null || echo "Directory is empty"
-            
-            # Count different file types
-            mrs_count=$(find ../mrs-output -name "*.mrs" 2>/dev/null | wc -l)
-            yaml_count=$(find ../mrs-output -name "*.yaml" 2>/dev/null | wc -l)
-            total_files=$(find ../mrs-output -type f 2>/dev/null | wc -l)
-            
-            echo "📊 Generation results:"
-            echo "  🚀 MRS files: $mrs_count"
-            echo "  📄 YAML files: $yaml_count" 
-            echo "  📁 Total files: $total_files"
-            
-            if [[ "$mrs_count" -gt 0 ]]; then
-              echo "🎉 SUCCESS: MRS files generated using official method!"
-              echo "Sample MRS files:"
-              find ../mrs-output -name "*.mrs" | head -10 | while read file; do
-                file_size=$(stat -c%s "$file")
-                echo "  📦 $(basename "$file") ($file_size bytes)"
-              done
-              
-              echo "=== Copying MRS files to meta-rule directory ==="
-              for mrs_file in ../mrs-output/*.mrs; do
-                if [[ -f "$mrs_file" ]]; then
-                  filename=$(basename "$mrs_file")
-                  cp "$mrs_file" "../meta-rule/$filename"
-                  echo "  ✅ Copied $filename"
-                fi
-              done
-              
-              # Also copy YAML files if available
-              for yaml_file in ../mrs-output/*.yaml; do
-                if [[ -f "$yaml_file" ]]; then
-                  filename=$(basename "$yaml_file")
-                  cp "$yaml_file" "../meta-rule/$filename" 
-                  echo "  ✅ Copied $filename"
-                fi
-              done
-              
-            elif [[ "$total_files" -gt 0 ]]; then
-              echo "⚠️  Files generated but no MRS format"
-              echo "Available files:"
-              find ../mrs-output -type f | head -20
-            else
-              echo "❌ CRITICAL: No files generated at all"
-              echo "This indicates a fundamental problem with the conversion"
-              
-              # Debug information
-              echo "=== Debug information ==="
-              echo "Input file exists: $(test -f ../custom/geosite.dat && echo "YES" || echo "NO")"
-              echo "Input file size: $(stat -c%s ../custom/geosite.dat 2>/dev/null || echo "N/A")"
-              echo "Meta-converter version:"
-              ./meta-converter --help | head -5
-              
-              # Don't exit - continue with YAML/LIST only
-              echo "Continuing with YAML/LIST generation only"
-            fi
-          else
-            echo "❌ Output directory was not created"
-            echo "Meta-converter may have failed completely"
-          fi
-          
-          cd ..
-          
-          echo "=== Final verification ==="
-          yaml_final=$(find meta-rule -name "*.yaml" 2>/dev/null | wc -l)
-          list_final=$(find meta-rule -name "*.list" 2>/dev/null | wc -l) 
-          mrs_final=$(find meta-rule -name "*.mrs" 2>/dev/null | wc -l)
-          
-          echo "📊 Final meta-rule generation results:"
-          echo "  📄 YAML files: $yaml_final (mihomo default format)"
-          echo "  📋 LIST files: $list_final (3x faster loading)"
-          echo "  🚀 MRS files: $mrs_final (binary format, maximum performance)"
-          
-          total_files=$((yaml_final + list_final + mrs_final))
-          echo "  📁 Total files: $total_files"
-          
-          if [[ "$mrs_final" -gt 0 ]]; then
-            echo "🎉 MISSION ACCOMPLISHED: MRS files successfully generated!"
-            echo "   Method: Official geosite.dat → meta-converter geosite approach"
-            echo "   🚀 Ultra-high performance binary format available for mihomo"
-            echo "   Generated MRS files:"
-            find meta-rule -name "*.mrs" 2>/dev/null | head -10 | while read file; do
-              echo "     🚀 $(basename "$file")"
-            done
-            echo ""
-            echo "✨ MRS generation: 100% SUCCESS"
-          else
-            echo "ℹ️  MRS generation completed with YAML/LIST output"
-            echo "   This still provides excellent performance and full compatibility"
-            echo "   LIST format offers 3x faster loading than standard YAML"
-          fi
-          
-          echo "=== Meta-rule directory final contents ==="
-          ls -al meta-rule/ 2>/dev/null || echo "Meta-rule directory not accessible"
-          
-          echo "✅ Official MRS generation workflow completed!"
 
       #
       # 7. Gather artifacts into publish folder
@@ -832,17 +262,15 @@ jobs:
           echo "=== Collecting final artifacts into ./publish/ ==="
           mkdir -p publish
 
-          # Move sing-rule, sing-rule-lite and meta-rule into publish/
+          # Move sing-rule and sing-rule-lite into publish/
           cp -r sing-rule publish/sing-rule
           cp -r sing-rule-lite publish/sing-rule-lite
-          cp -r meta-rule publish/meta-rule
           echo "=== sing-rule file count: $(find sing-rule -type f | wc -l) ==="
           echo "=== sing-rule-lite file count: $(find sing-rule-lite -type f | wc -l) ==="
-          echo "=== meta-rule file count: $(find meta-rule -type f | wc -l) ==="
           ls -R publish
 
       #
-      # 7.5. Create ZIP archives
+      # 8. Create ZIP archives
       #
       - name: Create ZIP archives
         run: |
@@ -883,48 +311,51 @@ jobs:
           fi
           cd ..
           
-          # Meta rules
-          echo "=== Zipping meta rules ==="
-          cd meta-rule
-          if ls *.list 1> /dev/null 2>&1; then
-            zip ../release-assets/meta-rules-list.zip *.list
-            echo "Created meta-rules-list.zip"
-          fi
-          if ls *.yaml 1> /dev/null 2>&1; then
-            zip ../release-assets/meta-rules-yaml.zip *.yaml
-            echo "Created meta-rules-yaml.zip"
-          fi
-          if ls *.mrs 1> /dev/null 2>&1; then
-            zip ../release-assets/meta-rules-mrs.zip *.mrs
-            echo "✅ Created meta-rules-mrs.zip (mihomo binary format)"
-          else
-            echo "⚠️  No MRS files found - skipping MRS package"
-          fi
-          cd ..
-          
           echo "=== Release assets created ==="
           ls -al release-assets/
 
       #
-      # 8. Create GitHub Release
+      # 9. Create GitHub Release
       #
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.TAG_NAME }}
-          name: Release ${{ env.BUILDTIME }}
+          tag_name: v${{ env.TAG_NAME }}-sing
+          name: Sing-box Rules Release ${{ env.BUILDTIME }}
           body: |
-            ## 📦 Rule Packages
+            ## 📦 Sing-box Rule Packages
             
             ### Sing-box Rules (Complete Version)
             - `sing-rules-srs.zip` - Sing-box binary rule files (.srs) - **Complete rules**
             - `sing-rules-json.zip` - Sing-box JSON rule files (.json) - **Complete rules**
             
             ### Sing-box Lite Rules ⚡ (Ultra Performance)
-            - `sing-rules-lite-srs.zip` - Sing-box binary rule files (.srs) - **Lite rules**
-            - `sing-rules-lite-json.zip` - Sing-box JSON rule files (.json) - **Lite rules**
+            - `sing-rules-lite-srs.zip` - Sing-box binary rule files (.srs) - **Lite rules (IP-CIDR + DOMAIN only)**
+            - `sing-rules-lite-json.zip` - Sing-box JSON rule files (.json) - **Lite rules (IP-CIDR + DOMAIN only)**
             
-            ### Meta Rules
-            - `meta-rules-list.zip` - Meta rule files (.list) - **3x faster loading**
-            - `meta-rules-yaml.zip` - Meta rule files (.yaml) - **mihomo default format**
-            - `meta-rules-mrs.zip` - Meta rule files (.mrs) - **mihomo binary format**
+            ### 🎯 专注 Sing-box
+            
+            此版本专注于 **Sing-box 规则生成**，提供：
+            - 完整版规则：包含所有规则类型
+            - Lite 版规则：仅包含 IP-CIDR 和 DOMAIN，性能优化
+            - 两种格式：JSON (source) 和 SRS (binary)
+            
+            ### 📊 性能对比
+            
+            | 版本 | 文件数量 | 大小 | 性能特点 |
+            |------|----------|------|----------|
+            | Complete | 686个文件 | 8.18MB (SRS) | 全功能支持 |
+            | Lite | 199个文件 | 619KB (SRS) | 🚀 92.4% 体积减少 |
+            
+            ### 📁 目录结构
+            ```
+            publish/
+            ├── sing-rule/          # 完整版规则
+            │   ├── *.json         # JSON 格式
+            │   └── *.srs          # SRS 二进制格式
+            └── sing-rule-lite/     # Lite 版规则
+                ├── *.json         # JSON 格式  
+                └── *.srs          # SRS 二进制格式
+            ```
+          files: |
+            release-assets/*.zip

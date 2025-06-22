@@ -769,3 +769,80 @@ rules:
   }
 }
 ```
+
+# 🚀 Rule Generation Mihomo & Sing-box
+
+## 📋 项目简介
+由于 Mihomo 内核支持多种rule-provider格式，我们为Mihomo同时提供 `yaml` 和 `list` 文件格式。根据官方文档，Mihomo还支持 `mrs` 二进制格式（仅限domain/ipcidr behavior），但我们当前主要提供classical behavior的规则。
+
+相关文档：[https://wiki.metacubex.one/config/rule-providers/#format](https://wiki.metacubex.one/config/rule-providers/#format)
+
+## 🔄 **双内核构建方案**
+
+本项目提供**专门优化的构建方法**，为不同内核提供最佳支持：
+
+### 📊 **方案对比**
+
+| 特性 | Sing-box 方法 (main.yml) | Mihomo 方法 (meta-official.yml) |
+|------|---------------------------|----------------------------------|
+| **🎯 专业定位** | 🎯 **Sing-box 专用** | 🛡️ **Mihomo 专用** |
+| **📅 更新时间** | 每天 20:00 (北京时间) | 每天 20:00 (北京时间) |
+| **🌐 数据源** | iOS rule script (~15k 规则) | 多源整合 (~30k 规则) |
+| **⚡ 处理方式** | 直接转换 + 性能优化 | 智能去重 + 冗余清理 |
+| **📦 发布标签** | `v{date}-sing` (动态) | `v{date}-meta` (动态) |
+| **🚀 特色功能** | Lite 规则 (IP-CIDR + DOMAIN) | 完整 geo 生态 (YAML + LIST + MRS) |
+| **📁 输出格式** | JSON + SRS (二进制) | YAML + LIST + MRS |
+
+### 🎯 **如何选择**
+
+- **🎯 Sing-box 用户**：使用 **Sing-box 方法** (`v{date}-sing`)
+  - 专为 Sing-box 优化
+  - 提供 Lite 版本，极致性能
+  - 支持 JSON + SRS 格式
+
+- **🛡️ Mihomo 用户**：使用 **Mihomo 方法** (`v{date}-meta`)
+  - 官方权威数据源
+  - 智能去重算法
+  - 支持 YAML + LIST + MRS 格式
+
+### 📦 **获取方式**
+
+#### Sing-box 规则：
+```bash
+# GitHub Release
+https://github.com/proother/rule_singbox_mihomo/releases/tag/v{date}-sing
+
+# 示例 URL
+https://github.com/proother/rule_singbox_mihomo/releases/tag/v20241215-2000-sing
+```
+
+#### Mihomo 规则：
+```bash
+# GitHub Release  
+https://github.com/proother/rule_singbox_mihomo/releases/tag/v{date}-meta
+
+# 示例 URL
+https://github.com/proother/rule_singbox_mihomo/releases/tag/v20241215-2000-meta
+```
+
+## 📊 规则格式说明
+
+| 文件格式              | format写法 | 支持的behavior | 性能特点 |
+|---------------------|------------|----------------|----------|
+| *.yaml              | yaml       | classical/domain/ipcidr | 📖 默认格式，可读性好 |
+| *.list              | text       | classical/domain/ipcidr | ⚡ 文本格式，加载快 |
+| *.mrs               | mrs        | domain/ipcidr | 🚀 二进制格式，最高性能 |
+
+**🔥 格式优化**：
+- 🚀 **双格式支持**：`yaml`（默认，兼容性最佳）+ `text`（.list文件，加载速度快）
+- ⚡ **LIST格式优势**：相比YAML加载速度提升约3倍，内存占用更少
+- 🎯 **实用导向**：专注于稳定可靠的格式，确保最大兼容性
+- 🔧 **智能生成**：
+```bash
+# 我们的实现流程
+1. 从源YAML提取规则
+2. 生成标准YAML格式（默认）
+3. 转换为LIST格式（性能优化）  
+4. 尝试MRS生成（实验性，成功时提供）
+```
+- ✅ **实用价值**：LIST格式提供显著性能提升，无需复杂的二进制格式

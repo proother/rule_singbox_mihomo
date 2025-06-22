@@ -49,23 +49,49 @@ jobs:
       - name: Prepare data source
         run: |
           echo "🎯 GENERATING SING-BOX RULES"
+          echo "📁 Scanning iOS rule script directories..."
           mkdir -p community/data_source
+          total_dirs=0
+          copied_files=0
+          
           for dir in $(find ios_rule_script/rule/Clash -type d); do
+            total_dirs=$((total_dirs + 1))
             if ls "$dir"/*_Classical.yaml 2>/dev/null; then
-              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
+              classical_files=$(find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml')
+              for file in $classical_files; do
+                cp "$file" community/data_source/
+                copied_files=$((copied_files + 1))
+                echo "📄 Copied: $(basename "$file")"
+              done
             else
               dir_name=$(basename "$dir")
-              find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
+              target_file=$(find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -print -quit)
+              if [[ -n "$target_file" ]]; then
+                cp "$target_file" community/data_source/
+                copied_files=$((copied_files + 1))
+                echo "📄 Copied: $(basename "$target_file")"
+              fi
             fi
           done
-          echo "Files copied: $(ls community/data_source | wc -l)"
+          
+          echo "✅ Data source preparation complete:"
+          echo "   📂 Scanned directories: $total_dirs"
+          echo "   📄 Files copied: $copied_files"
+          echo "   📋 Final count: $(ls community/data_source | wc -l) files"
 
       - name: Convert to sing rules
         run: |
+          echo "🔄 Converting YAML rules to Sing-box format..."
           mkdir -p sing-rule
           cd converter && go build -o meta-converter .
+          echo "✅ Meta-converter built successfully"
+          
+          echo "🎯 Starting conversion process..."
           ./meta-converter clash -f ../community/data_source -o ../sing-rule -t sing-box
+          
+          echo "📝 Processing converted files..."
           cd ../sing-rule
+          processed_count=0
           for dir in */; do
             dir_name=$(basename "$dir")
             if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
@@ -74,34 +100,48 @@ jobs:
                 original_name=$(basename "$original_yaml" .yaml)
                 mv "$dir/classical.json" "${original_name}.json"
                 mv "$dir/classical.srs" "${original_name}.srs"
+                echo "✅ Processed: ${original_name} (.json + .srs)"
               else
                 mv "$dir/classical.json" "${dir_name}.json"
                 mv "$dir/classical.srs" "${dir_name}.srs"
+                echo "✅ Processed: ${dir_name} (.json + .srs)"
               fi
+              processed_count=$((processed_count + 1))
             fi
             rm -rf "$dir"
           done
-          echo "Generated files: $(ls *.json *.srs 2>/dev/null | wc -l)"
+          
+          echo "🎉 Conversion complete:"
+          echo "   📄 Processed rules: $processed_count"
+          echo "   📊 Generated files: $(ls *.json *.srs 2>/dev/null | wc -l)"
 
       - name: Create lite rules with cleanup
         run: |
+          echo "🔧 Creating Lite rules (IP-CIDR + DOMAIN only)..."
           mkdir -p sing-rule-lite
           sudo apt-get update && sudo apt-get install -y jq
           
-          # Create lite JSON rules
+          echo "📝 Step 1: Creating lite JSON rules..."
+          lite_json_count=0
           for json_file in sing-rule/*.json; do
             if [[ -f "$json_file" ]]; then
               filename=$(basename "$json_file" .json)
+              echo "   Processing: $filename"
               jq '{version: .version, rules: [.rules[] | with_entries(select(.key == "ip_cidr" or .key == "domain")) | select(keys | length > 0)]}' "$json_file" > "sing-rule-lite/${filename}.json"
               rule_count=$(jq '.rules | if . == null then 0 else length end' "sing-rule-lite/${filename}.json")
               if [[ "$rule_count" -eq 0 ]]; then
+                echo "   ❌ Removed empty: $filename (0 rules)"
                 rm "sing-rule-lite/${filename}.json"
+              else
+                echo "   ✅ Created: $filename ($rule_count rules)"
+                lite_json_count=$((lite_json_count + 1))
               fi
             fi
           done
           
-          # Convert to SRS using meta-converter
+          echo "📝 Step 2: Preparing YAML sources for SRS conversion..."
           mkdir -p lite-yaml-source
+          yaml_count=0
           for yaml_file in community/data_source/*.yaml; do
             if [[ -f "$yaml_file" ]]; then
               filename=$(basename "$yaml_file" .yaml)
@@ -114,12 +154,16 @@ jobs:
               if [[ "$rule_count" -eq 0 ]]; then
                 echo "payload:" > "lite-yaml-source/${filename}.yaml"
               fi
+              yaml_count=$((yaml_count + 1))
             fi
           done
           
+          echo "📝 Step 3: Converting lite YAML to SRS..."
           cd converter
           if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box 2>&1; then
+            echo "✅ SRS conversion successful"
             cd ../sing-rule-lite-converted
+            srs_count=0
             for dir in */; do
               if [[ -d "$dir" ]]; then
                 dir_name=$(basename "$dir")
@@ -131,6 +175,8 @@ jobs:
                       if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
                         mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
                         mv "$dir/classical.srs" "../sing-rule-lite/${original_basename}.srs"
+                        echo "   ✅ SRS created: $original_basename"
+                        srs_count=$((srs_count + 1))
                       elif [[ -f "$dir/classical.json" ]]; then
                         mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
                       fi
@@ -141,22 +187,32 @@ jobs:
               fi
             done
             cd ..
+          else
+            echo "⚠️ SRS conversion failed, continuing with JSON only"
           fi
           rm -rf lite-yaml-source sing-rule-lite-converted
           
-          # Final cleanup - remove empty files
+          echo "📝 Step 4: Final cleanup - removing empty files..."
+          cleaned_count=0
           for lite_file in sing-rule-lite/*.json; do
             if [[ -f "$lite_file" ]]; then
               rule_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file" 2>/dev/null || echo "0")
               if [[ "$rule_count" -eq 0 ]]; then
+                echo "   🗑️ Cleaned: $(basename "$lite_file") (empty)"
                 rm "$lite_file"
                 srs_file="${lite_file%.json}.srs"
                 [[ -f "$srs_file" ]] && rm "$srs_file"
+                cleaned_count=$((cleaned_count + 1))
               fi
             fi
           done
           
-          echo "Lite files generated: $(ls sing-rule-lite/*.json sing-rule-lite/*.srs 2>/dev/null | wc -l)"
+          echo "🎉 Lite rules creation complete:"
+          echo "   📄 Lite JSON files: $lite_json_count"
+          echo "   📄 YAML sources: $yaml_count"
+          echo "   📄 SRS files: $srs_count"
+          echo "   🗑️ Cleaned empty: $cleaned_count"
+          echo "   📊 Final count: $(ls sing-rule-lite/*.json sing-rule-lite/*.srs 2>/dev/null | wc -l) files"
 
       - name: Upload sing-box artifacts
         uses: actions/upload-artifact@v4
@@ -213,60 +269,163 @@ jobs:
       - name: Process domain lists
         run: |
           echo "🛡️ GENERATING MIHOMO RULES"
+          
+          echo "📥 Step 1: Downloading GFWList..."
           cd gfwlist2dnsmasq && chmod +x ./gfwlist2dnsmasq.sh && ./gfwlist2dnsmasq.sh -l -o ./temp-gfwlist.txt && cd ..
+          gfw_count=$(wc -l < ./gfwlist2dnsmasq/temp-gfwlist.txt)
+          echo "✅ GFWList downloaded: $gfw_count domains"
+          
+          echo "📥 Step 2: Downloading China domains..."
           curl -sSL ${CHINA_DOMAINS_URL} | sed '/^\s*#/d' | sed '/^[^\.]/ s/^/full:/' | sed 's/^\.\([^.]*\)/\1/' > temp-direct.txt
+          china_count=$(wc -l < temp-direct.txt)
+          echo "✅ China domains downloaded: $china_count domains"
+          
+          echo "📥 Step 3: Processing proxy domains..."
           cat ./gfwlist2dnsmasq/temp-gfwlist.txt | perl -ne '/^((?=^.{3,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})+)/ && print "$1\n"' > temp-proxy.txt
+          proxy_initial=$(wc -l < temp-proxy.txt)
+          
+          echo "📥 Step 4: Adding Google domains..."
           curl -sSL $GOOGLE_DOMAINS_URL | perl -ne '/^server=\/([^\/]+)\// && print "$1\n"' >> temp-proxy.txt
+          proxy_google=$(wc -l < temp-proxy.txt)
+          google_added=$((proxy_google - proxy_initial))
+          
+          echo "📥 Step 5: Adding Apple domains..."
           curl -sSL $APPLE_DOMAINS_URL | perl -ne '/^server=\/([^\/]+)\// && print "$1\n"' >> temp-proxy.txt
+          proxy_apple=$(wc -l < temp-proxy.txt)
+          apple_added=$((proxy_apple - proxy_google))
+          
+          echo "📥 Step 6: Adding custom proxy domains..."
           curl -sSL ${CUSTOM_PROXY} | grep -Ev ":@cn" | perl -ne '/^(domain):([^:]+)(\n$|:@.+)/ && print "$2\n"' >> temp-proxy.txt
-          echo "Domain lists processed: direct=$(wc -l < temp-direct.txt), proxy=$(wc -l < temp-proxy.txt)"
+          proxy_final=$(wc -l < temp-proxy.txt)
+          custom_added=$((proxy_final - proxy_apple))
+          
+          echo "📊 Domain collection summary:"
+          echo "   📋 GFWList: $gfw_count domains"
+          echo "   🇨🇳 China: $china_count domains" 
+          echo "   🔍 Google: +$google_added domains"
+          echo "   🍎 Apple: +$apple_added domains"
+          echo "   🌐 Custom: +$custom_added domains"
+          echo "   📈 Total Direct: $china_count"
+          echo "   📈 Total Proxy: $proxy_final"
 
       - name: Remove redundant domains
         run: |
+          echo "🔧 Starting domain deduplication (this may take 2-3 minutes)..."
+          
           cat > remove_redundant.py << 'EOF'
           import sys
+          import time
+          print(f"🐍 Python deduplication script started...")
+          start_time = time.time()
+          
           domains = set()
           with open(sys.argv[1], 'r') as f:
               for line in f:
                   domain = line.strip()
                   if domain: domains.add(domain)
+          
+          print(f"📊 Loaded {len(domains)} unique domains")
+          print("🔍 Searching for redundant subdomains...")
+          
           redundant = set()
           domain_list = sorted(domains)
+          total = len(domain_list)
+          processed = 0
+          
           for i, domain in enumerate(domain_list):
+              if i % 1000 == 0:
+                  progress = (i / total) * 100
+                  print(f"   Progress: {progress:.1f}% ({i}/{total})")
+              
               for j, other_domain in enumerate(domain_list):
                   if i != j and domain.endswith('.' + other_domain):
                       redundant.add(domain)
+              processed += 1
+          
           final_domains = domains - redundant
           with open(sys.argv[2], 'w') as f:
               for domain in sorted(final_domains):
                   f.write(domain + '\n')
+          
+          elapsed = time.time() - start_time
+          print(f"✅ Deduplication complete in {elapsed:.1f}s")
+          print(f"   Original: {len(domains)} domains")
+          print(f"   Redundant: {len(redundant)} domains")
+          print(f"   Final: {len(final_domains)} domains")
           EOF
           
+          echo "📝 Step 1: Sorting and initial dedup..."
           cat temp-proxy.txt | sort --ignore-case -u > proxy-list-raw.txt
           cat temp-direct.txt | sort --ignore-case -u > direct-list-raw.txt
+          proxy_raw=$(wc -l < proxy-list-raw.txt)
+          direct_raw=$(wc -l < direct-list-raw.txt)
+          echo "   Proxy (after sort): $proxy_raw domains"
+          echo "   Direct (after sort): $direct_raw domains"
+          
+          echo "📝 Step 2: Advanced redundancy removal for proxy domains..."
           python remove_redundant.py proxy-list-raw.txt proxy-list-clean.txt
+          proxy_clean=$(wc -l < proxy-list-clean.txt)
+          
+          echo "📝 Step 3: Advanced redundancy removal for direct domains..."
           python remove_redundant.py direct-list-raw.txt direct-list-clean.txt
+          direct_clean=$(wc -l < direct-list-clean.txt)
+          
+          echo "📝 Step 4: Final processing and validation..."
           cat proxy-list-clean.txt | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' | perl -ne 'print if not /\.cn$/' > ./community/data/geolocation-!cn
           cat direct-list-clean.txt | grep -v google | grep -v manhua | grep -v ooklaserver | grep -v "acg.rip" | sort --ignore-case -u | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' > ./community/data/cn
-          echo "After dedup: cn=$(wc -l < ./community/data/cn), proxy=$(wc -l < ./community/data/geolocation-!cn)"
+          
+          proxy_final=$(wc -l < ./community/data/geolocation-!cn)
+          direct_final=$(wc -l < ./community/data/cn)
+          
+          echo "🎉 Deduplication summary:"
+          echo "   🔍 Proxy: $proxy_raw → $proxy_clean → $proxy_final (final)"
+          echo "   🇨🇳 Direct: $direct_raw → $direct_clean → $direct_final (final)"
+          echo "   💾 Proxy saved: $((proxy_raw - proxy_final)) domains"
+          echo "   💾 Direct saved: $((direct_raw - direct_final)) domains"
 
       - name: Build and convert geosite
         run: |
+          echo "🏗️ Building geosite database..."
           cd custom && echo ipleak.net >> ../community/data/geolocation-!cn && echo browserleaks.org >> ../community/data/geolocation-!cn
-          go run ./ --datapath=../community/data && cd ../converter && go build -o meta-converter .
+          
+          echo "📝 Step 1: Building geosite.dat..."
+          go run ./ --datapath=../community/data
+          geosite_size=$(du -h publish/geosite.dat | cut -f1)
+          echo "✅ geosite.dat built: $geosite_size"
+          
+          echo "📝 Step 2: Building meta-converter..."
+          cd ../converter && go build -o meta-converter .
+          echo "✅ meta-converter built"
+          
+          echo "📝 Step 3: Converting geosite to meta rules..."
           mkdir -p ../meta-rule
           ./meta-converter geosite -f ../custom/publish/geosite.dat -o ../meta-rule-temp
+          
+          echo "📝 Step 4: Processing converted rules..."
+          yaml_count=0
+          list_count=0
           for yaml_dir in ../meta-rule-temp/*/; do
             if [[ -d "$yaml_dir" ]]; then
               dir_name=$(basename "$yaml_dir")
               if [[ -f "$yaml_dir/classical.yaml" ]]; then
                 mv "$yaml_dir/classical.yaml" "../meta-rule/${dir_name}.yaml"
+                yaml_count=$((yaml_count + 1))
+                
+                # Create LIST format
                 tail -n +2 "../meta-rule/${dir_name}.yaml" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "../meta-rule/${dir_name}.list"
+                list_count=$((list_count + 1))
+                
+                rule_count=$(tail -n +2 "../meta-rule/${dir_name}.yaml" | wc -l)
+                echo "   ✅ $dir_name: $rule_count rules (YAML + LIST)"
               fi
             fi
           done
           rm -rf ../meta-rule-temp
-          echo "Meta rules generated: $(ls ../meta-rule/*.yaml ../meta-rule/*.list 2>/dev/null | wc -l)"
+          
+          echo "🎉 Geosite conversion complete:"
+          echo "   📄 YAML files: $yaml_count"
+          echo "   📄 LIST files: $list_count"
+          echo "   📊 Total files: $(ls ../meta-rule/*.yaml ../meta-rule/*.list 2>/dev/null | wc -l)"
 
       - name: Upload mihomo artifacts
         uses: actions/upload-artifact@v4

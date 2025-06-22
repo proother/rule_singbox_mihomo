@@ -54,10 +54,10 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/
 ### Sing-box 配置示例
 ```json
 {
-  "rule_set": [
-    {
+    "rule_set": [
+      {
       "tag": "geosite-cn",
-      "type": "remote",
+        "type": "remote",
       "format": "binary",
       "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/cn.srs"
     }

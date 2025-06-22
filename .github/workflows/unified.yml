@@ -388,11 +388,11 @@ jobs:
           cp -r sing-rule-lite publish/sing-rule-lite
           
           # 检查meta-rule目录结构并适配
-          if [ -d "meta-rule/geo/geosite" ]; then
+          if [ -d "geo/geosite" ]; then
             echo "🔧 Detected official nested structure, flattening..."
             mkdir -p publish/meta-rule
             # 将嵌套结构平铺到根目录
-            find meta-rule/geo/geosite -name "classical.yaml" | while read file; do
+            find geo/geosite -name "classical.yaml" | while read file; do
               dirname=$(basename $(dirname "$file"))
               cp "$file" "publish/meta-rule/${dirname}.yaml"
               # 生成对应的list文件
@@ -404,6 +404,7 @@ jobs:
             cp -r meta-rule publish/meta-rule
           else
             echo "❌ No meta-rule directory found!"
+            echo "📂 Available directories:"
             ls -la
             exit 1
           fi

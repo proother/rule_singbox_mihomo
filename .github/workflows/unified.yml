@@ -507,7 +507,7 @@ jobs:
           git push -f -u origin sing
           
           # Mihomo branch
-          cd ../meta-rule && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cd ../publish/meta-rule && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b meta && git add . && git commit -m "🛡️ Mihomo Rules (Parallel Build) ${{ env.BUILDTIME }}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u origin meta

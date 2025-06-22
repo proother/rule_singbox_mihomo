@@ -222,7 +222,7 @@ jobs:
             sing-rule/
             sing-rule-lite/
 
-  # Job 2: Generate Mihomo Rules (Parallel) - Using Official Method
+  # Job 2: Generate Mihomo Rules (Official MetaCubeX Method)
   mihomo-rules:
     runs-on: ubuntu-latest
     steps:
@@ -235,14 +235,14 @@ jobs:
           echo "GOOGLE_DOMAINS_URL=https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf" >> $GITHUB_ENV
           echo "APPLE_DOMAINS_URL=https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/apple.china.conf" >> $GITHUB_ENV
           echo "CUSTOM_PROXY=https://raw.githubusercontent.com/Loyalsoldier/domain-list-custom/release/geolocation-!cn.txt" >> $GITHUB_ENV
+        shell: bash
 
-      - name: Checkout MetaCubeX/meta-rules-dat (for official scripts)
+      - name: Checkout MetaCubeX/meta-rules-dat (Official)
         uses: actions/checkout@v4
         with:
           repository: MetaCubeX/meta-rules-dat
-          path: official
 
-      - name: Checkout domain lists for mihomo
+      - name: Checkout Loyalsoldier/domain-list-custom
         uses: actions/checkout@v4
         with:
           repository: Loyalsoldier/domain-list-custom
@@ -254,17 +254,17 @@ jobs:
           repository: v2fly/domain-list-community
           path: community
 
-      - name: Checkout gfwlist tool
-        uses: actions/checkout@v4
-        with:
-          repository: cokebar/gfwlist2dnsmasq
-          path: gfwlist2dnsmasq
-
       - name: Checkout MetaCubeX/meta-rules-converter
         uses: actions/checkout@v4
         with:
           repository: MetaCubeX/meta-rules-converter
-          path: converter
+          path: convert
+
+      - name: Checkout cokebar/gfwlist2dnsmasq
+        uses: actions/checkout@v4
+        with:
+          repository: cokebar/gfwlist2dnsmasq
+          path: gfwlist2dnsmasq
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -274,148 +274,82 @@ jobs:
 
       - name: Generate GFWList domains
         run: |
-          echo "🛡️ GENERATING MIHOMO RULES (Official Method)"
-          echo "📥 Step 1: Downloading GFWList..."
-          cd gfwlist2dnsmasq && chmod +x ./gfwlist2dnsmasq.sh && ./gfwlist2dnsmasq.sh -l -o ./temp-gfwlist.txt
-          gfw_count=$(wc -l < ./temp-gfwlist.txt)
-          echo "✅ GFWList downloaded: $gfw_count domains"
+          echo "🛡️ GENERATING MIHOMO RULES (Official MetaCubeX Method)"
+          cd gfwlist2dnsmasq || exit 1
+          chmod +x ./gfwlist2dnsmasq.sh
+          ./gfwlist2dnsmasq.sh -l -o ./temp-gfwlist.txt
 
       - name: Get and add direct domains into temp-direct.txt file
         run: |
-          echo "📥 Step 2: Downloading China domains..."
-          curl -sSL ${CHINA_DOMAINS_URL} | sed '/^\s*#/d' | sed '/^[^\.]/ s/^/full:/' | sed 's/^\.\([^.]*\)/\1/' > temp-direct.txt
-          china_count=$(wc -l < temp-direct.txt)
-          echo "✅ China domains downloaded: $china_count domains"
+          curl -sSL ${CHINA_DOMAINS_URL} | sed '/^\s*#/d' | sed '/^[^\.]/ s/^/full:/' |  sed 's/^\.\([^.]*\)/\1/' > temp-direct.txt 
 
       - name: Get and add proxy domains into temp-proxy.txt file
         run: |
-          echo "📥 Step 3: Collecting proxy domains..."
           cat ./gfwlist2dnsmasq/temp-gfwlist.txt | perl -ne '/^((?=^.{3,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})+)/ && print "$1\n"' > temp-proxy.txt
-          proxy_initial=$(wc -l < temp-proxy.txt)
-          
           curl -sSL $GOOGLE_DOMAINS_URL | perl -ne '/^server=\/([^\/]+)\// && print "$1\n"' >> temp-proxy.txt
-          proxy_google=$(wc -l < temp-proxy.txt)
-          
           curl -sSL $APPLE_DOMAINS_URL | perl -ne '/^server=\/([^\/]+)\// && print "$1\n"' >> temp-proxy.txt
-          proxy_apple=$(wc -l < temp-proxy.txt)
-          
           curl -sSL ${CUSTOM_PROXY} | grep -Ev ":@cn" | perl -ne '/^(domain):([^:]+)(\n$|:@.+)/ && print "$2\n"' >> temp-proxy.txt
-          proxy_final=$(wc -l < temp-proxy.txt)
-          
-          echo "✅ Proxy domains collected:"
-          echo "   GFWList: $proxy_initial domains"
-          echo "   +Google: $((proxy_google - proxy_initial)) domains"
-          echo "   +Apple: $((proxy_apple - proxy_google)) domains"
-          echo "   +Custom: $((proxy_final - proxy_apple)) domains"
-          echo "   Total: $proxy_final domains"
 
-      - name: Reserve proxy domains from custom lists
+      - name: Reserve `full`, `regexp` and `keyword` type of rules from custom lists to "reserve" files
         run: |
-          echo "📝 Step 4: Reserving special proxy rules..."
           curl -sSL ${CUSTOM_PROXY} | grep -Ev ":@cn" | perl -ne '/^((full|regexp|keyword):[^:]+)(\n$|:@.+)/ && print "$1\n"' | sort --ignore-case -u > proxy-reserve.txt
-          reserve_count=$(wc -l < proxy-reserve.txt)
-          echo "✅ Reserved proxy rules: $reserve_count"
+          
+      - name: Add proxy, direct and reject domains from "hidden" branch to appropriate temp files
+        run: |
+          cat ./resouces/proxy.txt >> temp-proxy.txt
+          cat ./resouces/direct.txt >> temp-direct.txt
 
       - name: Sort and generate redundant lists
         run: |
-          echo "📝 Step 5: Initial sorting and dedup..."
           cat temp-proxy.txt | sort --ignore-case -u > proxy-list-with-redundant
           cat temp-direct.txt | sort --ignore-case -u > direct-list-with-redundant
-          
-          proxy_sorted=$(wc -l < proxy-list-with-redundant)
-          direct_sorted=$(wc -l < direct-list-with-redundant)
-          echo "✅ After sorting:"
-          echo "   Proxy: $proxy_sorted domains"
-          echo "   Direct: $direct_sorted domains"
 
       - name: Remove redundant domains (Official Method)
         run: |
-          echo "🔧 Step 6: Removing redundant domains (Official Method)..."
-          chmod +x ./official/resouces/*.py
-          
-          echo "   Analyzing proxy redundancies..."
-          python ./official/resouces/findRedundantDomain.py ./proxy-list-with-redundant ./proxy-list-deleted-unsort
-          echo "   Analyzing direct redundancies..."
-          python ./official/resouces/findRedundantDomain.py ./direct-list-with-redundant ./direct-list-deleted-unsort
-          
+          echo "🔧 Using Official MetaCubeX redundancy removal..."
+          chmod +x ./resouces/*.py
+          python ./resouces/findRedundantDomain.py ./direct-list-with-redundant ./direct-list-deleted-unsort
+          python ./resouces/findRedundantDomain.py ./proxy-list-with-redundant ./proxy-list-deleted-unsort
           [ ! -f "direct-list-deleted-unsort" ] && touch direct-list-deleted-unsort
           [ ! -f "proxy-list-deleted-unsort" ] && touch proxy-list-deleted-unsort
-          
           sort ./direct-list-deleted-unsort > ./direct-list-deleted-sort
           sort ./proxy-list-deleted-unsort > ./proxy-list-deleted-sort
-          
-          echo "   Removing redundant domains..."
-          python ./official/resouces/removeFrom.py -remove ./direct-list-deleted-sort -from ./direct-list-with-redundant -out direct-list-without-redundant
-          python ./official/resouces/removeFrom.py -remove ./proxy-list-deleted-sort -from ./proxy-list-with-redundant -out proxy-list-without-redundant
-          
-          proxy_clean=$(wc -l < proxy-list-without-redundant)
-          direct_clean=$(wc -l < direct-list-without-redundant)
-          proxy_removed=$(wc -l < proxy-list-deleted-sort)
-          direct_removed=$(wc -l < direct-list-deleted-sort)
-          
-          echo "✅ Redundancy removal complete:"
-          echo "   Proxy: removed $proxy_removed redundant → $proxy_clean final"
-          echo "   Direct: removed $direct_removed redundant → $direct_clean final"
+          python ./resouces/removeFrom.py -remove ./direct-list-deleted-sort -from ./direct-list-with-redundant -out direct-list-without-redundant
+          python ./resouces/removeFrom.py -remove ./proxy-list-deleted-sort -from ./proxy-list-with-redundant -out proxy-list-without-redundant
 
-      - name: Final processing and write to data directory
+      - name: Remove domains from "need-to-remove" lists in "hidden" branch
         run: |
-          echo "📝 Step 7: Final processing..."
-          cat direct-list-without-redundant | grep -v google | grep -v manhua | grep -v ooklaserver | grep -v "acg.rip" | sort --ignore-case -u | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' > ./community/data/cn
-          cat proxy-list-without-redundant | sort --ignore-case -u | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' | perl -ne 'print if not /\.cn$/' > ./community/data/geolocation-\!cn
-          
-          echo "📝 Step 8: Adding reserved rules back..."
+          python ./resouces/removeFrom.py -remove ./resouces/direct-need-to-remove.txt -from ./direct-list-without-redundant -out ./temp-cn.txt
+          python ./resouces/removeFrom.py -remove ./resouces/proxy-need-to-remove.txt -from ./proxy-list-without-redundant -out ./temp-geolocation-\!cn.txt
+
+      - name: Remove domains end with ".cn" in "temp-geolocation-!cn.txt" and write lists to data directory
+        run: |
+          cat temp-cn.txt | grep -v google | grep -v manhua | grep -v ooklaserver | grep -v "acg.rip" | sort --ignore-case -u | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' > ./community/data/cn
+          cat temp-cn.txt | sort --ignore-case -u | perl -ne 'print if not /^((?=^.{3,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})+)/' > direct-tld-list.txt
+          cat temp-geolocation-\!cn.txt | sort --ignore-case -u | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' | perl -ne 'print if not /\.cn$/' > ./community/data/geolocation-\!cn
+          cat temp-geolocation-\!cn.txt | sort --ignore-case -u | perl -ne 'print if not /^((?=^.{3,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})+)/' > proxy-tld-list.txt
+
+      - name: Add `full`, `regexp` and `keyword` type of rules back into "cn", and "geolocation-!cn" list
+        run: |
+          [ -f "direct-reserve.txt" ] && cat direct-reserve.txt >> ./community/data/cn
           [ -f "proxy-reserve.txt" ] && cat proxy-reserve.txt >> ./community/data/geolocation-\!cn
-          
-          final_cn=$(wc -l < ./community/data/cn)
-          final_proxy=$(wc -l < ./community/data/geolocation-\!cn)
-          
-          echo "✅ Final domain counts:"
-          echo "   CN domains: $final_cn"
-          echo "   Proxy domains: $final_proxy"
+          cp ./community/data/cn direct-list.txt
+          cp ./community/data/geolocation-\!cn proxy-list.txt
 
-      - name: Build and convert geosite
+      - name: Build geosite.dat file
         run: |
-          echo "🏗️ Step 9: Building geosite database..."
-          cd custom
-          echo ipleak.net >> ../community/data/geolocation-\!cn
-          echo browserleaks.org >> ../community/data/geolocation-\!cn
-          
-          echo "   Building geosite.dat..."
+          cd custom || exit 1
+          echo ipleak.net >> ../community/data/geolocation-\!cn && echo browserleaks.org >> ../community/data/geolocation-\!cn
           go run ./ --datapath=../community/data
-          geosite_size=$(du -h publish/geosite.dat | cut -f1)
-          echo "✅ geosite.dat built: $geosite_size"
-          
-          echo "   Building meta-converter..."
-          cd ../converter && go build -o meta-converter .
-          echo "✅ meta-converter built"
-          
-          echo "   Converting geosite to meta rules..."
-          mkdir -p ../meta-rule
-          ./meta-converter geosite -f ../custom/publish/geosite.dat -o ../meta-rule-temp
-          
-          yaml_count=0
-          list_count=0
-          for yaml_dir in ../meta-rule-temp/*/; do
-            if [[ -d "$yaml_dir" ]]; then
-              dir_name=$(basename "$yaml_dir")
-              if [[ -f "$yaml_dir/classical.yaml" ]]; then
-                mv "$yaml_dir/classical.yaml" "../meta-rule/${dir_name}.yaml"
-                yaml_count=$((yaml_count + 1))
-                
-                tail -n +2 "../meta-rule/${dir_name}.yaml" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "../meta-rule/${dir_name}.list"
-                list_count=$((list_count + 1))
-                
-                rule_count=$(tail -n +2 "../meta-rule/${dir_name}.yaml" | wc -l)
-                echo "   ✅ $dir_name: $rule_count rules"
-              fi
-            fi
-          done
-          rm -rf ../meta-rule-temp
-          
-          echo "🎉 Geosite conversion complete:"
-          echo "   📄 YAML files: $yaml_count"
-          echo "   📄 LIST files: $list_count"
-          echo "   📊 Total files: $(ls ../meta-rule/*.yaml ../meta-rule/*.list 2>/dev/null | wc -l)"
+
+      - name: Convert geo to meta-rule-set
+        env:
+          NO_SKIP: true
+        run: |
+          mkdir -p meta-rule/geo/geosite && mkdir -p meta-rule/geo/geoip
+          cd convert
+          go run ./ geosite -f ../custom/publish/geosite.dat -o ../meta-rule/geo/geosite
+          echo "✅ Meta rules generated: $(find ../meta-rule -name "*.yaml" -o -name "*.list" | wc -l) files"
 
       - name: Upload mihomo artifacts
         uses: actions/upload-artifact@v4
@@ -522,7 +456,7 @@ jobs:
             - 🚀 **2x 构建速度**: Sing-box 和 Mihomo 并行生成
             - 🎯 **资源隔离**: 每个Job独立运行，互不干扰
             - 📊 **清晰日志**: 分Job显示，问题定位更容易
-            - 🔥 **官方算法**: 使用MetaCubeX官方高效去重算法
+            - 🔥 **官方算法**: 完全使用MetaCubeX官方代码和算法
             
             ### 📊 数据源
             - **Sing-box**: iOS rule script (~15k 规则)

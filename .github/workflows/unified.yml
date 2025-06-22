@@ -532,7 +532,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ env.TAG_NAME }}
-          name: 🚀 Parallel Build Release ${{ env.BUILDTIME }}
+          name: Release ${{ env.BUILDTIME }}
           body: |
             ## ⚡ 并行构建版本 (Ultra Fast)
             
@@ -568,7 +568,7 @@ jobs:
         run: |
           echo "🌳 PUSHING TO RELEASE BRANCH (Complete Rules)"
           cd publish && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b release && git add . && git commit -m "🚀 Parallel Build Released on ${{ env.BUILDTIME }}"
+          git checkout -b release && git add . && git commit -m "Released on ${{ env.BUILDTIME }}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u origin release
 

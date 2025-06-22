@@ -61,14 +61,14 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/{规则文件}
   "route": {
     "rule_set": [{
       "tag": "cn",
-      "type": "remote",
+        "type": "remote",
       "format": "binary",
       "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/cn.srs",
       "download_detour": "direct"
     }],
     "rules": [{
       "rule_set": "cn",
-      "outbound": "direct"
+        "outbound": "direct"
     }]
   }
 }

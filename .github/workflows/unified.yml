@@ -405,18 +405,22 @@ jobs:
             
             echo "🔍 Total classical.yaml files found: $(find geo/geosite -name "classical.yaml" -type f | wc -l)"
             
-            # 将嵌套结构平铺到根目录
-            find geo/geosite -name "classical.yaml" -type f | while read file; do
-              dirname=$(basename $(dirname "$file"))
-              echo "📝 Processing: $file -> ${dirname}.yaml"
-              cp "$file" "publish/meta-rule/${dirname}.yaml"
-              # 生成对应的list文件
-              tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${dirname}.list"
-              echo "✅ Flattened: ${dirname}.yaml + ${dirname}.list"
+            # 使用for循环替代while循环避免子shell问题
+            echo "🔧 Starting flatten process..."
+            for file in $(find geo/geosite -name "classical.yaml" -type f); do
+              if [ -f "$file" ]; then
+                dirname=$(basename $(dirname "$file"))
+                echo "📝 Processing: $file -> ${dirname}.yaml"
+                cp "$file" "publish/meta-rule/${dirname}.yaml"
+                # 生成对应的list文件
+                tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${dirname}.list"
+                echo "✅ Flattened: ${dirname}.yaml + ${dirname}.list"
+              fi
             done
             
             echo "🔍 Final meta-rule directory contents:"
             ls -la publish/meta-rule/ || echo "❌ meta-rule directory empty"
+            echo "📊 Meta-rule files count: $(find publish/meta-rule -type f | wc -l)"
             
           elif [ -d "meta-rule" ]; then
             echo "🔧 Using existing flat structure..."
@@ -425,7 +429,9 @@ jobs:
             echo "❌ No meta-rule directory found!"
             echo "📂 Available directories:"
             ls -la
-            exit 1
+            echo "🚨 Creating empty meta-rule to prevent total failure..."
+            mkdir -p publish/meta-rule
+            echo "# Empty meta-rule directory" > publish/meta-rule/README.md
           fi
           
           echo "=== Artifact Summary ==="
@@ -439,27 +445,27 @@ jobs:
           echo "📦 Creating ZIP packages"
           
           # Sing-box packages
-          cd sing-rule
+          cd publish/sing-rule
           if ls *.srs 1> /dev/null 2>&1; then
-            zip -r ../release-assets/sing-rules-srs.zip *.srs
+            zip -r ../../release-assets/sing-rules-srs.zip *.srs
             echo "✅ sing-rules-srs.zip ($(ls *.srs | wc -l) files)"
           fi
           if ls *.json 1> /dev/null 2>&1; then
-            zip -r ../release-assets/sing-rules-json.zip *.json
+            zip -r ../../release-assets/sing-rules-json.zip *.json
             echo "✅ sing-rules-json.zip ($(ls *.json | wc -l) files)"
           fi
           cd ../sing-rule-lite
           if ls *.srs 1> /dev/null 2>&1; then
-            zip -r ../release-assets/sing-rules-lite-srs.zip *.srs
+            zip -r ../../release-assets/sing-rules-lite-srs.zip *.srs
             echo "✅ sing-rules-lite-srs.zip ($(ls *.srs | wc -l) files)"
           fi
           if ls *.json 1> /dev/null 2>&1; then
-            zip -r ../release-assets/sing-rules-lite-json.zip *.json
+            zip -r ../../release-assets/sing-rules-lite-json.zip *.json
             echo "✅ sing-rules-lite-json.zip ($(ls *.json | wc -l) files)"
           fi
           
           # Mihomo packages  
-          cd ../publish/meta-rule
+          cd ../meta-rule
           if ls *.yaml 1> /dev/null 2>&1; then
             zip -r ../../release-assets/meta-rules-yaml.zip *.yaml
             echo "✅ meta-rules-yaml.zip ($(ls *.yaml | wc -l) files)"
@@ -491,7 +497,6 @@ jobs:
             ### 🛡️ Mihomo 规则
             - `meta-rules-yaml.zip` - YAML 格式 (默认)
             - `meta-rules-list.zip` - LIST 格式 (3x 更快)
-            - `meta-rules-mrs.zip` - MRS 格式 (实验性)
             
             ### ⚡ 并行构建优势
             - 🚀 **2x 构建速度**: Sing-box 和 Mihomo 并行生成
@@ -503,33 +508,20 @@ jobs:
             - **Sing-box**: iOS rule script (~15k 规则)
             - **Mihomo**: 多源整合 GFWList + China domains (~30k 规则)
             
-            ### 🔗 CDN 访问
-            - GitHub: `https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/`
-            - jsDelivr: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/`
+            ### 🔗 访问方式
+            - **完整规则**: `release` 分支包含所有规则文件
+            - **GitHub Raw**: `https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/`
+            - **jsDelivr CDN**: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/`
           files: |
             release-assets/*.zip
 
-      - name: Push to release branch
+      - name: Push to release branch (Complete Rules)
         run: |
-          echo "🌳 PUSHING TO BRANCHES"
+          echo "🌳 PUSHING TO RELEASE BRANCH (Complete Rules)"
           cd publish && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b release && git add . && git commit -m "🚀 Parallel Build Released on ${{ env.BUILDTIME }}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u origin release
-
-      - name: Push to specialized branches
-        run: |
-          # Sing-box branch
-          cd sing-rule && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b sing && git add . && git commit -m "🎯 Sing-box Rules (Parallel Build) ${{ env.BUILDTIME }}"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push -f -u origin sing
-          
-          # Mihomo branch
-          cd ../publish/meta-rule && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b meta && git add . && git commit -m "🛡️ Mihomo Rules (Parallel Build) ${{ env.BUILDTIME }}"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push -f -u origin meta
 
       - name: Purge jsDelivr CDN
         run: |

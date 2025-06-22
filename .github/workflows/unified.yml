@@ -440,20 +440,20 @@ jobs:
           fi
           
           # Mihomo packages  
-          cd ../meta-rule
+          cd ../publish/meta-rule
           if ls *.yaml 1> /dev/null 2>&1; then
-            zip -r ../release-assets/meta-rules-yaml.zip *.yaml
+            zip -r ../../release-assets/meta-rules-yaml.zip *.yaml
             echo "✅ meta-rules-yaml.zip ($(ls *.yaml | wc -l) files)"
           fi
           if ls *.list 1> /dev/null 2>&1; then
-            zip -r ../release-assets/meta-rules-list.zip *.list
+            zip -r ../../release-assets/meta-rules-list.zip *.list
             echo "✅ meta-rules-list.zip ($(ls *.list | wc -l) files)"
           fi
           if ls *.mrs 1> /dev/null 2>&1; then
-            zip -r ../release-assets/meta-rules-mrs.zip *.mrs
+            zip -r ../../release-assets/meta-rules-mrs.zip *.mrs
             echo "✅ meta-rules-mrs.zip ($(ls *.mrs | wc -l) files)"
           fi
-          cd ..
+          cd ../..
 
       - name: Create Unified GitHub Release
         uses: softprops/action-gh-release@v1

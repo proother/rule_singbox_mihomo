@@ -350,6 +350,17 @@ jobs:
           cd convert
           go run ./ geosite -f ../custom/publish/geosite.dat -o ../meta-rule/geo/geosite
           echo "✅ Meta rules generated: $(find ../meta-rule -name "*.yaml" -o -name "*.list" | wc -l) files"
+          
+      - name: Generate MRS files
+        run: |
+          echo "🔄 Generating MRS (Meta Rule Set) binary files..."
+          cd convert
+          # 生成MRS二进制格式
+          go run ./ geosite -f ../custom/publish/geosite.dat -o ../meta-rule/geo/geosite-mrs -t mrs
+          
+          # 统计生成的文件
+          echo "📊 MRS files generated: $(find ../meta-rule -name "*.mrs" | wc -l)"
+          echo "✅ All formats generated: YAML + LIST + MRS"
 
       - name: Upload mihomo artifacts
         uses: actions/upload-artifact@v4
@@ -401,28 +412,45 @@ jobs:
             echo "🔧 Detected official nested structure, flattening..."
             mkdir -p publish/meta-rule
             
-            echo "🔍 Searching for yaml files..."
-            find meta-rule/geo/geosite -name "*.yaml" -type f | head -10
-            
-            echo "🔍 Total yaml files found: $(find meta-rule/geo/geosite -name "*.yaml" -type f | wc -l)"
+            echo "🔍 Searching for rule files..."
+            echo "YAML files: $(find meta-rule/geo/geosite -name "*.yaml" -type f | wc -l)"
+            echo "MRS files: $(find meta-rule/geo/geosite-mrs -name "*.mrs" -type f 2>/dev/null | wc -l || echo 0)"
             
             # 复制所有yaml文件到平铺结构
-            echo "🔧 Starting flatten process..."
+            echo "🔧 Starting flatten process for YAML files..."
             for file in $(find meta-rule/geo/geosite -name "*.yaml" -type f); do
               if [ -f "$file" ]; then
                 filename=$(basename "$file")
-                echo "📝 Processing: $file -> ${filename}"
+                echo "📝 Processing YAML: $file -> ${filename}"
                 cp "$file" "publish/meta-rule/${filename}"
                 
                 # 生成对应的list文件 (去掉yaml的第一行payload:)
                 tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${filename%.yaml}.list"
-                echo "✅ Flattened: ${filename} + ${filename%.yaml}.list"
+                echo "✅ Generated: ${filename} + ${filename%.yaml}.list"
               fi
             done
             
+            # 复制MRS文件（如果存在）
+            if [ -d "meta-rule/geo/geosite-mrs" ]; then
+              echo "🔧 Processing MRS files..."
+              for file in $(find meta-rule/geo/geosite-mrs -name "*.mrs" -type f); do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file")
+                  echo "📝 Processing MRS: $file -> ${filename}"
+                  cp "$file" "publish/meta-rule/${filename}"
+                  echo "✅ Copied: ${filename}"
+                fi
+              done
+            else
+              echo "⚠️ No MRS directory found, skipping MRS files"
+            fi
+            
             echo "🔍 Final meta-rule directory contents:"
             ls -la publish/meta-rule/ | head -20
-            echo "📊 Meta-rule files count: $(find publish/meta-rule -type f | wc -l)"
+            echo "📊 Meta-rule files count:"
+            echo "  YAML: $(find publish/meta-rule -name "*.yaml" | wc -l)"
+            echo "  LIST: $(find publish/meta-rule -name "*.list" | wc -l)"
+            echo "  MRS: $(find publish/meta-rule -name "*.mrs" | wc -l)"
             
           elif [ -d "meta-rule" ] && [ ! -d "meta-rule/geo" ]; then
             echo "🔧 Using existing flat structure..."
@@ -501,6 +529,12 @@ jobs:
           else
             echo "⚠️ No .list files found in meta-rule"
           fi
+          if ls *.mrs 1> /dev/null 2>&1; then
+            zip -r ../../release-assets/meta-rules-mrs.zip *.mrs
+            echo "✅ meta-rules-mrs.zip ($(ls *.mrs | wc -l) files)"
+          else
+            echo "⚠️ No .mrs files found in meta-rule"
+          fi
           cd ../..
           
           echo "📦 Final release-assets contents:"
@@ -522,7 +556,8 @@ jobs:
             
             ### 🛡️ Mihomo 规则
             - `meta-rules-yaml.zip` - YAML 格式 (默认)
-            - `meta-rules-list.zip` - LIST 格式 (3x 更快)
+            - `meta-rules-list.zip` - LIST 格式 (纯文本，加载更快)
+            - `meta-rules-mrs.zip` - MRS 格式 (二进制，性能最优)
             
             ### ⚡ 并行构建优势
             - 🚀 **2x 构建速度**: Sing-box 和 Mihomo 并行生成
@@ -555,7 +590,7 @@ jobs:
           cd publish
           
           # 统计文件
-          total_files=$(find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" | wc -l)
+          total_files=$(find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" -o -name "*.mrs" | wc -l)
           echo "📊 Total files to purge: $total_files"
           
           # 分批清理CDN（每批100个文件）
@@ -563,7 +598,7 @@ jobs:
           batch_num=0
           file_count=0
           
-          find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" | while IFS= read -r file; do
+          find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" -o -name "*.mrs" | while IFS= read -r file; do
             file_path=$(echo "$file" | sed 's|^\./||')
             curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file_path}" > /dev/null 2>&1 || true
             

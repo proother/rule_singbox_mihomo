@@ -386,7 +386,28 @@ jobs:
           mkdir -p publish
           cp -r sing-rule publish/sing-rule
           cp -r sing-rule-lite publish/sing-rule-lite
-          cp -r meta-rule publish/meta-rule
+          
+          # 检查meta-rule目录结构并适配
+          if [ -d "meta-rule/geo/geosite" ]; then
+            echo "🔧 Detected official nested structure, flattening..."
+            mkdir -p publish/meta-rule
+            # 将嵌套结构平铺到根目录
+            find meta-rule/geo/geosite -name "classical.yaml" | while read file; do
+              dirname=$(basename $(dirname "$file"))
+              cp "$file" "publish/meta-rule/${dirname}.yaml"
+              # 生成对应的list文件
+              tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${dirname}.list"
+              echo "✅ Flattened: ${dirname}.yaml + ${dirname}.list"
+            done
+          elif [ -d "meta-rule" ]; then
+            echo "🔧 Using existing flat structure..."
+            cp -r meta-rule publish/meta-rule
+          else
+            echo "❌ No meta-rule directory found!"
+            ls -la
+            exit 1
+          fi
+          
           echo "=== Artifact Summary ==="
           echo "Sing-box rules: $(find publish/sing-rule -type f | wc -l) files"
           echo "Sing-box lite: $(find publish/sing-rule-lite -type f | wc -l) files"

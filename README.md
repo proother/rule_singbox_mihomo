@@ -12,13 +12,22 @@ Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社�
 
 **Make Rules Great Again!**
 
-### 引用
+### 🔗 **多种访问方式**
 
-我们提供了三种 URL，您可以根据您的网络环境自行选择：
+我们提供多种 URL 访问方式，您可以根据网络环境自行选择：
 
-- GitHub Release：[https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/](https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/)
-- jsDelivr：[https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/](https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/)
-- jsDelivr-CF：[https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/](https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/)
+#### 📦 **ZIP 包下载 (推荐)**
+- **GitHub Release**: [https://github.com/proother/rule_singbox_mihomo/releases](https://github.com/proother/rule_singbox_mihomo/releases)
+
+#### 🌐 **CDN 直链访问**
+- **GitHub**: [https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/](https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/)
+- **jsDelivr**: [https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/](https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/)
+- **jsDelivr-CF**: [https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/](https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/)
+
+#### 🌳 **分支访问**
+- **完整规则**: `@release` 分支 (包含所有格式)
+- **Sing-box 专用**: `@sing` 分支 (仅 sing-box 规则)
+- **Mihomo 专用**: `@meta` 分支 (仅 mihomo 规则)
 
 您也可以使用类似 [https://ghproxy.cn/](https://ghproxy.cn/) 的前置加速服务。
 
@@ -777,53 +786,48 @@ rules:
 
 相关文档：[https://wiki.metacubex.one/config/rule-providers/#format](https://wiki.metacubex.one/config/rule-providers/#format)
 
-## 🔄 **双内核构建方案**
+## 🚀 **统一构建方案 (All-in-One)**
 
-本项目提供**专门优化的构建方法**，为不同内核提供最佳支持：
+本项目采用**统一构建方案**，一次运行同时生成所有格式的规则，发布在同一个 Release 中！
 
-### 📊 **方案对比**
+### 📊 **统一方案优势**
 
-| 特性 | Sing-box 方法 (main.yml) | Mihomo 方法 (meta-official.yml) |
-|------|---------------------------|----------------------------------|
-| **🎯 专业定位** | 🎯 **Sing-box 专用** | 🛡️ **Mihomo 专用** |
-| **📅 更新时间** | 每天 20:00 (北京时间) | 每天 20:00 (北京时间) |
-| **🌐 数据源** | iOS rule script (~15k 规则) | 多源整合 (~30k 规则) |
-| **⚡ 处理方式** | 直接转换 + 性能优化 | 智能去重 + 冗余清理 |
-| **📦 发布标签** | `v{date}-sing` (动态) | `v{date}-meta` (动态) |
-| **🚀 特色功能** | Lite 规则 (IP-CIDR + DOMAIN) | 完整 geo 生态 (YAML + LIST + MRS) |
-| **📁 输出格式** | JSON + SRS (二进制) | YAML + LIST + MRS |
+| 特性 | 统一方案 (unified.yml) |
+|------|-------------------------|
+| **🎯 覆盖范围** | 🚀 **Sing-box + Mihomo 全支持** |
+| **📅 更新时间** | 每天 20:00 (北京时间) |
+| **🌐 数据源** | 双重数据源：iOS rule script + 多源整合 |
+| **⚡ 处理方式** | 智能分离：Sing-box 快速转换 + Mihomo 官方去重 |
+| **📦 发布标签** | `v{date}` (统一标签) |
+| **🚀 输出内容** | **6种格式**：JSON + SRS + Lite + YAML + LIST + MRS |
+| **📁 输出结构** | 完整目录结构 + 分支推送 + CDN 刷新 |
 
-### 🎯 **如何选择**
+### 🎯 **一站式获取**
 
-- **🎯 Sing-box 用户**：使用 **Sing-box 方法** (`v{date}-sing`)
-  - 专为 Sing-box 优化
-  - 提供 Lite 版本，极致性能
-  - 支持 JSON + SRS 格式
+统一 Release 包含所有格式，用户按需下载：
 
-- **🛡️ Mihomo 用户**：使用 **Mihomo 方法** (`v{date}-meta`)
-  - 官方权威数据源
-  - 智能去重算法
-  - 支持 YAML + LIST + MRS 格式
-
-### 📦 **获取方式**
-
-#### Sing-box 规则：
 ```bash
-# GitHub Release
-https://github.com/proother/rule_singbox_mihomo/releases/tag/v{date}-sing
+# 统一 Release 地址
+https://github.com/proother/rule_singbox_mihomo/releases/tag/v{date}
 
-# 示例 URL
-https://github.com/proother/rule_singbox_mihomo/releases/tag/v20241215-2000-sing
+# 示例 URL  
+https://github.com/proother/rule_singbox_mihomo/releases/tag/v20241215-2000
 ```
 
-#### Mihomo 规则：
-```bash
-# GitHub Release  
-https://github.com/proother/rule_singbox_mihomo/releases/tag/v{date}-meta
+### 📦 **Release 内容**
 
-# 示例 URL
-https://github.com/proother/rule_singbox_mihomo/releases/tag/v20241215-2000-meta
-```
+每个 Release 包含以下 ZIP 包：
+
+#### 🎯 **Sing-box 用户**
+- `sing-rules-srs.zip` - 完整版 (.srs 二进制)
+- `sing-rules-json.zip` - 完整版 (.json 源码) 
+- `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制) - **仅 IP-CIDR + DOMAIN**
+- `sing-rules-lite-json.zip` - 精简版 (.json 源码) - **仅 IP-CIDR + DOMAIN**
+
+#### 🛡️ **Mihomo 用户**
+- `meta-rules-yaml.zip` - YAML 格式 (默认)
+- `meta-rules-list.zip` - LIST 格式 (3x 更快)
+- `meta-rules-mrs.zip` - MRS 格式 (实验性二进制)
 
 ## 📊 规则格式说明
 

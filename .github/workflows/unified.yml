@@ -1,0 +1,299 @@
+# Unified workflow placeholder
+
+name: Unified Rules Builder (Sing-box + Mihomo)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set variables
+        run: |
+          echo "GOAMD64=v3" >> $GITHUB_ENV
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+          echo "TAG_NAME=$(TZ=Asia/Shanghai date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
+          echo "CHINA_DOMAINS_URL=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaMax/ChinaMax_Domain.txt" >> $GITHUB_ENV
+          echo "GOOGLE_DOMAINS_URL=https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf" >> $GITHUB_ENV
+          echo "APPLE_DOMAINS_URL=https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/apple.china.conf" >> $GITHUB_ENV
+          echo "CUSTOM_PROXY=https://raw.githubusercontent.com/Loyalsoldier/domain-list-custom/release/geolocation-!cn.txt" >> $GITHUB_ENV
+
+      - name: Checkout repositories
+        uses: actions/checkout@v4
+        with:
+          repository: blackmatrix7/ios_rule_script
+          path: ios_rule_script
+
+      - name: Checkout MetaCubeX/meta-rules-converter
+        uses: actions/checkout@v4
+        with:
+          repository: MetaCubeX/meta-rules-converter
+          path: converter
+
+      - name: Checkout domain lists for mihomo
+        uses: actions/checkout@v4
+        with:
+          repository: Loyalsoldier/domain-list-custom
+          path: custom
+
+      - name: Checkout v2fly/domain-list-community
+        uses: actions/checkout@v4
+        with:
+          repository: v2fly/domain-list-community
+          path: community
+
+      - name: Checkout gfwlist tool
+        uses: actions/checkout@v4
+        with:
+          repository: cokebar/gfwlist2dnsmasq
+          path: gfwlist2dnsmasq
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: ./custom/go.sum
+
+      # Part A: Generate Sing-box Rules (From main.yml)
+      - name: "[Sing-box] Prepare data source"
+        run: |
+          echo "🎯 GENERATING SING-BOX RULES"
+          mkdir -p community/data_source
+          for dir in $(find ios_rule_script/rule/Clash -type d); do
+            if ls "$dir"/*_Classical.yaml 2>/dev/null; then
+              find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
+            else
+              dir_name=$(basename "$dir")
+              find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -exec cp {} community/data_source/ \;
+            fi
+          done
+
+      - name: "[Sing-box] Convert to sing rules"
+        run: |
+          mkdir -p sing-rule
+          cd converter && go build -o meta-converter .
+          ./meta-converter clash -f ../community/data_source -o ../sing-rule -t sing-box
+          cd ../sing-rule
+          for dir in */; do
+            dir_name=$(basename "$dir")
+            if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
+              original_yaml=$(find ../community/data_source -type f -iname "${dir_name}.yaml" -print -quit)
+              if [[ -n "$original_yaml" ]]; then
+                original_name=$(basename "$original_yaml" .yaml)
+                mv "$dir/classical.json" "${original_name}.json"
+                mv "$dir/classical.srs" "${original_name}.srs"
+              else
+                mv "$dir/classical.json" "${dir_name}.json"
+                mv "$dir/classical.srs" "${dir_name}.srs"
+              fi
+            fi
+            rm -rf "$dir"
+          done
+
+      - name: "[Sing-box] Create lite rules with cleanup"
+        run: |
+          mkdir -p sing-rule-lite
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          # Create lite JSON rules
+          for json_file in sing-rule/*.json; do
+            if [[ -f "$json_file" ]]; then
+              filename=$(basename "$json_file" .json)
+              jq '{version: .version, rules: [.rules[] | with_entries(select(.key == "ip_cidr" or .key == "domain")) | select(keys | length > 0)]}' "$json_file" > "sing-rule-lite/${filename}.json"
+              rule_count=$(jq '.rules | if . == null then 0 else length end' "sing-rule-lite/${filename}.json")
+              if [[ "$rule_count" -eq 0 ]]; then
+                rm "sing-rule-lite/${filename}.json"
+              fi
+            fi
+          done
+          
+          # Convert to SRS using meta-converter
+          mkdir -p lite-yaml-source
+          for yaml_file in community/data_source/*.yaml; do
+            if [[ -f "$yaml_file" ]]; then
+              filename=$(basename "$yaml_file" .yaml)
+              {
+                echo "payload:"
+                grep -E "^\s*-\s*DOMAIN," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
+                grep -E "^\s*-\s*IP-CIDR," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
+              } > "lite-yaml-source/${filename}.yaml"
+              rule_count=$(grep -c "^\s*-\s*" "lite-yaml-source/${filename}.yaml" 2>/dev/null || echo "0")
+              if [[ "$rule_count" -eq 0 ]]; then
+                echo "payload:" > "lite-yaml-source/${filename}.yaml"
+              fi
+            fi
+          done
+          
+          cd converter
+          if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box 2>&1; then
+            cd ../sing-rule-lite-converted
+            for dir in */; do
+              if [[ -d "$dir" ]]; then
+                dir_name=$(basename "$dir")
+                for lite_json in ../sing-rule-lite/*.json; do
+                  if [[ -f "$lite_json" ]]; then
+                    lite_basename=$(basename "$lite_json" .json)
+                    if [[ "${lite_basename,,}" == "${dir_name,,}" ]]; then
+                      original_basename=$(basename "$lite_json" .json)
+                      if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
+                        mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
+                        mv "$dir/classical.srs" "../sing-rule-lite/${original_basename}.srs"
+                      elif [[ -f "$dir/classical.json" ]]; then
+                        mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
+                      fi
+                      break
+                    fi
+                  fi
+                done
+              fi
+            done
+            cd ..
+          fi
+          rm -rf lite-yaml-source sing-rule-lite-converted
+          
+          # Final cleanup - remove empty files
+          for lite_file in sing-rule-lite/*.json; do
+            if [[ -f "$lite_file" ]]; then
+              rule_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file" 2>/dev/null || echo "0")
+              if [[ "$rule_count" -eq 0 ]]; then
+                rm "$lite_file"
+                srs_file="${lite_file%.json}.srs"
+                [[ -f "$srs_file" ]] && rm "$srs_file"
+              fi
+            fi
+          done
+
+      # Part B: Generate Mihomo Rules (From meta-official.yml)
+      - name: "[Mihomo] Process domain lists"
+        run: |
+          echo "🛡️ GENERATING MIHOMO RULES"
+          cd gfwlist2dnsmasq && chmod +x ./gfwlist2dnsmasq.sh && ./gfwlist2dnsmasq.sh -l -o ./temp-gfwlist.txt && cd ..
+          curl -sSL ${CHINA_DOMAINS_URL} | sed '/^\s*#/d' | sed '/^[^\.]/ s/^/full:/' | sed 's/^\.\([^.]*\)/\1/' > temp-direct.txt
+          cat ./gfwlist2dnsmasq/temp-gfwlist.txt | perl -ne '/^((?=^.{3,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})+)/ && print "$1\n"' > temp-proxy.txt
+          curl -sSL $GOOGLE_DOMAINS_URL | perl -ne '/^server=\/([^\/]+)\// && print "$1\n"' >> temp-proxy.txt
+          curl -sSL $APPLE_DOMAINS_URL | perl -ne '/^server=\/([^\/]+)\// && print "$1\n"' >> temp-proxy.txt
+          curl -sSL ${CUSTOM_PROXY} | grep -Ev ":@cn" | perl -ne '/^(domain):([^:]+)(\n$|:@.+)/ && print "$2\n"' >> temp-proxy.txt
+
+      - name: "[Mihomo] Remove redundant domains"
+        run: |
+          cat > remove_redundant.py << 'EOF'
+          import sys
+          domains = set()
+          with open(sys.argv[1], 'r') as f:
+              for line in f:
+                  domain = line.strip()
+                  if domain: domains.add(domain)
+          redundant = set()
+          domain_list = sorted(domains)
+          for i, domain in enumerate(domain_list):
+              for j, other_domain in enumerate(domain_list):
+                  if i != j and domain.endswith('.' + other_domain):
+                      redundant.add(domain)
+          final_domains = domains - redundant
+          with open(sys.argv[2], 'w') as f:
+              for domain in sorted(final_domains):
+                  f.write(domain + '\n')
+          EOF
+          
+          cat temp-proxy.txt | sort --ignore-case -u > proxy-list-raw.txt
+          cat temp-direct.txt | sort --ignore-case -u > direct-list-raw.txt
+          python remove_redundant.py proxy-list-raw.txt proxy-list-clean.txt
+          python remove_redundant.py direct-list-raw.txt direct-list-clean.txt
+          cat proxy-list-clean.txt | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' | perl -ne 'print if not /\.cn$/' > ./community/data/geolocation-!cn
+          cat direct-list-clean.txt | grep -v google | grep -v manhua | grep -v ooklaserver | grep -v "acg.rip" | sort --ignore-case -u | perl -ne '/^((?=^.{1,255})[a-zA-Z0-9][-_a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-_a-zA-Z0-9]{0,62})*)/ && print "$1\n"' > ./community/data/cn
+
+      - name: "[Mihomo] Build and convert geosite"
+        run: |
+          cd custom && echo ipleak.net >> ../community/data/geolocation-!cn && echo browserleaks.org >> ../community/data/geolocation-!cn
+          go run ./ --datapath=../community/data && cd ../converter
+          mkdir -p ../meta-rule
+          ./meta-converter geosite -f ../custom/publish/geosite.dat -o ../meta-rule-temp
+          for yaml_dir in ../meta-rule-temp/*/; do
+            if [[ -d "$yaml_dir" ]]; then
+              dir_name=$(basename "$yaml_dir")
+              if [[ -f "$yaml_dir/classical.yaml" ]]; then
+                mv "$yaml_dir/classical.yaml" "../meta-rule/${dir_name}.yaml"
+                tail -n +2 "../meta-rule/${dir_name}.yaml" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "../meta-rule/${dir_name}.list"
+              fi
+            fi
+          done
+          rm -rf ../meta-rule-temp
+
+      # Unified Publishing
+      - name: Prepare publish artifacts
+        run: |
+          mkdir -p publish
+          cp -r sing-rule publish/sing-rule
+          cp -r sing-rule-lite publish/sing-rule-lite
+          cp -r meta-rule publish/meta-rule
+
+      - name: Create ZIP archives
+        run: |
+          mkdir -p release-assets
+          cd sing-rule && zip ../release-assets/sing-rules-srs.zip *.srs && zip ../release-assets/sing-rules-json.zip *.json && cd ..
+          cd sing-rule-lite && zip ../release-assets/sing-rules-lite-srs.zip *.srs && zip ../release-assets/sing-rules-lite-json.zip *.json && cd ..
+          cd meta-rule && zip ../release-assets/meta-rules-yaml.zip *.yaml && zip ../release-assets/meta-rules-list.zip *.list && cd ..
+
+      - name: Create Unified GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.TAG_NAME }}
+          name: Unified Rules Release ${{ env.BUILDTIME }}
+          body: |
+            ## 🚀 统一规则包 (Sing-box + Mihomo)
+            
+            ### 🎯 Sing-box 规则
+            - `sing-rules-srs.zip` - 完整版 (.srs 二进制)
+            - `sing-rules-json.zip` - 完整版 (.json 源码)
+            - `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制) - IP-CIDR + DOMAIN only
+            - `sing-rules-lite-json.zip` - 精简版 (.json 源码) - IP-CIDR + DOMAIN only
+            
+            ### 🛡️ Mihomo 规则
+            - `meta-rules-yaml.zip` - YAML 格式 (默认)
+            - `meta-rules-list.zip` - LIST 格式 (3x 更快)
+            
+            ### 📊 数据源
+            - **Sing-box**: iOS rule script (~15k 规则)
+            - **Mihomo**: 多源整合 GFWList + China domains (~30k 规则)
+            
+            ### 🔗 CDN 访问
+            - GitHub: `https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/`
+            - jsDelivr: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/`
+          files: |
+            release-assets/*.zip
+
+      - name: Push to release branch
+        run: |
+          cd publish && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b release && git add . && git commit -m "Unified Rules Released on ${{ env.BUILDTIME }}"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin release
+
+      - name: Push to specialized branches
+        run: |
+          cd sing-rule && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b sing && git add . && git commit -m "Sing-box Rules Released on ${{ env.BUILDTIME }}"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin sing
+          cd ../meta-rule && git init && git config --local user.name "github-actions[bot]" && git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b meta && git add . && git commit -m "Mihomo Rules Released on ${{ env.BUILDTIME }}"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin meta
+
+      - name: Purge jsDelivr CDN
+        run: |
+          echo "🚀 Purging jsDelivr CDN"
+          cd publish
+          for file in $(find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" | head -30); do
+            file_path=$(echo "$file" | sed 's|^\./||')
+            curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file_path}" || true
+          done

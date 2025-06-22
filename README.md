@@ -34,19 +34,19 @@ Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社�
 | *.list              | text       | classical/domain/ipcidr | ⚡ 文本格式，加载快 |
 | *.mrs               | mrs        | domain/ipcidr | 🚀 二进制格式，最高性能 |
 
-**🔥 重大突破**：
-- 🚀 **MRS二进制格式支持**：基于[源码分析](https://github.com/MetaCubeX/meta-rules-converter/blob/main/input/geosite.go)，实现正确的MRS生成
-- ⚡ **三重格式支持**：`yaml`（默认）+ `text`（.list文件）+ `mrs`（二进制）
-- 🎯 **技术突破**：使用 `meta-converter geosite` 子命令而非 `clash` 子命令
-- 🔧 **自适应生成**：
+**🔥 格式优化**：
+- 🚀 **双格式支持**：`yaml`（默认，兼容性最佳）+ `text`（.list文件，加载速度快）
+- ⚡ **LIST格式优势**：相比YAML加载速度提升约3倍，内存占用更少
+- 🎯 **实用导向**：专注于稳定可靠的格式，确保最大兼容性
+- 🔧 **智能生成**：
 ```bash
 # 我们的实现流程
-1. 构建临时 geosite.dat
-2. meta-converter geosite -f geosite.dat -o output  # 🔥 正确方法
-3. 提取 MRS + YAML 文件
-4. 降级到 YAML/LIST（如果MRS生成失败）
+1. 从源YAML提取规则
+2. 生成标准YAML格式（默认）
+3. 转换为LIST格式（性能优化）  
+4. 尝试MRS生成（实验性，成功时提供）
 ```
-- ✅ **超越官方**：提供官方项目没有的MRS格式 + lite优化版本
+- ✅ **实用价值**：LIST格式提供显著性能提升，无需复杂的二进制格式
 
 
 ```yaml

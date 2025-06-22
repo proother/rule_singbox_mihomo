@@ -351,15 +351,73 @@ jobs:
           go run ./ geosite -f ../custom/publish/geosite.dat -o ../meta-rule/geo/geosite
           echo "✅ Meta rules generated: $(find ../meta-rule -name "*.yaml" -o -name "*.list" | wc -l) files"
           
-      - name: Generate MRS files
+      - name: Download and Generate MRS files
         run: |
           echo "🔄 Generating MRS (Meta Rule Set) binary files..."
-          cd convert
-          # 生成MRS二进制格式
-          go run ./ geosite -f ../custom/publish/geosite.dat -o ../meta-rule/geo/geosite-mrs -t mrs
+          echo "📥 Downloading mihomo binary for MRS conversion..."
           
-          # 统计生成的文件
-          echo "📊 MRS files generated: $(find ../meta-rule -name "*.mrs" | wc -l)"
+          # 下载最新的mihomo Linux AMD64版本
+          MIHOMO_VERSION=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+          wget -q "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.tar.gz" -O mihomo.tar.gz
+          tar -xzf mihomo.tar.gz
+          chmod +x mihomo
+          
+          # 创建MRS输出目录
+          mkdir -p meta-rule/geo/geosite-mrs
+          
+          echo "🔄 Converting YAML to MRS format..."
+          cd meta-rule/geo/geosite
+          
+          # 转换每个YAML文件到MRS
+          converted_count=0
+          for yaml_file in *.yaml; do
+            if [ -f "$yaml_file" ]; then
+              base_name="${yaml_file%.yaml}"
+              # 检测文件类型并验证是否可以转换为MRS
+              has_ipcidr=false
+              has_domain=false
+              has_other=false
+              
+              # 检查规则类型
+              if grep -q "IP-CIDR" "$yaml_file" || grep -q "ip_cidr" "$yaml_file"; then
+                has_ipcidr=true
+              fi
+              if grep -q "DOMAIN" "$yaml_file" || grep -q "domain" "$yaml_file"; then
+                has_domain=true
+              fi
+              if grep -q "PROCESS" "$yaml_file" || grep -q "GEOSITE" "$yaml_file" || grep -q "GEOIP" "$yaml_file"; then
+                has_other=true
+              fi
+              
+              # MRS只支持纯domain或纯ipcidr
+              if [ "$has_other" = true ]; then
+                echo "   ⏭️ Skipping: $yaml_file (contains unsupported rule types for MRS)"
+              elif [ "$has_ipcidr" = true ] && [ "$has_domain" = false ]; then
+                behavior="ipcidr"
+                echo "   Converting: $yaml_file (behavior: $behavior)"
+                if ../../../mihomo convert-ruleset $behavior yaml "$yaml_file" "../geosite-mrs/${base_name}.mrs" 2>/dev/null; then
+                  echo "   ✅ Generated: ${base_name}.mrs"
+                  converted_count=$((converted_count + 1))
+                else
+                  echo "   ⚠️ Failed to convert: $yaml_file"
+                fi
+              elif [ "$has_domain" = true ] && [ "$has_ipcidr" = false ]; then
+                behavior="domain"
+                echo "   Converting: $yaml_file (behavior: $behavior)"
+                if ../../../mihomo convert-ruleset $behavior yaml "$yaml_file" "../geosite-mrs/${base_name}.mrs" 2>/dev/null; then
+                  echo "   ✅ Generated: ${base_name}.mrs"
+                  converted_count=$((converted_count + 1))
+                else
+                  echo "   ⚠️ Failed to convert: $yaml_file"
+                fi
+              else
+                echo "   ⏭️ Skipping: $yaml_file (mixed rule types not supported by MRS)"
+              fi
+            fi
+          done
+          
+          cd ../../..
+          echo "📊 MRS files generated: $converted_count"
           echo "✅ All formats generated: YAML + LIST + MRS"
 
       - name: Upload mihomo artifacts

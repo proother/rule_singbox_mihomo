@@ -387,18 +387,37 @@ jobs:
           cp -r sing-rule publish/sing-rule
           cp -r sing-rule-lite publish/sing-rule-lite
           
+          echo "🔍 Debug: Checking directory structure..."
+          echo "📂 Root directory contents:"
+          ls -la
+          echo "📂 Checking for geo directory:"
+          ls -la geo/ || echo "❌ geo directory not found"
+          echo "📂 Checking for geo/geosite:"
+          ls -la geo/geosite/ || echo "❌ geo/geosite directory not found"
+          
           # 检查meta-rule目录结构并适配
           if [ -d "geo/geosite" ]; then
             echo "🔧 Detected official nested structure, flattening..."
             mkdir -p publish/meta-rule
+            
+            echo "🔍 Searching for classical.yaml files..."
+            find geo/geosite -name "classical.yaml" -type f | head -10
+            
+            echo "🔍 Total classical.yaml files found: $(find geo/geosite -name "classical.yaml" -type f | wc -l)"
+            
             # 将嵌套结构平铺到根目录
-            find geo/geosite -name "classical.yaml" | while read file; do
+            find geo/geosite -name "classical.yaml" -type f | while read file; do
               dirname=$(basename $(dirname "$file"))
+              echo "📝 Processing: $file -> ${dirname}.yaml"
               cp "$file" "publish/meta-rule/${dirname}.yaml"
               # 生成对应的list文件
               tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${dirname}.list"
               echo "✅ Flattened: ${dirname}.yaml + ${dirname}.list"
             done
+            
+            echo "🔍 Final meta-rule directory contents:"
+            ls -la publish/meta-rule/ || echo "❌ meta-rule directory empty"
+            
           elif [ -d "meta-rule" ]; then
             echo "🔧 Using existing flat structure..."
             cp -r meta-rule publish/meta-rule

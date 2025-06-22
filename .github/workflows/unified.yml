@@ -391,28 +391,53 @@ jobs:
           cp -r sing-rule publish/sing-rule
           cp -r sing-rule-lite publish/sing-rule-lite
           
-          echo "🔍 Debug: Checking directory structure..."
+          echo "🔍 Debug: Checking directory structure after artifact download..."
           echo "📂 Root directory contents:"
           ls -la
-          echo "📂 Checking for meta-rule directory:"
-          ls -la meta-rule/ || echo "❌ meta-rule directory not found"
-          echo "📂 Checking meta-rule subdirectories:"
-          ls -la meta-rule/geo/ || echo "❌ meta-rule/geo directory not found"
-          ls -la meta-rule/geo/geosite/ || echo "❌ meta-rule/geo/geosite directory not found"
+          echo ""
           
-          # 检查meta-rule目录结构并适配
+          echo "📂 Looking for possible mihomo artifact locations:"
+          echo "   Checking ./meta-rule:"
+          ls -la meta-rule/ 2>/dev/null || echo "   ❌ ./meta-rule not found"
+          echo ""
+          echo "   Checking ./geo:"
+          ls -la geo/ 2>/dev/null || echo "   ❌ ./geo not found"
+          echo ""
+          echo "   Checking ./geo/geosite:"
+          ls -la geo/geosite/ 2>/dev/null | head -10 || echo "   ❌ ./geo/geosite not found"
+          
+          # 检查meta-rule目录结构并适配（artifact可能解压到不同位置）
+          META_RULE_PATH=""
+          
+          # 检查可能的路径
           if [ -d "meta-rule/geo/geosite" ]; then
-            echo "🔧 Detected official nested structure, flattening..."
+            META_RULE_PATH="meta-rule/geo/geosite"
+            echo "✅ Found rules at: meta-rule/geo/geosite"
+          elif [ -d "geo/geosite" ]; then
+            META_RULE_PATH="geo/geosite"
+            echo "✅ Found rules at: geo/geosite (artifact extracted without meta-rule prefix)"
+          elif [ -d "geosite" ]; then
+            META_RULE_PATH="geosite"
+            echo "✅ Found rules at: geosite (flat structure)"
+          elif [ -d "meta-rule" ] && [ ! -d "meta-rule/geo" ]; then
+            META_RULE_PATH="meta-rule"
+            echo "✅ Found rules at: meta-rule (already flat)"
+          fi
+          
+          if [ -n "$META_RULE_PATH" ]; then
+            echo "🔧 Processing rules from: $META_RULE_PATH"
             mkdir -p publish/meta-rule
             
             echo "🔍 Searching for rule files..."
-            echo "   YAML files: $(find meta-rule/geo/geosite -name "*.yaml" -type f | wc -l)"
-            echo "   LIST files: $(find meta-rule/geo/geosite -name "*.list" -type f | wc -l)"
-            echo "   MRS files: $(find meta-rule/geo/geosite -name "*.mrs" -type f | wc -l)"
+            echo "   YAML files: $(find "$META_RULE_PATH" -name "*.yaml" -type f | wc -l)"
+            echo "   LIST files: $(find "$META_RULE_PATH" -name "*.list" -type f | wc -l)"
+            echo "   MRS files: $(find "$META_RULE_PATH" -name "*.mrs" -type f | wc -l)"
             
-            # 复制所有文件到平铺结构（meta-rules-converter已生成所有格式）
-            echo "🔧 Flattening all rule files..."
-            cp meta-rule/geo/geosite/* publish/meta-rule/ 2>/dev/null || true
+            # 复制所有文件到平铺结构
+            echo "🔧 Copying all rule files..."
+            cp "$META_RULE_PATH"/*.yaml publish/meta-rule/ 2>/dev/null || true
+            cp "$META_RULE_PATH"/*.list publish/meta-rule/ 2>/dev/null || true
+            cp "$META_RULE_PATH"/*.mrs publish/meta-rule/ 2>/dev/null || true
             
             echo "🔍 Final meta-rule directory contents:"
             ls -la publish/meta-rule/ | head -20
@@ -420,16 +445,10 @@ jobs:
             echo "  YAML: $(find publish/meta-rule -name "*.yaml" | wc -l)"
             echo "  LIST: $(find publish/meta-rule -name "*.list" | wc -l)"
             echo "  MRS: $(find publish/meta-rule -name "*.mrs" | wc -l)"
-            
-          elif [ -d "meta-rule" ] && [ ! -d "meta-rule/geo" ]; then
-            echo "🔧 Using existing flat structure..."
-            cp -r meta-rule/* publish/meta-rule/ 2>/dev/null || true
           else
             echo "❌ No valid meta-rule structure found!"
             echo "📂 Available directories:"
             ls -la
-            echo "📂 meta-rule contents (if exists):"
-            ls -la meta-rule/ || echo "meta-rule not found"
             echo "🚨 Creating empty meta-rule to prevent total failure..."
             mkdir -p publish/meta-rule
             echo "# Empty meta-rule directory" > publish/meta-rule/README.md

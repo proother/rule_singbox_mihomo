@@ -349,76 +349,11 @@ jobs:
           mkdir -p meta-rule/geo/geosite && mkdir -p meta-rule/geo/geoip
           cd convert
           go run ./ geosite -f ../custom/publish/geosite.dat -o ../meta-rule/geo/geosite
-          echo "✅ Meta rules generated: $(find ../meta-rule -name "*.yaml" -o -name "*.list" | wc -l) files"
           
-      - name: Download and Generate MRS files
-        run: |
-          echo "🔄 Generating MRS (Meta Rule Set) binary files..."
-          echo "📥 Downloading mihomo binary for MRS conversion..."
-          
-          # 下载最新的mihomo Linux AMD64版本
-          MIHOMO_VERSION=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-          wget -q "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.tar.gz" -O mihomo.tar.gz
-          tar -xzf mihomo.tar.gz
-          chmod +x mihomo
-          
-          # 创建MRS输出目录
-          mkdir -p meta-rule/geo/geosite-mrs
-          
-          echo "🔄 Converting YAML to MRS format..."
-          cd meta-rule/geo/geosite
-          
-          # 转换每个YAML文件到MRS
-          converted_count=0
-          for yaml_file in *.yaml; do
-            if [ -f "$yaml_file" ]; then
-              base_name="${yaml_file%.yaml}"
-              # 检测文件类型并验证是否可以转换为MRS
-              has_ipcidr=false
-              has_domain=false
-              has_other=false
-              
-              # 检查规则类型
-              if grep -q "IP-CIDR" "$yaml_file" || grep -q "ip_cidr" "$yaml_file"; then
-                has_ipcidr=true
-              fi
-              if grep -q "DOMAIN" "$yaml_file" || grep -q "domain" "$yaml_file"; then
-                has_domain=true
-              fi
-              if grep -q "PROCESS" "$yaml_file" || grep -q "GEOSITE" "$yaml_file" || grep -q "GEOIP" "$yaml_file"; then
-                has_other=true
-              fi
-              
-              # MRS只支持纯domain或纯ipcidr
-              if [ "$has_other" = true ]; then
-                echo "   ⏭️ Skipping: $yaml_file (contains unsupported rule types for MRS)"
-              elif [ "$has_ipcidr" = true ] && [ "$has_domain" = false ]; then
-                behavior="ipcidr"
-                echo "   Converting: $yaml_file (behavior: $behavior)"
-                if ../../../mihomo convert-ruleset $behavior yaml "$yaml_file" "../geosite-mrs/${base_name}.mrs" 2>/dev/null; then
-                  echo "   ✅ Generated: ${base_name}.mrs"
-                  converted_count=$((converted_count + 1))
-                else
-                  echo "   ⚠️ Failed to convert: $yaml_file"
-                fi
-              elif [ "$has_domain" = true ] && [ "$has_ipcidr" = false ]; then
-                behavior="domain"
-                echo "   Converting: $yaml_file (behavior: $behavior)"
-                if ../../../mihomo convert-ruleset $behavior yaml "$yaml_file" "../geosite-mrs/${base_name}.mrs" 2>/dev/null; then
-                  echo "   ✅ Generated: ${base_name}.mrs"
-                  converted_count=$((converted_count + 1))
-                else
-                  echo "   ⚠️ Failed to convert: $yaml_file"
-                fi
-              else
-                echo "   ⏭️ Skipping: $yaml_file (mixed rule types not supported by MRS)"
-              fi
-            fi
-          done
-          
-          cd ../../..
-          echo "📊 MRS files generated: $converted_count"
-          echo "✅ All formats generated: YAML + LIST + MRS"
+          echo "✅ Meta rules generated:"
+          echo "   YAML files: $(find ../meta-rule -name "*.yaml" | wc -l)"
+          echo "   LIST files: $(find ../meta-rule -name "*.list" | wc -l)"
+          echo "   MRS files: $(find ../meta-rule -name "*.mrs" | wc -l)"
 
       - name: Upload mihomo artifacts
         uses: actions/upload-artifact@v4
@@ -471,37 +406,13 @@ jobs:
             mkdir -p publish/meta-rule
             
             echo "🔍 Searching for rule files..."
-            echo "YAML files: $(find meta-rule/geo/geosite -name "*.yaml" -type f | wc -l)"
-            echo "MRS files: $(find meta-rule/geo/geosite-mrs -name "*.mrs" -type f 2>/dev/null | wc -l || echo 0)"
+            echo "   YAML files: $(find meta-rule/geo/geosite -name "*.yaml" -type f | wc -l)"
+            echo "   LIST files: $(find meta-rule/geo/geosite -name "*.list" -type f | wc -l)"
+            echo "   MRS files: $(find meta-rule/geo/geosite -name "*.mrs" -type f | wc -l)"
             
-            # 复制所有yaml文件到平铺结构
-            echo "🔧 Starting flatten process for YAML files..."
-            for file in $(find meta-rule/geo/geosite -name "*.yaml" -type f); do
-              if [ -f "$file" ]; then
-                filename=$(basename "$file")
-                echo "📝 Processing YAML: $file -> ${filename}"
-                cp "$file" "publish/meta-rule/${filename}"
-                
-                # 生成对应的list文件 (去掉yaml的第一行payload:)
-                tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${filename%.yaml}.list"
-                echo "✅ Generated: ${filename} + ${filename%.yaml}.list"
-              fi
-            done
-            
-            # 复制MRS文件（如果存在）
-            if [ -d "meta-rule/geo/geosite-mrs" ]; then
-              echo "🔧 Processing MRS files..."
-              for file in $(find meta-rule/geo/geosite-mrs -name "*.mrs" -type f); do
-                if [ -f "$file" ]; then
-                  filename=$(basename "$file")
-                  echo "📝 Processing MRS: $file -> ${filename}"
-                  cp "$file" "publish/meta-rule/${filename}"
-                  echo "✅ Copied: ${filename}"
-                fi
-              done
-            else
-              echo "⚠️ No MRS directory found, skipping MRS files"
-            fi
+            # 复制所有文件到平铺结构（meta-rules-converter已生成所有格式）
+            echo "🔧 Flattening all rule files..."
+            cp meta-rule/geo/geosite/* publish/meta-rule/ 2>/dev/null || true
             
             echo "🔍 Final meta-rule directory contents:"
             ls -la publish/meta-rule/ | head -20

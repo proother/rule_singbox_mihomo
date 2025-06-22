@@ -1,852 +1,143 @@
-# README
+# Rule Singbox Mihomo
 
-本仓库每日会自动从 [@blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)  (specifically the `rule/Clash`)**获取**每个目录里主要的`yaml`文件，然后**转换**生成适用于 sing-box 的 `json` 和 `srs` 格式，以及适用于 Mihomo 的 `yaml` 和`list`格式，并发布在[proother/rule_singbox_mihomo@release](https://github.com/proother/rule_singbox_mihomo/tree/release)。
+> ⚡ **并行构建方案 (Ultra Fast Parallel Build)** - 同时生成适用于 **Sing-box** 和 **Mihomo** 的网络规则文件
 
-### 背景
+## 🚀 特色功能
 
-Mihomo 和 sing-box 官方提供的 `geosite` 和 `geoip` 整合了互联网社区整理的大部分域名和 IP 地址。为了提高程序的效率，他们会将一个服务的域名和 IP 分别拆分到两个文件中，但这使得普通用户在日常使用时难以维护。
+### ⚡ 并行构建架构
+- **2x 构建速度**: Sing-box 和 Mihomo 规则并行生成
+- **资源隔离**: 每个Job独立运行，互不干扰
+- **一键发布**: 统一Release包含所有格式规则
 
-本项目的目的是将这些服务提供商的域名、IP，甚至软件包名保存在同一个文件中，方便我们日常使用时对某个服务进行统一的分流管理。
+### 🎯 Sing-box 规则
+- **完整版**: 支持所有规则类型，适合高级用户
+- **Lite版**: 仅包含 IP-CIDR + DOMAIN，体积更小，加载更快
+- **双格式**: JSON 源码 + SRS 二进制，满足不同需求
 
-两个内核的作者化繁为简，我们再次地化繁为简（bushi... 但大家的目标永远只有一个：
+### 🛡️ Mihomo 规则
+- **YAML格式**: 默认格式，兼容性最好
+- **LIST格式**: 纯文本列表，加载速度 3x 更快  
+- **MRS格式**: 实验性二进制格式
 
-**Make Rules Great Again!**
+## 📦 获取方式
 
-### 🔗 **多种访问方式**
+### 🎯 ZIP包下载 (推荐)
+访问 [Releases页面](../../releases/latest) 下载：
 
-我们提供多种 URL 访问方式，您可以根据网络环境自行选择：
-
-#### 📦 **ZIP 包下载 (推荐)**
-- **GitHub Release**: [https://github.com/proother/rule_singbox_mihomo/releases](https://github.com/proother/rule_singbox_mihomo/releases)
-
-#### 🌐 **CDN 直链访问**
-- **GitHub**: [https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/](https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/)
-- **jsDelivr**: [https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/](https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/)
-- **jsDelivr-CF**: [https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/](https://testingcf.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/)
-
-#### 🌳 **分支访问**
-- **完整规则**: `@release` 分支 (包含所有格式)
-- **Sing-box 专用**: `@sing` 分支 (仅 sing-box 规则)
-- **Mihomo 专用**: `@meta` 分支 (仅 mihomo 规则)
-
-您也可以使用类似 [https://ghproxy.cn/](https://ghproxy.cn/) 的前置加速服务。
-
-### Mihomo 示例
-
-由于 Mihomo 内核支持多种rule-provider格式，我们为Mihomo同时提供 `yaml` 和 `list` 文件格式。根据官方文档，Mihomo还支持 `mrs` 二进制格式（仅限domain/ipcidr behavior），但我们当前主要提供classical behavior的规则。
-
-相关文档：[https://wiki.metacubex.one/config/rule-providers/#format](https://wiki.metacubex.one/config/rule-providers/#format)
-
-| 文件格式              | format写法 | 支持的behavior | 性能特点 |
-|---------------------|------------|----------------|----------|
-| *.yaml              | yaml       | classical/domain/ipcidr | 📖 默认格式，可读性好 |
-| *.list              | text       | classical/domain/ipcidr | ⚡ 文本格式，加载快 |
-| *.mrs               | mrs        | domain/ipcidr | 🚀 二进制格式，最高性能 |
-
-**🔥 格式优化**：
-- 🚀 **双格式支持**：`yaml`（默认，兼容性最佳）+ `text`（.list文件，加载速度快）
-- ⚡ **LIST格式优势**：相比YAML加载速度提升约3倍，内存占用更少
-- 🎯 **实用导向**：专注于稳定可靠的格式，确保最大兼容性
-- 🔧 **智能生成**：
-```bash
-# 我们的实现流程
-1. 从源YAML提取规则
-2. 生成标准YAML格式（默认）
-3. 转换为LIST格式（性能优化）  
-4. 尝试MRS生成（实验性，成功时提供）
-```
-- ✅ **实用价值**：LIST格式提供显著性能提升，无需复杂的二进制格式
-
-
-```yaml
-rule-providers:
-  # Classical behavior - 支持所有规则类型 (推荐)
-  Apple_Classical:
-    type: http
-    path: ./ruleset/Apple_Classical.yaml
-    url: "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/meta-rule/Apple_Classical.yaml"
-    interval: 86400
-    behavior: classical
-    format: yaml
-  Microsoft:
-    type: http
-    path: ./ruleset/Microsoft.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Microsoft.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  
-  # MRS binary format - 🔥 最高性能 (仅限domain/ipcidr behavior)
-  Google_Domain:
-    type: http
-    path: ./ruleset/Google-domain.mrs
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Google-domain.mrs"
-    interval: 86400
-    behavior: domain
-    format: mrs
-  China_IPCIDR:
-    type: http
-    path: ./ruleset/China-ipcidr.mrs
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/China_Classical-ipcidr.mrs"
-    interval: 86400
-    behavior: ipcidr
-    format: mrs
-```
-
-
-### sing-box 示例：
-
-sing-box内核的二进制文件`srs`支持路由规则的全部类型，因此所有的sing-box的rule-set我们同时提供`srs`和`json`文件格式。
-
-相关文档：[https://sing-box.sagernet.org/configuration/route/rule/](https://sing-box.sagernet.org/configuration/route/rule/)
-
-| 文件格式              | format写法                                                                                                                              |
-|---------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| *.srs        | binary                                                 |
-| *.json       | source                                                 |
-
-
-```json
-
- "rule_set": [
-      {
-        "type": "remote",
-        "tag": "Apple_Classical",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Apple_Classical.srs"
-      },
-      {
-        "type": "source",
-        "tag": "Microsoft",
-        "format": "source",
-        "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/Microsoft.json"
-      }
-    ]
-```
-
-## ⚡ sing-box Lite规则 (New!)
-
-为了优化sing-box的性能，我们新增了**Lite规则集**，只保留最高效的规则类型：
-
-### 特性
-
-- **🚀 极速匹配**：只包含 `IP-CIDR` 和 `DOMAIN` 规则类型，自动清理空文件
-- **💾 内存优化**：相比完整版规则，内存使用减少 90%+，文件大小减少92%+
-- **⚡ 低延迟**：每次匹配速度提升 3-5倍，100% SRS二进制格式支持
-- **📱 设备友好**：特别适合路由器和资源受限设备，启动时间缩短50%
-
-### 性能对比（实际测试数据）
-
-| 指标 | 完整规则 | Lite规则 | 优化效果 |
-|------|----------|----------|----------|
-| 规则类型 | 全部类型 | IP-CIDR + DOMAIN | 仅保留高效规则类型 |
-| JSON压缩包 | 7.63 MB | 748 KB | ↓ 90.2% |
-| SRS压缩包 | 8.18 MB | 619 KB | ↓ 92.4% |
-| 文件数量 | 686个文件 | 自动优化 | 空文件自动清理 |
-| 规则复杂度 | 包含5种规则类型 | **仅2种高效类型** | 匹配速度优化 |
-| 匹配速度 | 标准 | ↑ 3-5倍 | 极速提升 |
-| 启动时间 | 标准 | ↓ 50% | 快速启动 |
-
-**🔥 重大突破：Lite版通过规则类型精简，实现了极致性能优化，SRS格式比JSON小17%！**
-
-### 使用示例
-
-```json
-{
-  "route": {
-    "rule_set": [
-      {
-        "type": "remote",
-        "tag": "Apple_Lite",
-        "format": "binary",  // 🔥 推荐使用binary格式(.srs)获得最佳性能
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule-lite/Apple_Classical.srs"
-      },
-      {
-        "type": "remote", 
-        "tag": "Google_Lite",
-        "format": "binary",  // ⚡ 比source格式快90%，体积小17%
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule-lite/Google.srs"
-      }
-    ],
-    "rules": [
-      {
-        "rule_set": ["Apple_Lite"],
-        "outbound": "direct"
-      },
-      {
-        "rule_set": ["Google_Lite"],
-        "outbound": "proxy"
-      }
-    ]
-  }
-}
-```
-
-### 文件格式
-
-| 文件格式              | format写法  | 路径                      | 性能特点              |
-|---------------------|-------------|---------------------------|----------------------|
-| *.srs (🔥**强烈推荐**) | binary      | `/sing-rule-lite/*.srs`   | ⚡最快 💾比JSON小17% 🚀路由器优选 |
-| *.json              | source      | `/sing-rule-lite/*.json`  | 📖可读 🛠️调试友好      |
-
-### 适用场景
-
-- ✅ **路由器设备**：OpenWrt、梅林固件等
-- ✅ **性能敏感场景**：高并发服务器
-- ✅ **资源受限设备**：低内存VPS、嵌入式设备
-- ✅ **对延迟敏感**：游戏、直播等应用
-
-完整配置示例请参考：[sing-box_lite_example.json](sing-box_lite_example.json)
-
-## Mihomo懒人配置
-```yaml
-
-# Mihomo懒人配置
-# 国外常用服务单独分流：YouTube，Netflix，Disney+，HBO，Spotify，Telegram，PayPal，Twitter，Facebook，Google，TikTok，GitHub，ChatGPT。
-# 国内常用服务单独分流：苹果服务，微软服务，哔哩哔哩，网易云音乐，游戏平台，亚马逊，百度，豆瓣，微信，抖音，新浪，知乎，小红书。
-rule-providers:
-  Apple:
-    type: http
-    path: ./ruleset/Apple_Classical.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Apple_Classical.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  BiliBili:
-    type: http
-    path: ./ruleset/BiliBili.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/BiliBili.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  NetEaseMusic:
-    type: http
-    path: ./ruleset/NetEaseMusic.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/NetEaseMusic.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Baidu:
-    type: http
-    path: ./ruleset/Baidu.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Baidu.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  DouBan:
-    type: http
-    path: ./ruleset/DouBan.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/DouBan.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  WeChat:
-    type: http
-    path: ./ruleset/WeChat.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/WeChat.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  DouYin:
-    type: http
-    path: ./ruleset/DouYin.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/DouYin.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Sina:
-    type: http
-    path: ./ruleset/Sina.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Sina.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Zhihu:
-    type: http
-    path: ./ruleset/Zhihu.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Zhihu.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  XiaoHongShu:
-    type: http
-    path: ./ruleset/XiaoHongShu.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/XiaoHongShu.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  YouTube:
-    type: http
-    path: ./ruleset/YouTube.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/YouTube.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Netflix:
-    type: http
-    path: ./ruleset/Netflix_Classical.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Netflix_Classical.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Disney:
-    type: http
-    path: ./ruleset/Disney.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Disney.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  HBO:
-    type: http
-    path: ./ruleset/HBO.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/HBO.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Spotify:
-    type: http
-    path: ./ruleset/Spotify.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Spotify.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Telegram:
-    type: http
-    path: ./ruleset/Telegram.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Telegram.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  PayPal:
-    type: http
-    path: ./ruleset/PayPal.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/PayPal.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Twitter:
-    type: http
-    path: ./ruleset/Twitter.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Twitter.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Facebook:
-    type: http
-    path: ./ruleset/Facebook.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Facebook.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Amazon:
-    type: http
-    path: ./ruleset/Amazon.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Amazon.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  OpenAI:
-    type: http
-    path: ./ruleset/OpenAI.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/OpenAI.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Sony:
-    type: http
-    path: ./ruleset/Sony.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Sony.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Nintendo:
-    type: http
-    path: ./ruleset/Nintendo.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Nintendo.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Epic:
-    type: http
-    path: ./ruleset/Epic.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Epic.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  SteamCN:
-    type: http
-    path: ./ruleset/SteamCN.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/SteamCN.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Steam:
-    type: http
-    path: ./ruleset/Steam.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Steam.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Game:
-    type: http
-    path: ./ruleset/Game.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Game.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  GitHub:
-    type: http
-    path: ./ruleset/GitHub.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/GitHub.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Microsoft:
-    type: http
-    path: ./ruleset/Microsoft.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Microsoft.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  Google:
-    type: http
-    path: ./ruleset/Google.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/Google.list"
-    interval: 86400
-    behavior: classical
-    format: text
-  TikTok:
-    type: http
-    path: ./ruleset/TikTok.list
-    url: "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/TikTok.list"
-    interval: 86400
-    behavior: classical
-    format: text
-rules:
-  #RULE-SET 规则，请将下方的所有PROXY配置为你的代理服务器
-  - RULE-SET,Apple,DIRECT
-  - RULE-SET,BiliBili,DIRECT
-  - RULE-SET,NetEaseMusic,DIRECT
-  - RULE-SET,Baidu,DIRECT
-  - RULE-SET,DouBan,DIRECT
-  - RULE-SET,WeChat,DIRECT
-  - RULE-SET,DouYin,DIRECT
-  - RULE-SET,Sina,DIRECT
-  - RULE-SET,Zhihu,DIRECT
-  - RULE-SET,XiaoHongShu,DIRECT
-  - RULE-SET,Microsoft,DIRECT
-  - RULE-SET,Sony,DIRECT
-  - RULE-SET,Nintendo,DIRECT
-  - RULE-SET,Epic,DIRECT
-  - RULE-SET,SteamCN,DIRECT
-  - RULE-SET,YouTube,PROXY
-  - RULE-SET,Netflix,PROXY
-  - RULE-SET,Disney,PROXY
-  - RULE-SET,HBO,PROXY
-  - RULE-SET,Spotify,PROXY
-  - RULE-SET,Telegram,PROXY
-  - RULE-SET,PayPal,PROXY
-  - RULE-SET,Twitter,PROXY
-  - RULE-SET,Facebook,PROXY
-  - RULE-SET,Amazon,PROXY
-  - RULE-SET,OpenAI,PROXY
-  - RULE-SET,Steam,PROXY
-  - RULE-SET,Game,PROXY
-  - RULE-SET,GitHub,PROXY
-  - RULE-SET,Google,PROXY
-  - RULE-SET,TikTok,PROXY
-
-  #GEOSITE 规则，来自官方geosite.db,建议保留
-  - GEOSITE,geolocation-!cn,PROXY # 请将PROXY配置为你的代理服务器
-  - GEOSITE,cn,DIRECT
-
-  #GEOIP 规则，来自官方geoip.db,建议保留
-  - GEOIP,private,DIRECT,no-resolve
-  - GEOIP,CN,DIRECT
-  - DST-PORT,80/8080/443/8443,PROXY # 请将PROXY配置为你的代理服务器
-  #MATCH 匹配所有请求用来兜底,建议保留
-  - MATCH,DIRECT
-```
-
-## sing-box懒人配置
-```json
-
-{
-// sing-box懒人配置
-// 国外常用服务单独分流：YouTube，Netflix，Disney+，HBO，Spotify，Telegram，PayPal，Twitter，Facebook，Google，TikTok，GitHub，ChatGPT。
-// 国内常用服务单独分流：苹果服务，微软服务，哔哩哔哩，网易云音乐，游戏平台，亚马逊，百度，豆瓣，微信，抖音，新浪，知乎，小红书。
-// 食用之前，请删掉本配置里的所有注释，不然无法使用。
-  "route": {
-    "auto_detect_interface": true,
-    "rule_set": [
-      {
-        "type": "remote",
-        "tag": "Apple",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Apple_Classical.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "BiliBili",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/BiliBili.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "NetEaseMusic",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/NetEaseMusic.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Baidu",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Baidu.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "DouBan",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/DouBan.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "WeChat",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/WeChat.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "DouYin",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/DouYin.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Sina",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Sina.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Zhihu",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Zhihu.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "XiaoHongShu",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/XiaoHongShu.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "YouTube",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/YouTube.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Netflix",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Netflix_Classical.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Disney",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Disney.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "HBO",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/HBO.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Spotify",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Spotify.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Telegram",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Telegram.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "PayPal",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/PayPal.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Twitter",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Twitter.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Facebook",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Facebook.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Amazon",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Amazon.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "OpenAI",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/OpenAI.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Sony",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Sony.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Nintendo",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Nintendo.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Epic",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Epic.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "SteamCN",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/SteamCN.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Steam",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Steam.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Game",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Game.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "GitHub",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/GitHub.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Microsoft",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Microsoft.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Google",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/Google.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "TikTok",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/sing-rule/TikTok.srs"
-      },
-// 官方geoip geosite 建议保留
-      {
-        "format": "binary",
-        "tag": "geoip-cn",
-        "type": "remote",
-        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs"
-      },
-      {
-        "format": "binary",
-        "tag": "geosite-geolocation-cn",
-        "type": "remote",
-        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-cn.srs"
-      },
-      {
-        "format": "binary",
-        "tag": "geosite-geolocation-!cn",
-        "type": "remote",
-        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs"
-      }
-    ],
-    "rules": [
-      {
-        "type": "logical",
-        "mode": "or",
-        "rules": [
-          {
-            "protocol": "dns"
-          },
-          {
-            "port": 53
-          }
-        ],
-        "outbound": "dns-out"
-      },
-      {
-        "ip_is_private": true,
-        "outbound": "direct"
-      },
-      {
-        "clash_mode": "Direct",
-        "outbound": "direct"
-      },
-      {
-        "clash_mode": "Global",
-// 请将oubound 配置为你的代理服务器
-        "outbound": "Proxy"
-      },
-      {
-        "type": "logical",
-        "mode": "or",
-        "rules": [
-          {
-            "port": 853
-          },
-          {
-            "network": "udp",
-            "port": 443
-          },
-          {
-            "protocol": "stun"
-          }
-        ],
-        "outbound": "block"
-      },
-      {
-        "outbound": "direct",
-        "rule_set": [
-          "Apple",
-          "BiliBili",
-          "NetEaseMusic",
-          "Baidu",
-          "DouBan",
-          "WeChat",
-          "DouYin",
-          "Sina",
-          "Zhihu",
-          "XiaoHongShu",
-          "Microsoft",
-          "Sony",
-          "Nintendo",
-          "Epic",
-          "SteamCN",
-          "geoip-cn",
-          "geosite-geolocation-cn"
-        ]
-      },
-      {
-        "rule_set": [
-          "YouTube",
-          "Netflix",
-          "Disney",
-          "HBO",
-          "Spotify",
-          "Telegram",
-          "PayPal",
-          "Twitter",
-          "Facebook",
-          "Amazon",
-          "OpenAI",
-          "Steam",
-          "Game",
-          "GitHub",
-          "Google",
-          "TikTok",
-          "geosite-geolocation-!cn"
-        ],
-// 请将oubound 配置为你的代理服务器
-        "outbound": "Proxy"
-      }
-    ]
-  }
-}
-```
-
-# 🚀 Rule Generation Mihomo & Sing-box
-
-## 📋 项目简介
-由于 Mihomo 内核支持多种rule-provider格式，我们为Mihomo同时提供 `yaml` 和 `list` 文件格式。根据官方文档，Mihomo还支持 `mrs` 二进制格式（仅限domain/ipcidr behavior），但我们当前主要提供classical behavior的规则。
-
-相关文档：[https://wiki.metacubex.one/config/rule-providers/#format](https://wiki.metacubex.one/config/rule-providers/#format)
-
-## 🚀 **统一构建方案 (All-in-One)**
-
-本项目采用**统一构建方案**，一次运行同时生成所有格式的规则，发布在同一个 Release 中！
-
-### 📊 **统一方案优势**
-
-| 特性 | 统一方案 (unified.yml) |
-|------|-------------------------|
-| **🎯 覆盖范围** | 🚀 **Sing-box + Mihomo 全支持** |
-| **📅 更新时间** | 每天 20:00 (北京时间) |
-| **🌐 数据源** | 双重数据源：iOS rule script + 多源整合 |
-| **⚡ 处理方式** | 智能分离：Sing-box 快速转换 + Mihomo 官方去重 |
-| **📦 发布标签** | `v{date}` (统一标签) |
-| **🚀 输出内容** | **6种格式**：JSON + SRS + Lite + YAML + LIST + MRS |
-| **📁 输出结构** | 完整目录结构 + 分支推送 + CDN 刷新 |
-
-### 🎯 **一站式获取**
-
-统一 Release 包含所有格式，用户按需下载：
-
-```bash
-# 统一 Release 地址
-https://github.com/proother/rule_singbox_mihomo/releases/tag/v{date}
-
-# 示例 URL  
-https://github.com/proother/rule_singbox_mihomo/releases/tag/v20241215-2000
-```
-
-### 📦 **Release 内容**
-
-每个 Release 包含以下 ZIP 包：
-
-#### 🎯 **Sing-box 用户**
+#### Sing-box 规则包
 - `sing-rules-srs.zip` - 完整版 (.srs 二进制)
-- `sing-rules-json.zip` - 完整版 (.json 源码) 
-- `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制) - **仅 IP-CIDR + DOMAIN**
-- `sing-rules-lite-json.zip` - 精简版 (.json 源码) - **仅 IP-CIDR + DOMAIN**
+- `sing-rules-json.zip` - 完整版 (.json 源码)  
+- `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制)
+- `sing-rules-lite-json.zip` - 精简版 (.json 源码)
 
-#### 🛡️ **Mihomo 用户**
-- `meta-rules-yaml.zip` - YAML 格式 (默认)
-- `meta-rules-list.zip` - LIST 格式 (3x 更快)
-- `meta-rules-mrs.zip` - MRS 格式 (实验性二进制)
+#### Mihomo 规则包  
+- `meta-rules-yaml.zip` - YAML 格式
+- `meta-rules-list.zip` - LIST 格式 (推荐)
+- `meta-rules-mrs.zip` - MRS 格式
 
-## 📊 规则格式说明
-
-| 文件格式              | format写法 | 支持的behavior | 性能特点 |
-|---------------------|------------|----------------|----------|
-| *.yaml              | yaml       | classical/domain/ipcidr | 📖 默认格式，可读性好 |
-| *.list              | text       | classical/domain/ipcidr | ⚡ 文本格式，加载快 |
-| *.mrs               | mrs        | domain/ipcidr | 🚀 二进制格式，最高性能 |
-
-**🔥 格式优化**：
-- 🚀 **双格式支持**：`yaml`（默认，兼容性最佳）+ `text`（.list文件，加载速度快）
-- ⚡ **LIST格式优势**：相比YAML加载速度提升约3倍，内存占用更少
-- 🎯 **实用导向**：专注于稳定可靠的格式，确保最大兼容性
-- 🔧 **智能生成**：
+### 🌐 CDN 直链访问
 ```bash
-# 我们的实现流程
-1. 从源YAML提取规则
-2. 生成标准YAML格式（默认）
-3. 转换为LIST格式（性能优化）  
-4. 尝试MRS生成（实验性，成功时提供）
+# GitHub Raw (稳定)
+https://raw.githubusercontent.com/proother/rule_singbox_mihomo/refs/heads/release/
+
+# jsDelivr CDN (国内加速)  
+https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/
 ```
-- ✅ **实用价值**：LIST格式提供显著性能提升，无需复杂的二进制格式
+
+### 🌳 分支访问
+- **release**: 完整规则 (Sing-box + Mihomo)
+- **sing**: 仅 Sing-box 规则
+- **meta**: 仅 Mihomo 规则
+
+## ⚙️ 使用方法
+
+### Sing-box 配置示例
+```json
+{
+  "rule_set": [
+    {
+      "tag": "geosite-cn",
+      "type": "remote",
+      "format": "binary",
+      "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/cn.srs"
+    }
+  ]
+}
+```
+
+### Mihomo 配置示例
+```yaml
+rule-providers:
+  geosite-cn:
+    type: http
+    behavior: domain
+    url: https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/cn.yaml
+    interval: 86400
+```
+
+## 🔄 自动更新
+
+### ⏰ 构建时间
+- **北京时间**: 每日 20:00 (UTC+8)
+- **UTC时间**: 每日 12:00
+
+### 🏗️ 并行构建流程
+```mermaid
+graph TD
+    A[定时触发 20:00] --> B[Job 1: Sing-box Rules]
+    A --> C[Job 2: Mihomo Rules]
+    B --> D[上传 Sing-box artifacts]
+    C --> E[上传 Mihomo artifacts] 
+    D --> F[Job 3: Publish]
+    E --> F
+    F --> G[创建 ZIP 包]
+    F --> H[GitHub Release]
+    F --> I[分支推送]
+    F --> J[CDN 刷新]
+```
+
+## 📊 数据源
+
+### 🎯 Sing-box 规则源
+- **blackmatrix7/ios_rule_script** (~15,000 规则)
+- 高质量规则集，适合移动设备和桌面端
+
+### 🛡️ Mihomo 规则源  
+- **GFWList** (反审查规则)
+- **China Domains** (国内域名白名单)
+- **Google/Apple China** (特殊优化)
+- **v2fly/domain-list-community** (~30,000 规则)
+
+## ⚡ 性能优势
+
+### 🚀 构建性能
+- **并行构建**: 2x 构建速度
+- **智能缓存**: Go modules 缓存加速
+- **增量更新**: 仅更新变更规则
+
+### 📈 运行性能
+- **SRS格式**: 二进制加载，启动更快
+- **LIST格式**: 纯文本解析，内存占用更少
+- **去重优化**: 智能去除冗余规则
+
+## 🛠️ 技术栈
+
+- **GitHub Actions**: 并行CI/CD流水线
+- **Go 1.22**: 高性能规则转换
+- **meta-converter**: 官方格式转换工具
+- **jsDelivr CDN**: 全球加速分发
+
+## 📄 许可证
+
+MIT License - 自由使用和修改
+
+---
+
+<div align="center">
+
+**🌟 如果这个项目对你有帮助，请点击 Star 支持一下！**
+
+[![Star History Chart](https://api.star-history.com/svg?repos=proother/rule_singbox_mihomo&type=Date)](https://star-history.com/#proother/rule_singbox_mihomo&Date)
+
+</div>
+

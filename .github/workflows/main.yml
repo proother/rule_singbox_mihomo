@@ -63,6 +63,10 @@ jobs:
         run: |
           echo "=== Copying necessary files to data source directory ==="
           mkdir -p community/data_source
+          
+          # 🔧 CRITICAL FIX: Also create the directory structure expected by domain-list-custom
+          echo "=== Creating data directory structure for domain-list-custom ==="
+          mkdir -p community/data
 
           # Copy .yaml files
           echo "=== Copying .yaml files ==="
@@ -77,6 +81,54 @@ jobs:
 
           echo "=== Files in community/data_source ==="
           ls -al community/data_source
+          
+          # 🚀 CRITICAL: Convert YAML files to domain-list-custom format for MRS generation
+          echo "=== Converting YAML files to domain-list-custom format ==="
+          for yaml_file in community/data_source/*.yaml; do
+            if [[ -f "$yaml_file" ]]; then
+              filename=$(basename "$yaml_file" .yaml)
+              echo "Converting $filename to domain-list format..."
+              
+              # Create domain-list-custom format file (.txt)
+              data_file="community/data/${filename}.txt"
+              
+              # Extract domains and IP-CIDRs from YAML and convert to domain-list format
+              {
+                # Extract DOMAIN rules and convert format
+                grep -E "^\s*-\s*DOMAIN," "$yaml_file" | sed 's/^\s*-\s*DOMAIN,//' | sed 's/$//' | sort -u || true
+                # Extract DOMAIN-SUFFIX rules and convert format  
+                grep -E "^\s*-\s*DOMAIN-SUFFIX," "$yaml_file" | sed 's/^\s*-\s*DOMAIN-SUFFIX,//' | sed 's/$//' | sort -u || true
+                # Note: IP-CIDR rules might need different handling in domain-list-custom
+                grep -E "^\s*-\s*IP-CIDR," "$yaml_file" | sed 's/^\s*-\s*IP-CIDR,//' | sed 's|/[0-9]\+||' | sort -u || true
+              } > "$data_file"
+              
+              # Remove empty lines and clean up
+              sed -i '/^$/d; /^[[:space:]]*$/d' "$data_file"
+              
+              rule_count=$(wc -l < "$data_file" 2>/dev/null || echo "0")
+              if [[ "$rule_count" -gt 0 ]]; then
+                echo "✅ Created $data_file with $rule_count rules"
+              else
+                echo "⚠️  $data_file is empty, removing..."
+                rm -f "$data_file"
+              fi
+            fi
+          done
+          
+          echo "=== Domain-list-custom data files created ==="
+          ls -al community/data/ || echo "No data files created"
+          
+          # Show sample content
+          if ls community/data/*.txt 1> /dev/null 2>&1; then
+            echo "=== Sample domain-list data content ==="
+            for data_file in community/data/*.txt; do
+              if [[ -f "$data_file" ]]; then
+                echo "==> $(basename "$data_file") (first 5 lines) <=="
+                head -5 "$data_file" 2>/dev/null || echo "  (empty or error)"
+                break  # Only show one sample to avoid too much output
+              fi
+            done
+          fi
 
       #
       # 5. Convert YAML to sing rules (Updated Step)
@@ -627,7 +679,11 @@ jobs:
              echo "Working directory: $(pwd)"
              echo "Available files: $(ls -la)"
              
-             # 修复参数：使用-datname而不是-outputname
+             # 修复参数：使用-datname而不是-outputname，并指向正确的数据目录
+             echo "🎯 Building geosite.dat from converted domain data..."
+             echo "Data directory contents:"
+             ls -la ../community/data/ | head -10
+             
              if go run ./ --datapath=../community/data --datname=temp-geosite.dat 2>&1; then
                echo "✅ Successfully built temporary geosite.dat"
                

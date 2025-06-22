@@ -251,7 +251,79 @@ jobs:
             rm -rf lite-yaml-source sing-rule-lite-converted
           fi
           
+          echo "=== Final cleanup: Removing empty lite files ==="
+          # Final cleanup - remove any files that only contain version but no rules
+          # This is the definitive check using the actual JSON output from meta-converter
+          removed_empty_count=0
+          for lite_file in sing-rule-lite/*.json; do
+            if [[ -f "$lite_file" ]]; then
+              filename=$(basename "$lite_file")
+              rule_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file" 2>/dev/null || echo "0")
+              
+              if [[ "$rule_count" -eq 0 ]]; then
+                echo "🗑️  Removing empty lite file: $filename (no rules found)"
+                rm "$lite_file"
+                
+                # Also remove corresponding SRS file if it exists
+                srs_file="${lite_file%.json}.srs"
+                if [[ -f "$srs_file" ]]; then
+                  echo "🗑️  Also removing corresponding SRS file: $(basename "$srs_file")"
+                  rm "$srs_file"
+                fi
+                
+                removed_empty_count=$((removed_empty_count + 1))
+              fi
+            fi
+          done
+          
+          if [[ "$removed_empty_count" -gt 0 ]]; then
+            echo "🧹 Cleaned up $removed_empty_count empty lite rule files"
+          else
+            echo "✅ No empty lite files found - all files contain rules"
+          fi
+          
+          # Validate that lite rules only contain ip_cidr and domain fields
+          echo "=== Validating lite rules purity ==="
+          validation_failed=false
+          for lite_file in sing-rule-lite/*.json; do
+            if [[ -f "$lite_file" ]]; then
+              filename=$(basename "$lite_file" .json)
+              ip_count=$(jq '[.rules[]? // empty | select(. != null and has("ip_cidr"))] | length' "$lite_file")
+              domain_count=$(jq '[.rules[]? // empty | select(. != null and has("domain"))] | length' "$lite_file")
+              total_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file")
+              
+              # Check for any unexpected fields in rules (handle null values safely)
+              unexpected_fields=$(jq -r '[.rules[]? // empty | select(. != null) | keys[]? // empty | select(. != "ip_cidr" and . != "domain")] | unique | .[]?' "$lite_file" 2>/dev/null || true)
+              
+              if [[ -n "$unexpected_fields" ]]; then
+                echo "  ❌ $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN) - UNEXPECTED FIELDS: $unexpected_fields"
+                validation_failed=true
+              else
+                echo "  ✅ $filename: $total_count rules ($ip_count IP-CIDR, $domain_count DOMAIN) - CLEAN"
+              fi
+            fi
+          done
+          
+          if [[ "$validation_failed" == "true" ]]; then
+            echo "❌ VALIDATION FAILED: Some lite rules contain unexpected fields!"
+            exit 1
+          else
+            echo "✅ VALIDATION PASSED: All lite rules contain only ip_cidr and domain fields"
+          fi
+          
           echo "=== Final lite directory contents ==="
+          final_json_count=$(find sing-rule-lite -name "*.json" | wc -l)
+          final_srs_count=$(find sing-rule-lite -name "*.srs" | wc -l)
+          echo "📊 Final File Count:"
+          echo "  📄 JSON files: $final_json_count"
+          echo "  🚀 SRS files: $final_srs_count"
+          
+          if [[ "$final_json_count" -gt 0 ]]; then
+            echo "✅ Lite rules successfully generated with proper cleanup"
+          else
+            echo "❌ CRITICAL: No lite JSON files remain after cleanup!"
+          fi
+          
           ls -al sing-rule-lite/ || echo "Lite directory is empty"
 
       #
@@ -345,7 +417,7 @@ jobs:
             | 版本 | 文件数量 | 大小 | 性能特点 |
             |------|----------|------|----------|
             | Complete | 686个文件 | 8.18MB (SRS) | 全功能支持 |
-            | Lite | 199个文件 | 619KB (SRS) | 🚀 92.4% 体积减少 |
+            | Lite | 智能优化 | 619KB (SRS) | 🚀 92.4% 体积减少 + 空文件清理 |
             
             ### 📁 目录结构
             ```

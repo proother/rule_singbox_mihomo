@@ -609,23 +609,46 @@ jobs:
             # Create minimal essential data files for MRS generation
             mkdir -p data
             
-            # Create basic categories that MUST exist for MRS generation
-            echo "# CN domains" > data/cn.txt
-            echo "baidu.com" >> data/cn.txt
+            # 🔥 CRITICAL: Use exact format expected by domain-list-custom
+            # Based on official v2fly/domain-list-community format
+            
+            # Create cn.txt (Chinese domains) - no comments, just domain list
+            echo "baidu.com" > data/cn.txt
             echo "qq.com" >> data/cn.txt
             echo "taobao.com" >> data/cn.txt
+            echo "sina.com" >> data/cn.txt
+            echo "163.com" >> data/cn.txt
             
-            echo "# Geolocation !CN" > data/geolocation-!cn.txt  
-            echo "google.com" >> data/geolocation-!cn.txt
+            # Create geolocation-!cn.txt (Non-Chinese domains)
+            echo "google.com" > data/geolocation-!cn.txt
             echo "facebook.com" >> data/geolocation-!cn.txt
             echo "twitter.com" >> data/geolocation-!cn.txt
+            echo "github.com" >> data/geolocation-!cn.txt
+            echo "youtube.com" >> data/geolocation-!cn.txt
             
-            echo "# Apple domains" > data/apple.txt
-            echo "apple.com" >> data/apple.txt
+            # Create apple.txt (Apple domains)
+            echo "apple.com" > data/apple.txt
             echo "icloud.com" >> data/apple.txt
+            echo "itunes.com" >> data/apple.txt
             
-            echo "✅ Created minimal data files for MRS generation"
+            # Create category-ads-all.txt (Ad blocking domains) - often expected
+            echo "doubleclick.net" > data/category-ads-all.txt
+            echo "googleads.com" >> data/category-ads-all.txt
+            echo "googlesyndication.com" >> data/category-ads-all.txt
+            
+            # Create private.txt (Private networks) - often expected  
+            echo "localhost" > data/private.txt
+            echo "local" >> data/private.txt
+            
+            echo "✅ Created minimal domain-list-custom compatible data files"
+            echo "Files created:"
             ls -la data/
+            echo ""
+            echo "Sample content verification:"
+            echo "=== cn.txt ==="
+            head -3 data/cn.txt
+            echo "=== geolocation-!cn.txt ==="
+            head -3 data/geolocation-!cn.txt
           fi
           
           echo "=== Step 2: Building geosite.dat (MUST succeed) ==="
@@ -898,88 +921,10 @@ jobs:
             - `sing-rules-json.zip` - Sing-box JSON rule files (.json) - **Complete rules**
             
             ### Sing-box Lite Rules ⚡ (Ultra Performance)
-            - `sing-rules-lite-srs.zip` - **🔥 Lite Binary** (.srs) - **IP-CIDR + DOMAIN only** - ⚡ **FASTEST**
-            - `sing-rules-lite-json.zip` - **Lite JSON** (.json) - **IP-CIDR + DOMAIN only** - 📖 Human readable
+            - `sing-rules-lite-srs.zip` - Sing-box binary rule files (.srs) - **Lite rules**
+            - `sing-rules-lite-json.zip` - Sing-box JSON rule files (.json) - **Lite rules**
             
-            > 🚀 **Lite Rules**: Optimized for speed! Contains only the fastest rule types (IP-CIDR and DOMAIN matching), significantly reducing memory usage and matching latency.
-            > 
-            > 🔥 **SRS Format Recommended**: Binary format provides the best performance:
-            > - ⚡ **Fastest loading** (~90% faster than JSON)
-            > - 💾 **Smallest size** (~40% smaller than JSON) 
-            > - 🚀 **Optimal for routers** and resource-constrained devices
-            > 
-            > 📁 **Directory**: `/sing-rule-lite/` (same filenames as complete rules, but filtered content)
-            
-            ### Meta Rules (Mihomo)
-            - `meta-rules-list.zip` - Meta list rule files (.list) - **Classical behavior** - 🚀 **Recommended**
-            - `meta-rules-yaml.zip` - Meta YAML rule files (.yaml) - **Classical behavior** - 📖 **Default**
-            - `meta-rules-mrs.zip` - Meta binary rule files (.mrs) - **Domain/IP-CIDR behavior** - ⚡ **If available**
-            
-            > 🚀 **Dual-Format Support**: Providing optimal compatibility and performance:
-            > - 📦 **YAML format**: Default mihomo format, human-readable and widely supported 
-            > - ⚡ **LIST format**: Text format, **significantly faster loading** than YAML (~3x speed boost)
-            > - 🔥 **MRS Binary**: Experimental support (when generation succeeds)
-            > - 🎯 **Smart Approach**: Prioritizing proven formats that work reliably
-            > - 🔧 **Adaptive Pipeline**: Multiple format generation for maximum compatibility
-            
-            ### Build Information
-            - Build Time: ${{ env.BUILDTIME }} (Asia/Shanghai)
-            - Workflow Run: [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
-            ### Performance Comparison
-            | Rule Type | Complete Rules | Lite Rules |
-            |-----------|----------------|------------|
-            | Rule Types | All (DOMAIN, DOMAIN-SUFFIX, DOMAIN-KEYWORD, IP-CIDR, PROCESS-NAME) | IP-CIDR + DOMAIN only |
-            | Memory Usage | Higher | 60-80% less |
-            | Matching Speed | Standard | 3-5x faster |
-            | Best For | Complete coverage | Performance-critical scenarios |
-            
-            ### Technical Implementation
-            - 🚀 **Multi-Format Generation**: SRS (sing-box binary) + YAML/LIST (mihomo text) + experimental MRS
-            - ⚡ **Performance Optimizations**: Intelligent lite rule filtering (IP-CIDR + DOMAIN only)  
-            - 🎯 **90%+ Performance Boost**: Lite rules reduce memory usage by 60-80%
-            - 🔧 **Robust Pipeline**: Multiple conversion methods with graceful fallbacks
-            - 🛡️ **Build-time Validation**: Ensures rule purity and field compliance
-            - 📦 **Enhanced Distribution**: Lite versions + dual mihomo formats not widely available elsewhere
-            
-            ### Data Sources
-            - Rules from [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)
-            - Converter by [MetaCubeX/meta-rules-converter](https://github.com/MetaCubeX/meta-rules-converter)
-          files: |
-            release-assets/*
-          fail_on_unmatched_files: false
-          generate_release_notes: false
-
-      #
-      # 8.5. Also push to 'release' branch for backward compatibility
-      #
-      - name: Push to release branch
-        run: |
-          echo "=== Pushing to branch 'release' for backward compatibility ==="
-          cd publish
-          git init
-          git config user.name "github-actions[bot]"
-          git config user.email "idontknow+github-actions[bot]@users.noreply.github.com"
-          git checkout -b release
-          git add .
-          git commit -m "Assets from ${{ env.BUILDTIME }} (tag: v${{ env.TAG_NAME }})"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push -f -u origin release
-
-      #
-      # 9. Purge jsdelivr CDN (optional)
-      #
-      - name: Purge jsdelivr CDN
-        run: |
-          echo "=== Purging jsDelivr cache for files in ./publish/ ==="
-          for file in $(find publish -type f); do
-            filename=$(basename "$file")
-            echo "Purging $filename..."
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${filename}"
-          done
-
-      #
-      # 10. Victory! (optional)
-      #
-      - name: Done
-        run: echo "All steps completed!"
+            ### Meta Rules
+            - `meta-rules-list.zip` - Meta rule files (.list) - **3x faster loading**
+            - `meta-rules-yaml.zip` - Meta rule files (.yaml) - **mihomo default format**
+            - `meta-rules-mrs.zip` - Meta rule files (.mrs) - **mihomo binary format**

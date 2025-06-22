@@ -390,45 +390,49 @@ jobs:
           echo "🔍 Debug: Checking directory structure..."
           echo "📂 Root directory contents:"
           ls -la
-          echo "📂 Checking for geo directory:"
-          ls -la geo/ || echo "❌ geo directory not found"
-          echo "📂 Checking for geo/geosite:"
-          ls -la geo/geosite/ || echo "❌ geo/geosite directory not found"
+          echo "📂 Checking for meta-rule directory:"
+          ls -la meta-rule/ || echo "❌ meta-rule directory not found"
+          echo "📂 Checking meta-rule subdirectories:"
+          ls -la meta-rule/geo/ || echo "❌ meta-rule/geo directory not found"
+          ls -la meta-rule/geo/geosite/ || echo "❌ meta-rule/geo/geosite directory not found"
           
           # 检查meta-rule目录结构并适配
-          if [ -d "geo/geosite" ]; then
+          if [ -d "meta-rule/geo/geosite" ]; then
             echo "🔧 Detected official nested structure, flattening..."
             mkdir -p publish/meta-rule
             
-            echo "🔍 Searching for classical.yaml files..."
-            find geo/geosite -name "classical.yaml" -type f | head -10
+            echo "🔍 Searching for yaml files..."
+            find meta-rule/geo/geosite -name "*.yaml" -type f | head -10
             
-            echo "🔍 Total classical.yaml files found: $(find geo/geosite -name "classical.yaml" -type f | wc -l)"
+            echo "🔍 Total yaml files found: $(find meta-rule/geo/geosite -name "*.yaml" -type f | wc -l)"
             
-            # 使用for循环替代while循环避免子shell问题
+            # 复制所有yaml文件到平铺结构
             echo "🔧 Starting flatten process..."
-            for file in $(find geo/geosite -name "classical.yaml" -type f); do
+            for file in $(find meta-rule/geo/geosite -name "*.yaml" -type f); do
               if [ -f "$file" ]; then
-                dirname=$(basename $(dirname "$file"))
-                echo "📝 Processing: $file -> ${dirname}.yaml"
-                cp "$file" "publish/meta-rule/${dirname}.yaml"
-                # 生成对应的list文件
-                tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${dirname}.list"
-                echo "✅ Flattened: ${dirname}.yaml + ${dirname}.list"
+                filename=$(basename "$file")
+                echo "📝 Processing: $file -> ${filename}"
+                cp "$file" "publish/meta-rule/${filename}"
+                
+                # 生成对应的list文件 (去掉yaml的第一行payload:)
+                tail -n +2 "$file" | sed 's/^[[:space:]]*-\s*//g' | grep -v '^$' > "publish/meta-rule/${filename%.yaml}.list"
+                echo "✅ Flattened: ${filename} + ${filename%.yaml}.list"
               fi
             done
             
             echo "🔍 Final meta-rule directory contents:"
-            ls -la publish/meta-rule/ || echo "❌ meta-rule directory empty"
+            ls -la publish/meta-rule/ | head -20
             echo "📊 Meta-rule files count: $(find publish/meta-rule -type f | wc -l)"
             
-          elif [ -d "meta-rule" ]; then
+          elif [ -d "meta-rule" ] && [ ! -d "meta-rule/geo" ]; then
             echo "🔧 Using existing flat structure..."
-            cp -r meta-rule publish/meta-rule
+            cp -r meta-rule/* publish/meta-rule/ 2>/dev/null || true
           else
-            echo "❌ No meta-rule directory found!"
+            echo "❌ No valid meta-rule structure found!"
             echo "📂 Available directories:"
             ls -la
+            echo "📂 meta-rule contents (if exists):"
+            ls -la meta-rule/ || echo "meta-rule not found"
             echo "🚨 Creating empty meta-rule to prevent total failure..."
             mkdir -p publish/meta-rule
             echo "# Empty meta-rule directory" > publish/meta-rule/README.md
@@ -444,41 +448,63 @@ jobs:
           mkdir -p release-assets
           echo "📦 Creating ZIP packages"
           
+          echo "🔍 Debug: Checking publish directory structure before ZIP..."
+          echo "📂 publish/ contents:"
+          ls -la publish/
+          echo "📂 publish/meta-rule contents:"
+          ls -la publish/meta-rule/ | head -20 || echo "❌ meta-rule directory not found or empty"
+          
           # Sing-box packages
           cd publish/sing-rule
           if ls *.srs 1> /dev/null 2>&1; then
             zip -r ../../release-assets/sing-rules-srs.zip *.srs
             echo "✅ sing-rules-srs.zip ($(ls *.srs | wc -l) files)"
+          else
+            echo "⚠️ No .srs files found in sing-rule"
           fi
           if ls *.json 1> /dev/null 2>&1; then
             zip -r ../../release-assets/sing-rules-json.zip *.json
             echo "✅ sing-rules-json.zip ($(ls *.json | wc -l) files)"
+          else
+            echo "⚠️ No .json files found in sing-rule"
           fi
+          
           cd ../sing-rule-lite
           if ls *.srs 1> /dev/null 2>&1; then
             zip -r ../../release-assets/sing-rules-lite-srs.zip *.srs
             echo "✅ sing-rules-lite-srs.zip ($(ls *.srs | wc -l) files)"
+          else
+            echo "⚠️ No .srs files found in sing-rule-lite"
           fi
           if ls *.json 1> /dev/null 2>&1; then
             zip -r ../../release-assets/sing-rules-lite-json.zip *.json
             echo "✅ sing-rules-lite-json.zip ($(ls *.json | wc -l) files)"
+          else
+            echo "⚠️ No .json files found in sing-rule-lite"
           fi
           
           # Mihomo packages  
           cd ../meta-rule
+          echo "🔍 Current directory: $(pwd)"
+          echo "📂 Files in meta-rule:"
+          ls -la | head -20
+          
           if ls *.yaml 1> /dev/null 2>&1; then
             zip -r ../../release-assets/meta-rules-yaml.zip *.yaml
             echo "✅ meta-rules-yaml.zip ($(ls *.yaml | wc -l) files)"
+          else
+            echo "⚠️ No .yaml files found in meta-rule"
           fi
           if ls *.list 1> /dev/null 2>&1; then
             zip -r ../../release-assets/meta-rules-list.zip *.list
             echo "✅ meta-rules-list.zip ($(ls *.list | wc -l) files)"
-          fi
-          if ls *.mrs 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/meta-rules-mrs.zip *.mrs
-            echo "✅ meta-rules-mrs.zip ($(ls *.mrs | wc -l) files)"
+          else
+            echo "⚠️ No .list files found in meta-rule"
           fi
           cd ../..
+          
+          echo "📦 Final release-assets contents:"
+          ls -la release-assets/
 
       - name: Create Unified GitHub Release
         uses: softprops/action-gh-release@v1
@@ -525,10 +551,29 @@ jobs:
 
       - name: Purge jsDelivr CDN
         run: |
-          echo "🚀 Purging jsDelivr CDN"
+          echo "🚀 Purging jsDelivr CDN - This may take a while..."
           cd publish
-          for file in $(find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" | head -30); do
+          
+          # 统计文件
+          total_files=$(find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" | wc -l)
+          echo "📊 Total files to purge: $total_files"
+          
+          # 分批清理CDN（每批100个文件）
+          batch_size=100
+          batch_num=0
+          file_count=0
+          
+          find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" | while IFS= read -r file; do
             file_path=$(echo "$file" | sed 's|^\./||')
-            curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file_path}" || true
+            curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file_path}" > /dev/null 2>&1 || true
+            
+            file_count=$((file_count + 1))
+            
+            # 每100个文件显示进度
+            if [ $((file_count % batch_size)) -eq 0 ]; then
+              batch_num=$((batch_num + 1))
+              echo "✅ Batch $batch_num completed: $file_count/$total_files files purged"
+            fi
           done
-          echo "✅ CDN cache purged"
+          
+          echo "🎉 CDN purge completed! Total: $file_count files"

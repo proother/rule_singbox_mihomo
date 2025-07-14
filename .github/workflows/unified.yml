@@ -274,10 +274,58 @@ jobs:
           name: mihomo-rules
           path: meta-rule/
 
-  # Job 3: Publish (Sequential - waits for both parallel jobs)
+  # Job 3: Generate GeoIP Rules (Parallel)
+  geoip-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set variables
+        run: |
+          echo "GOAMD64=v3" >> $GITHUB_ENV
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+          echo "TAG_NAME=$(TZ=Asia/Shanghai date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
+
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ^1.22
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing GeoIP generator dependencies..."
+          go mod download
+          go mod tidy
+
+      - name: Build geoip rule sets
+        id: build
+        run: |
+          echo "🌍 GENERATING GEOIP RULE SETS"
+          go run -v geoip_generator.go
+          
+          echo "📊 Generated GeoIP files:"
+          if [ -d "release/sing-geoip" ]; then
+            echo "   SRS files: $(find release/sing-geoip -name "*.srs" | wc -l)"
+            ls -la release/sing-geoip/*.srs | head -10
+            echo "   ..."
+          else
+            echo "   ❌ No GeoIP files generated"
+          fi
+        env:
+          FIXED_RELEASE: ${{ github.event.inputs.tag }}
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload geoip artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: geoip-rules
+          path: release/sing-geoip/
+
+  # Job 4: Publish (Sequential - waits for all three parallel jobs)
   publish:
     runs-on: ubuntu-latest
-    needs: [sing-box-rules, mihomo-rules]
+    needs: [sing-box-rules, mihomo-rules, geoip-rules]
     steps:
       - name: Set variables
         run: |
@@ -297,12 +345,26 @@ jobs:
           name: mihomo-rules
           path: ./
 
+      - name: Download geoip artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: geoip-rules
+          path: ./release/sing-geoip
+
       - name: Prepare publish artifacts
         run: |
           echo "📦 PREPARING UNIFIED PUBLISH"
           mkdir -p publish
           cp -r sing-rule publish/sing-rule
           cp -r sing-rule-lite publish/sing-rule-lite
+          
+          # Copy GeoIP rules
+          if [ -d "release/sing-geoip" ]; then
+            cp -r release/sing-geoip publish/sing-geoip
+            echo "✅ Copied GeoIP rules: $(find publish/sing-geoip -name "*.srs" | wc -l) files"
+          else
+            echo "⚠️ No GeoIP rules found"
+          fi
           
           echo "🔍 Debug: Checking directory structure after artifact download..."
           echo "📂 Root directory contents:"
@@ -371,6 +433,7 @@ jobs:
           echo "Sing-box rules: $(find publish/sing-rule -type f | wc -l) files"
           echo "Sing-box lite: $(find publish/sing-rule-lite -type f | wc -l) files"
           echo "Mihomo rules: $(find publish/meta-rule -type f | wc -l) files"
+          echo "GeoIP rules: $(find publish/sing-geoip -type f 2>/dev/null | wc -l) files"
 
       - name: Create ZIP archives
         run: |
@@ -438,6 +501,20 @@ jobs:
           fi
           cd ../..
           
+          # GeoIP packages
+          if [ -d "publish/sing-geoip" ]; then
+            cd publish/sing-geoip
+            if ls *.srs 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/geoip-srs.zip *.srs
+              echo "✅ geoip-srs.zip ($(ls *.srs | wc -l) files)"
+            else
+              echo "⚠️ No .srs files found in sing-geoip"
+            fi
+            cd ../..
+          else
+            echo "⚠️ sing-geoip directory not found"
+          fi
+          
           echo "📦 Final release-assets contents:"
           ls -la release-assets/
 
@@ -460,8 +537,13 @@ jobs:
             - `meta-rules-list.zip` - LIST 格式 (纯文本，加载更快)
             - `meta-rules-mrs.zip` - MRS 格式 (二进制，性能最优)
             
+            ### 🌍 GeoIP 规则
+            - `geoip-srs.zip` - 所有国家/地区的 IP 地址段 (.srs 二进制)
+            - 文件格式: `geoip-{国家代码}.srs` (如 `geoip-cn.srs`)
+            - 包含 200+ 个国家/地区的 IP 数据
+            
             ### ⚡ 并行构建优势
-            - 🚀 **2x 构建速度**: Sing-box 和 Mihomo 并行生成
+            - 🚀 **3x 构建速度**: Sing-box、Mihomo 和 GeoIP 并行生成
             - 🎯 **资源隔离**: 每个Job独立运行，互不干扰
             - 📊 **清晰日志**: 分Job显示，问题定位更容易
             - 🔥 **官方算法**: 完全使用MetaCubeX官方代码和算法
@@ -469,6 +551,7 @@ jobs:
             ### 📊 数据源
             - **Sing-box**: iOS rule script (~15k 规则)
             - **Mihomo**: 多源整合 GFWList + China domains (~30k 规则)
+            - **GeoIP**: MaxMind GeoIP 数据库 (每月更新)
             
             ### 🔗 访问方式
             - **完整规则**: `release` 分支包含所有规则文件

@@ -5,8 +5,8 @@
 ## ✨ 特色功能
 
 ### ⚡ 统一构建系统
-- **一个Workflow，全部搞定**: 同时生成 Sing-box 和 Mihomo 规则
-- **并行处理**: 2倍构建速度，独立Job互不干扰
+- **一个Workflow，全部搞定**: 同时生成 Sing-box、Mihomo 和 GeoIP 规则
+- **并行处理**: 3倍构建速度，独立Job互不干扰
 - **统一发布**: 所有规则集中在一个Release，方便下载
 
 ### 🎯 Sing-box 规则 (更新：使用 Python 脚本方式)
@@ -24,6 +24,12 @@
   - `.list` - 纯文本格式，加载更快
   - `.mrs` - 二进制格式，性能最优（仅支持纯domain/ipcidr规则）
 
+### 🌍 GeoIP 规则
+- **MaxMind 数据源**: 基于 Dreamacro/maxmind-geoip 项目
+- **200+ 国家/地区**: 完整的全球 IP 地址段数据
+- **Sing-box 专用**: SRS 二进制格式，加载速度快
+- **文件命名**: `geoip-{国家代码}.srs`（如 geoip-cn.srs）
+
 ## 📦 下载使用
 
 ### 方式一：下载ZIP包（推荐）
@@ -40,6 +46,8 @@
 | `meta-rules-yaml.zip` | YAML格式 | 标准用法 |
 | `meta-rules-list.zip` | LIST纯文本格式 | 快速加载 |
 | `meta-rules-mrs.zip` | MRS二进制格式 | 极致性能 |
+| **GeoIP 规则** |
+| `sing-box-geoip-srs.zip` | IP地址段规则集 | 按国家分流 |
 
 ### 方式二：CDN直链（在线更新）
 
@@ -90,6 +98,24 @@ rules:
   - RULE-SET,cn,DIRECT
 ```
 
+### GeoIP 配置（Sing-box）
+```json
+{
+  "route": {
+    "rule_set": [{
+      "tag": "geoip-cn",
+      "type": "remote",
+      "format": "binary",
+      "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-geoip/geoip-cn.srs"
+    }],
+    "rules": [{
+      "rule_set": "geoip-cn",
+      "outbound": "direct"
+    }]
+  }
+}
+```
+
 ## 🔄 更新机制
 
 - **更新时间**: 每日北京时间 20:00（UTC 12:00）
@@ -102,6 +128,7 @@ rules:
 |--------|--------|----------|
 | **Sing-box** | [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) | ~15,000 |
 | **Mihomo** | 多源整合：GFWList + China Domains + v2fly社区 | ~30,000 |
+| **GeoIP** | [Dreamacro/maxmind-geoip](https://github.com/Dreamacro/maxmind-geoip) | 200+ 国家/地区 |
 
 > 注意：Sing-box 规则生成时会跳过 IP-ASN 规则，仅包含 DOMAIN、DOMAIN-SUFFIX、DOMAIN-KEYWORD、IP-CIDR 和 PROCESS-NAME 规则。
 
@@ -115,20 +142,23 @@ graph LR
     (Python脚本)"]
     A --> C["并行Job 2
     Mihomo规则生成"]
-    B --> D[上传Artifacts]
-    C --> D
-    D --> E["发布Job
+    A --> D["并行Job 3
+    GeoIP规则生成"]
+    B --> E[上传Artifacts]
+    C --> E
+    D --> E
+    E --> F["发布Job
     整合打包"]
-    E --> F["GitHub Release
+    F --> G["GitHub Release
     ZIP包下载"]
-    E --> G["Git Push
+    F --> H["Git Push
     release分支"]
-    E --> H["CDN刷新
+    F --> I["CDN刷新
     jsDelivr"]
 ```
 
 ### 核心优势
-- **并行构建**: Sing-box 和 Mihomo 同时生成，效率翻倍
+- **并行构建**: Sing-box、Mihomo 和 GeoIP 同时生成，效率提升3倍
 - **Python 脚本**: Sing-box 使用 Python 脚本处理，更灵活
 - **官方工具**: Mihomo 使用 MetaCubeX 官方 meta-rules-converter
 - **智能去重**: 自动去除冗余规则，优化体积

@@ -505,8 +505,8 @@ jobs:
           if [ -d "publish/sing-geoip" ]; then
             cd publish/sing-geoip
             if ls *.srs 1> /dev/null 2>&1; then
-              zip -r ../../release-assets/geoip-srs.zip *.srs
-              echo "✅ geoip-srs.zip ($(ls *.srs | wc -l) files)"
+              zip -r ../../release-assets/sing-box-geoip-srs.zip *.srs
+              echo "✅ sing-box-geoip-srs.zip ($(ls *.srs | wc -l) files)"
             else
               echo "⚠️ No .srs files found in sing-geoip"
             fi
@@ -538,7 +538,7 @@ jobs:
             - `meta-rules-mrs.zip` - MRS 格式 (二进制，性能最优)
             
             ### 🌍 GeoIP 规则
-            - `geoip-srs.zip` - 所有国家/地区的 IP 地址段 (.srs 二进制)
+            - `sing-box-geoip-srs.zip` - 所有国家/地区的 IP 地址段 (.srs 二进制)
             - 文件格式: `geoip-{国家代码}.srs` (如 `geoip-cn.srs`)
             - 包含 200+ 个国家/地区的 IP 数据
             

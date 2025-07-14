@@ -96,7 +96,7 @@ wget https://raw.githubusercontent.com/proother/rule_singbox_mihomo/release/sing
 ## 下载方式
 
 ### GitHub Release
-每次更新后会生成 `geoip-srs.zip` 包含所有国家的规则集文件，可从 [Releases](https://github.com/proother/rule_singbox_mihomo/releases) 页面下载。
+每次更新后会生成 `sing-box-geoip-srs.zip` 包含所有国家的规则集文件，可从 [Releases](https://github.com/proother/rule_singbox_mihomo/releases) 页面下载。
 
 ### 直接访问
 - GitHub Raw: `https://raw.githubusercontent.com/proother/rule_singbox_mihomo/release/sing-geoip/{文件名}`

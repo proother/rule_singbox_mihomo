@@ -8,7 +8,7 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: '0 12 * * *'
+    - cron: '0 12 * * *'  # 北京时间 20:00
 
 permissions:
   contents: write
@@ -29,190 +29,103 @@ jobs:
           echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
           echo "TAG_NAME=$(TZ=Asia/Shanghai date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
 
-      - name: Checkout blackmatrix7/ios_rule_script
+      - name: Checkout current repository
         uses: actions/checkout@v4
         with:
-          repository: blackmatrix7/ios_rule_script
-          path: ios_rule_script
+          path: current-repo
 
-      - name: Checkout MetaCubeX/meta-rules-converter
-        uses: actions/checkout@v4
-        with:
-          repository: MetaCubeX/meta-rules-converter
-          path: converter
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Prepare data source
+      - name: Setup sing-box
+        env:
+          SING_BOX_DEB_URL: "https://github.com/SagerNet/sing-box/releases/download/v1.10.0-beta.5/sing-box_1.10.0-beta.5_linux_amd64.deb"
         run: |
-          echo "🎯 GENERATING SING-BOX RULES"
-          echo "📁 Scanning iOS rule script directories..."
-          mkdir -p community/data_source
-          total_dirs=0
-          copied_files=0
-          
-          for dir in $(find ios_rule_script/rule/Clash -type d); do
-            total_dirs=$((total_dirs + 1))
-            if ls "$dir"/*_Classical.yaml 2>/dev/null; then
-              classical_files=$(find "$dir" -type f -name '*_Classical.yaml' ! -name '*_No_Resolve.yaml')
-              for file in $classical_files; do
-                cp "$file" community/data_source/
-                copied_files=$((copied_files + 1))
-                echo "📄 Copied: $(basename "$file")"
-              done
-            else
-              dir_name=$(basename "$dir")
-              target_file=$(find "$dir" -type f -name "${dir_name}.yaml" ! -name '*_No_Resolve.yaml' -print -quit)
-              if [[ -n "$target_file" ]]; then
-                cp "$target_file" community/data_source/
-                copied_files=$((copied_files + 1))
-                echo "📄 Copied: $(basename "$target_file")"
-              fi
-            fi
-          done
-          
-          echo "✅ Data source preparation complete:"
-          echo "   📂 Scanned directories: $total_dirs"
-          echo "   📄 Files copied: $copied_files"
-          echo "   📋 Final count: $(ls community/data_source | wc -l) files"
+          set -Eeuo pipefail
+          wget -O sing-box.deb $SING_BOX_DEB_URL
+          sudo dpkg -i sing-box.deb
+          rm sing-box.deb
 
-      - name: Convert to sing rules
+      - name: Copy Python scripts
         run: |
-          echo "🔄 Converting YAML rules to Sing-box format..."
-          mkdir -p sing-rule
-          cd converter && go build -o meta-converter .
-          echo "✅ Meta-converter built successfully"
-          
-          echo "🎯 Starting conversion process..."
-          ./meta-converter clash -f ../community/data_source -o ../sing-rule -t sing-box
-          
-          echo "📝 Processing converted files..."
-          cd ../sing-rule
-          processed_count=0
-          for dir in */; do
-            dir_name=$(basename "$dir")
-            if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-              original_yaml=$(find ../community/data_source -type f -iname "${dir_name}.yaml" -print -quit)
-              if [[ -n "$original_yaml" ]]; then
-                original_name=$(basename "$original_yaml" .yaml)
-                mv "$dir/classical.json" "${original_name}.json"
-                mv "$dir/classical.srs" "${original_name}.srs"
-                echo "✅ Processed: ${original_name} (.json + .srs)"
-              else
-                mv "$dir/classical.json" "${dir_name}.json"
-                mv "$dir/classical.srs" "${dir_name}.srs"
-                echo "✅ Processed: ${dir_name} (.json + .srs)"
-              fi
-              processed_count=$((processed_count + 1))
-            fi
-            rm -rf "$dir"
-          done
-          
-          echo "🎉 Conversion complete:"
-          echo "   📄 Processed rules: $processed_count"
-          echo "   📊 Generated files: $(ls *.json *.srs 2>/dev/null | wc -l)"
+          # 复制修改后的 Python 脚本和相关文件
+          cp current-repo/main.py ./
+          cp current-repo/compile.sh ./
+          cp current-repo/requirements.txt ./
+          # 修改 main.py 中的输出目录从 rule 到 sing-rule
+          sed -i "s|os.path.join(current_dir, 'rule')|os.path.join(current_dir, 'sing-rule')|g" main.py
+          sed -i 's|base_dir="rule"|base_dir="sing-rule"|g' compile.sh
 
-      - name: Create lite rules with cleanup
+      - name: Setup Python environment
+        run: |
+          set -Eeuo pipefail
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install -r requirements.txt
+
+      - name: Generate sing-box rules
+        run: |
+          echo "🎯 GENERATING SING-BOX RULES (Python Method)"
+          set -Eeuo pipefail
+          source venv/bin/activate
+          python3 main.py
+          
+          echo "📊 Generated files:"
+          echo "   JSON files: $(find sing-rule -name "*.json" | wc -l)"
+
+      - name: Compile sing-box rules
+        run: |
+          echo "🔄 Compiling sing-box rules to SRS format..."
+          bash compile.sh
+          
+          echo "📊 Compiled files:"
+          echo "   SRS files: $(find sing-rule -name "*.srs" | wc -l)"
+
+      - name: Create lite rules
         run: |
           echo "🔧 Creating Lite rules (IP-CIDR + DOMAIN only)..."
           mkdir -p sing-rule-lite
           sudo apt-get update && sudo apt-get install -y jq
           
-          echo "📝 Step 1: Creating lite JSON rules..."
-          lite_json_count=0
+          # 复制完整规则并过滤
           for json_file in sing-rule/*.json; do
             if [[ -f "$json_file" ]]; then
               filename=$(basename "$json_file" .json)
               echo "   Processing: $filename"
-              jq '{version: .version, rules: [.rules[] | with_entries(select(.key == "ip_cidr" or .key == "domain")) | select(keys | length > 0)]}' "$json_file" > "sing-rule-lite/${filename}.json"
-              rule_count=$(jq '.rules | if . == null then 0 else length end' "sing-rule-lite/${filename}.json")
+              
+              # 提取仅包含 ip_cidr 和 domain 的规则
+              jq '{version: .version, rules: [.rules[] | with_entries(select(.key == "ip_cidr" or .key == "domain" or .key == "domain_suffix")) | select(. != {})]}' "$json_file" > "sing-rule-lite/${filename}.json"
+              
+              # 检查是否有有效规则
+              rule_count=$(jq '[.rules[]? | length] | add // 0' "sing-rule-lite/${filename}.json")
               if [[ "$rule_count" -eq 0 ]]; then
                 echo "   ❌ Removed empty: $filename (0 rules)"
                 rm "sing-rule-lite/${filename}.json"
               else
                 echo "   ✅ Created: $filename ($rule_count rules)"
-                lite_json_count=$((lite_json_count + 1))
+                
+                # 如果存在对应的 SRS 文件，也复制一份用于后续处理
+                if [[ -f "sing-rule/${filename}.srs" ]]; then
+                  cp "sing-rule/${filename}.srs" "sing-rule-lite/${filename}_temp.srs"
+                fi
               fi
             fi
           done
           
-          echo "📝 Step 2: Preparing YAML sources for SRS conversion..."
-          mkdir -p lite-yaml-source
-          yaml_count=0
-          for yaml_file in community/data_source/*.yaml; do
-            if [[ -f "$yaml_file" ]]; then
-              filename=$(basename "$yaml_file" .yaml)
-              {
-                echo "payload:"
-                grep -E "^\s*-\s*DOMAIN," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
-                grep -E "^\s*-\s*IP-CIDR," "$yaml_file" | sed 's/^[[:space:]]*/  /' || true
-              } > "lite-yaml-source/${filename}.yaml"
-              rule_count=$(grep -c "^\s*-\s*" "lite-yaml-source/${filename}.yaml" 2>/dev/null || echo "0")
-              if [[ "$rule_count" -eq 0 ]]; then
-                echo "payload:" > "lite-yaml-source/${filename}.yaml"
-              fi
-              yaml_count=$((yaml_count + 1))
+          # 为 lite 版本重新编译 SRS
+          cd sing-rule-lite
+          for json_file in *.json; do
+            if [[ -f "$json_file" ]]; then
+              filename=$(basename "$json_file" .json)
+              sing-box rule-set compile --output "${filename}.srs" "$json_file"
+              echo "   ✅ Compiled lite SRS: $filename"
             fi
           done
           
-          echo "📝 Step 3: Converting lite YAML to SRS..."
-          cd converter
-          if ./meta-converter clash -f ../lite-yaml-source -o ../sing-rule-lite-converted -t sing-box 2>&1; then
-            echo "✅ SRS conversion successful"
-            cd ../sing-rule-lite-converted
-            srs_count=0
-            for dir in */; do
-              if [[ -d "$dir" ]]; then
-                dir_name=$(basename "$dir")
-                for lite_json in ../sing-rule-lite/*.json; do
-                  if [[ -f "$lite_json" ]]; then
-                    lite_basename=$(basename "$lite_json" .json)
-                    if [[ "${lite_basename,,}" == "${dir_name,,}" ]]; then
-                      original_basename=$(basename "$lite_json" .json)
-                      if [[ -f "$dir/classical.json" && -f "$dir/classical.srs" ]]; then
-                        mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
-                        mv "$dir/classical.srs" "../sing-rule-lite/${original_basename}.srs"
-                        echo "   ✅ SRS created: $original_basename"
-                        srs_count=$((srs_count + 1))
-                      elif [[ -f "$dir/classical.json" ]]; then
-                        mv "$dir/classical.json" "../sing-rule-lite/${original_basename}.json"
-                      fi
-                      break
-                    fi
-                  fi
-                done
-              fi
-            done
-            cd ..
-          else
-            echo "⚠️ SRS conversion failed, continuing with JSON only"
-          fi
-          rm -rf lite-yaml-source sing-rule-lite-converted
-          
-          echo "📝 Step 4: Final cleanup - removing empty files..."
-          cleaned_count=0
-          for lite_file in sing-rule-lite/*.json; do
-            if [[ -f "$lite_file" ]]; then
-              rule_count=$(jq '.rules | if . == null then 0 else length end' "$lite_file" 2>/dev/null || echo "0")
-              if [[ "$rule_count" -eq 0 ]]; then
-                echo "   🗑️ Cleaned: $(basename "$lite_file") (empty)"
-                rm "$lite_file"
-                srs_file="${lite_file%.json}.srs"
-                [[ -f "$srs_file" ]] && rm "$srs_file"
-                cleaned_count=$((cleaned_count + 1))
-              fi
-            fi
-          done
+          # 清理临时文件
+          rm -f *_temp.srs
+          cd ..
           
           echo "🎉 Lite rules creation complete:"
-          echo "   📄 Lite JSON files: $lite_json_count"
-          echo "   📄 YAML sources: $yaml_count"
-          echo "   📄 SRS files: $srs_count"
-          echo "   🗑️ Cleaned empty: $cleaned_count"
-          echo "   📊 Final count: $(ls sing-rule-lite/*.json sing-rule-lite/*.srs 2>/dev/null | wc -l) files"
+          echo "   📄 Lite JSON files: $(find sing-rule-lite -name "*.json" | wc -l)"
+          echo "   📄 Lite SRS files: $(find sing-rule-lite -name "*.srs" | wc -l)"
 
       - name: Upload sing-box artifacts
         uses: actions/upload-artifact@v4

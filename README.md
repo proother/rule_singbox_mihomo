@@ -9,9 +9,11 @@
 - **并行处理**: 2倍构建速度，独立Job互不干扰
 - **统一发布**: 所有规则集中在一个Release，方便下载
 
-### 🎯 Sing-box 规则
+### 🎯 Sing-box 规则 (更新：使用 Python 脚本方式)
+- **Python 脚本生成**: 使用修改版的 senshinya/singbox_ruleset 方式
+- **平铺目录结构**: 所有规则文件在同一目录，便于管理
 - **完整版**: 支持所有规则类型（~15k规则）
-- **精简版 (Lite)**: 仅包含 IP-CIDR + DOMAIN，体积小90%，加载飞快
+- **精简版 (Lite)**: 仅包含 IP-CIDR + DOMAIN + DOMAIN-SUFFIX，体积小90%，加载飞快
 - **双格式支持**: 
   - `.json` - 人类可读，方便调试
   - `.srs` - 二进制格式，性能最优
@@ -101,11 +103,13 @@ rules:
 | **Sing-box** | [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) | ~15,000 |
 | **Mihomo** | 多源整合：GFWList + China Domains + v2fly社区 | ~30,000 |
 
+> 注意：Sing-box 规则生成时会跳过 IP-ASN 规则，仅包含 DOMAIN、DOMAIN-SUFFIX、DOMAIN-KEYWORD、IP-CIDR 和 PROCESS-NAME 规则。
+
 ## 🏗️ 技术架构
 
 ```mermaid
 graph LR
-    A[GitHub Actions<br/>北京时间 20:00] --> B[并行Job 1<br/>Sing-box规则生成]
+    A[GitHub Actions<br/>北京时间 20:00] --> B[并行Job 1<br/>Sing-box规则生成<br/>(Python脚本)]
     A --> C[并行Job 2<br/>Mihomo规则生成]
     B --> D[上传Artifacts]
     C --> D
@@ -117,7 +121,8 @@ graph LR
 
 ### 核心优势
 - **并行构建**: Sing-box 和 Mihomo 同时生成，效率翻倍
-- **官方工具**: 使用 MetaCubeX 官方 meta-rules-converter
+- **Python 脚本**: Sing-box 使用 Python 脚本处理，更灵活
+- **官方工具**: Mihomo 使用 MetaCubeX 官方 meta-rules-converter
 - **智能去重**: 自动去除冗余规则，优化体积
 - **多格式输出**: 满足不同性能和兼容性需求
 

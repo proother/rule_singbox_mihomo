@@ -65,14 +65,14 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/{规则文件}
 {
   "route": {
     "rule_set": [{
-      "tag": "cn",
+      "tag": "apple",
         "type": "remote",
       "format": "binary",
       "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/apple.srs",
       "download_detour": "direct"
     }],
     "rules": [{
-      "rule_set": "cn",
+      "rule_set": "apple",
         "outbound": "direct"
     }]
   }
@@ -82,7 +82,7 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/{规则文件}
 ### Mihomo 配置
 ```yaml
 rule-providers:
-  cn:
+  apple:
     type: http
     behavior: domain
     format: yaml  # 可选: yaml/list/mrs
@@ -90,7 +90,7 @@ rule-providers:
     interval: 86400
 
 rules:
-  - RULE-SET,cn,DIRECT
+  - RULE-SET,apple,DIRECT
 ```
 
 ### GeoIP 配置（Sing-box）

@@ -109,14 +109,22 @@ rules:
 
 ```mermaid
 graph LR
-    A[GitHub Actions<br/>北京时间 20:00] --> B[并行Job 1<br/>Sing-box规则生成<br/>(Python脚本)]
-    A --> C[并行Job 2<br/>Mihomo规则生成]
+    A["GitHub Actions
+    北京时间 20:00"] --> B["并行Job 1
+    Sing-box规则生成
+    (Python脚本)"]
+    A --> C["并行Job 2
+    Mihomo规则生成"]
     B --> D[上传Artifacts]
     C --> D
-    D --> E[发布Job<br/>整合打包]
-    E --> F[GitHub Release<br/>ZIP包下载]
-    E --> G[Git Push<br/>release分支]
-    E --> H[CDN刷新<br/>jsDelivr]
+    D --> E["发布Job
+    整合打包"]
+    E --> F["GitHub Release
+    ZIP包下载"]
+    E --> G["Git Push
+    release分支"]
+    E --> H["CDN刷新
+    jsDelivr"]
 ```
 
 ### 核心优势

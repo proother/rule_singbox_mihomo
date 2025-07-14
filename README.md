@@ -1,15 +1,10 @@
 # Rule Singbox Mihomo
 
-自动生成适用于 **Sing-box** 和 **Mihomo** 的规则集，每日更新。
+自动生成适用于 **sing-box** 和 **Mihomo** 的规则集，每日更新。
 
 ## ✨ 特色功能
 
-### ⚡ 统一构建系统
-- **一个Workflow，全部搞定**: 同时生成 Sing-box、Mihomo 和 GeoIP 规则
-- **并行处理**: 3倍构建速度，独立Job互不干扰
-- **统一发布**: 所有规则集中在一个Release，方便下载
-
-### 🎯 Sing-box 规则 (更新：使用 Python 脚本方式)
+### 🎯 sing-box 规则 (更新：使用 Python 脚本方式)
 - **Python 脚本生成**: 使用修改版的 senshinya/singbox_ruleset 方式
 - **平铺目录结构**: 所有规则文件在同一目录，便于管理
 - **完整版**: 支持所有规则类型（~15k规则）
@@ -27,7 +22,7 @@
 ### 🌍 GeoIP 规则
 - **MaxMind 数据源**: 基于 Dreamacro/maxmind-geoip 项目
 - **200+ 国家/地区**: 完整的全球 IP 地址段数据
-- **Sing-box 专用**: SRS 二进制格式，加载速度快
+- **sing-box 专用**: SRS 二进制格式，加载速度快
 - **文件命名**: `geoip-{国家代码}.srs`（如 geoip-cn.srs）
 
 ## 📦 下载使用
@@ -37,7 +32,7 @@
 
 | 文件名 | 说明 | 适用场景 |
 |--------|------|----------|
-| **Sing-box 规则** |
+| **sing-box 规则** |
 | `sing-rules-json.zip` | 完整版JSON格式 | 需要查看/编辑规则 |
 | `sing-rules-srs.zip` | 完整版SRS二进制 | 追求性能 |
 | `sing-rules-lite-json.zip` | 精简版JSON格式 | 低配设备 |
@@ -60,8 +55,8 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/{规则文件}
 ```
 
 示例：
-- Sing-box: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/cn.srs`
-- Mihomo: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/cn.yaml`
+- Sing-box: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/apple.srs`
+- Mihomo: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/apple.yaml`
 
 ## 📝 配置示例
 
@@ -73,7 +68,7 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/{规则文件}
       "tag": "cn",
         "type": "remote",
       "format": "binary",
-      "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/cn.srs",
+      "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/apple.srs",
       "download_detour": "direct"
     }],
     "rules": [{
@@ -91,7 +86,7 @@ rule-providers:
     type: http
     behavior: domain
     format: yaml  # 可选: yaml/list/mrs
-    url: https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/cn.yaml
+    url: https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/apple.yaml
     interval: 86400
 
 rules:

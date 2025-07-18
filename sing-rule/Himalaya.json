@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "ximalaya.fm",
+        "himalaya.com",
+        "zhishinn.com",
+        "ximalaya.com",
+        "ximalayadata.com",
+        "ximalaya.tv",
+        "soundconch.com",
+        "9nali.com",
+        "zhishiu.com",
+        "zhishiv.com",
+        "xima.tv",
+        "conchdate.com",
+        "xmcdn.com",
+        "tableauxmly.com",
+        "zhishif.com",
+        "qingxuetang.com",
+        "himalaya.cool"
+      ]
+    }
+  ],
+  "version": 2
+}

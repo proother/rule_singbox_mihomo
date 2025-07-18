@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "vhxqa6.com",
+        "vhxqa3.com",
+        "vimeostatus.com",
+        "vhxqa1.com",
+        "vimeoondemand.com",
+        "vhx.tv",
+        "livestream.com",
+        "vimeo-staging2.com",
+        "vimeocdn.com",
+        "vhxqa4.com",
+        "vimeo.fr",
+        "vimeo-staging.com",
+        "vimeo.com",
+        "vhxqa2.com",
+        "vimeogoods.com",
+        "vimeobusiness.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "hjholdings.jp",
+        "hulu.jp",
+        "happyon.jp",
+        "yb.uncn.jp",
+        "streaks.jp"
+      ]
+    }
+  ]
+}

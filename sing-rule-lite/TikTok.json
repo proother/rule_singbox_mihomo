@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "lf16-pkgcdn.pitaya-clientai.com",
+        "p16-tiktokcdn-com.akamaized.net",
+        "lf16-effectcdn.byteeffecttos-g.com"
+      ],
+      "domain_suffix": [
+        "byteoversea.com",
+        "ibyteimg.com",
+        "tiktokcdn-us.com",
+        "ibytedtos.com",
+        "ipstatp.com",
+        "tik-tokapi.com",
+        "bytegecko-i18n.com",
+        "tiktok.com",
+        "musical.ly",
+        "tiktokd.org",
+        "tiktokmusic.app",
+        "sgpstatp.com",
+        "muscdn.com",
+        "tiktokv.us",
+        "capcut.com",
+        "ttwebview.com",
+        "isnssdk.com",
+        "tiktokd.net",
+        "tiktokcdn.com",
+        "bytedapm.com",
+        "tiktokv.com",
+        "snssdk.com"
+      ]
+    }
+  ]
+}

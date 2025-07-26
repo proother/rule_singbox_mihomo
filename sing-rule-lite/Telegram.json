@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "api.imem.app",
+        "api.swiftgram.app"
+      ],
+      "domain_suffix": [
+        "telegram.org",
+        "stel.com",
+        "telegram.dog",
+        "telegramdownload.com",
+        "mbrx.app",
+        "quiz.directory",
+        "graph.org",
+        "telegra.ph",
+        "telegram-cdn.org",
+        "cdn-telegram.org",
+        "usercontent.dev",
+        "telega.one",
+        "tdesktop.com",
+        "tx.me",
+        "legra.ph",
+        "telegram.space",
+        "contest.com",
+        "telesco.pe",
+        "telegram.me",
+        "tg.dev",
+        "t.me",
+        "comments.app"
+      ],
+      "ip_cidr": [
+        "149.154.160.0/20",
+        "5.28.192.0/18",
+        "2001:b28:f23f::/48",
+        "109.239.140.0/24",
+        "2a0a:f280::/29",
+        "2001:b28:f23c::/47",
+        "2001:67c:4e8::/48",
+        "91.108.0.0/16"
+      ]
+    }
+  ]
+}

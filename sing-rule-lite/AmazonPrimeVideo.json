@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "d22qjgkvxw22r6.cloudfront.net",
+        "d27xxe7juh1us6.cloudfront.net",
+        "dmqdd6hw24ucf.cloudfront.net",
+        "d25xi40x97liuc.cloudfront.net",
+        "d1v5ir2lpwr8os.cloudfront.net"
+      ],
+      "domain_suffix": [
+        "amazonprimevideo.cn",
+        "aiv-cdn.net",
+        "amazonprimevideos.com",
+        "avodmp4s3ww-a.akamaihd.net",
+        "primevideo.tv",
+        "amazonvideo.com",
+        "pv-cdn.net",
+        "amazonprimevideo.com.cn",
+        "primevideo.org",
+        "llnwd.net",
+        "primevideo.com",
+        "fls-na.amazon.com",
+        "amazonvideo.cc",
+        "primevideo.cc",
+        "aiv-delivery.net",
+        "prime-video.com",
+        "atv-ps.amazon.com",
+        "primevideo.info",
+        "media-amazon.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "ckt.cn",
+        "byfan.cn",
+        "huoziyin.com",
+        "chuangkit.com",
+        "huoziyin.cn"
+      ]
+    }
+  ]
+}

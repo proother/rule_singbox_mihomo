@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "wolai.ren",
+        "wostatic.cn",
+        "wol.tv",
+        "wolai.com",
+        "woyun.work"
+      ]
+    }
+  ]
+}

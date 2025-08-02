@@ -1,0 +1,52 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "huobi.com",
+        "bithumb.com",
+        "bitmex.com",
+        "binance.cloud",
+        "debank.com",
+        "kucoin.com",
+        "pancakeswap.finance",
+        "etherscan.io",
+        "bnbstatic.com",
+        "binance.cc",
+        "liquid.com",
+        "coingecko.com",
+        "aimoon.com",
+        "binance.us",
+        "bybit.com",
+        "kraken.com",
+        "bntrace.com",
+        "coinone.co.kr",
+        "binance.im",
+        "bitstamp.net",
+        "aex.com",
+        "bittrex.com",
+        "ftx.com",
+        "coincheck.com",
+        "bibox.com",
+        "coinmarketcap.com",
+        "gate.io",
+        "binance.com",
+        "binance.me",
+        "bnappzh.co",
+        "sushi.com",
+        "okex.com",
+        "bitcointalk.org",
+        "bnappzh.com",
+        "poloniex.com",
+        "coinbase.com",
+        "korbit.co.kr",
+        "uniswap.org",
+        "zb.com",
+        "aicoin.com",
+        "bitfinex.com",
+        "gemini.com",
+        "okx.com"
+      ]
+    }
+  ],
+  "version": 2
+}

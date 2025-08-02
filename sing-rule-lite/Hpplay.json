@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "mirrorcast.tv",
+        "hpplay.com.cn",
+        "hpplay.cn",
+        "mirrorcast.cn",
+        "mirrorcast.com.cn"
+      ]
+    }
+  ]
+}

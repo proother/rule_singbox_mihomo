@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "emblstatic.net",
+        "embl.org",
+        "embl.it",
+        "embl.fr",
+        "embl.de",
+        "ebi.ac.uk",
+        "embl-hamburg.de"
+      ]
+    }
+  ]
+}

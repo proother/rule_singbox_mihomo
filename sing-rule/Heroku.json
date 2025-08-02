@@ -1,0 +1,21 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "herokuapp.com",
+        "codeish.co",
+        "herokussl.com",
+        "heroku.co",
+        "heroku.me",
+        "heroku.com",
+        "codei.sh",
+        "heroku-app.com",
+        "herokucharge.com",
+        "codeish.io",
+        "herokucdn.com",
+        "heroku-charge.com"
+      ]
+    }
+  ],
+  "version": 2
+}

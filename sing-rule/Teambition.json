@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "teambition.io",
+        "jianliao.com",
+        "teambition.com",
+        "today.ai",
+        "tburl.in",
+        "teambition.net",
+        "tbapp.com",
+        "talk.ai",
+        "project.ai",
+        "teambitionapis.com"
+      ]
+    }
+  ],
+  "version": 2
+}

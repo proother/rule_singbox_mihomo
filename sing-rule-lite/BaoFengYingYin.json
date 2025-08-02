@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "baofengtv.com",
+        "bjtndao.org",
+        "bfimg.com",
+        "baofeng.com",
+        "baofeng.mobi",
+        "bfshow.cn",
+        "baofeng.net",
+        "stormshow.cn"
+      ]
+    }
+  ]
+}

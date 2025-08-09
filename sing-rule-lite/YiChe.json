@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "bitautoimg.com",
+        "bitauto.com",
+        "cheyisou.com",
+        "yccdn.com",
+        "yiche.com"
+      ]
+    }
+  ]
+}

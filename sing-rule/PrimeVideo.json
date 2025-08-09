@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "domain": [
+        "d27xxe7juh1us6.cloudfront.net",
+        "d22qjgkvxw22r6.cloudfront.net",
+        "d1v5ir2lpwr8os.cloudfront.net",
+        "fls-na.amazon.com",
+        "www.amazon.com",
+        "d25xi40x97liuc.cloudfront.net",
+        "avodmp4s3ww-a.akamaihd.net",
+        "atv-ps.amazon.com",
+        "dmqdd6hw24ucf.cloudfront.net"
+      ],
+      "domain_keyword": [
+        "avoddashs"
+      ],
+      "domain_suffix": [
+        "aiv-cdn.net",
+        "primevideo.com",
+        "pv-cdn.net",
+        "amazonvideo.com",
+        "aiv-delivery.net",
+        "media-amazon.com"
+      ]
+    }
+  ],
+  "version": 2
+}

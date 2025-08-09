@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "dmm-extension.com",
+        "ddo.jp",
+        "tenco.cc",
+        "navismithapis-cdn.com",
+        "akatsukiworks.com",
+        "dmmapis.com",
+        "alicesoft.com",
+        "api-p.videomarket.jp",
+        "dmm.co.jp",
+        "dmmrex.com",
+        "hibiki-site.com",
+        "wheel-soft.com",
+        "akabeesoft2.com",
+        "cosmiccute.com",
+        "dmm.hk",
+        "akabeesoft3.com",
+        "minori.ph",
+        "dmm.com"
+      ],
+      "ip_cidr": [
+        "203.104.209.7/32",
+        "125.6.189.7/32"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "ninemsn.com.au",
+        "yourtv.com.au",
+        "nineentertainmentco.com.au",
+        "mi9.com.au",
+        "mi9cdn.com",
+        "nineentertainment.com.au",
+        "freeviewplus.net.au",
+        "9cdn.net",
+        "9nation.com.au",
+        "9news.com.au",
+        "9now.com.au",
+        "nine.com.au",
+        "ninemediaroom.com.au",
+        "static9.net.au"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "nike.com.br",
+        "nikeinc.com.cn",
+        "nikestore.com.au",
+        "swoo.sh",
+        "nikecdn.com",
+        "nike.com",
+        "niketracking.com",
+        "nike.com.hk",
+        "nikecloud.com",
+        "static-nike.com",
+        "swoosh.com"
+      ]
+    }
+  ],
+  "version": 2
+}

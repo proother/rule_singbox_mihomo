@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "cf-ns.net",
+        "cloudflareinsights-cn.com",
+        "cftest5.cn",
+        "cloudflareprod.com",
+        "cloudflare-cn.com",
+        "cloudflarecn.net",
+        "cloudflarestoragegw.com",
+        "cftest6.cn",
+        "cf-ns.com",
+        "cftest8.com",
+        "cftest7.com",
+        "cf-ns.tech",
+        "cf-ns.site",
+        "cloudflarestaging.com"
+      ]
+    }
+  ]
+}

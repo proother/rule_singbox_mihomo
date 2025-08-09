@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "heart301.cn",
+        "huayiweibo.com",
+        "huayiyuan.com",
+        "91huayi.cn",
+        "huayi.cn",
+        "91huayi.com",
+        "roboticsurg301.net",
+        "shiyanma.org.cn",
+        "henancme.net",
+        "wsglw.com",
+        "sqpx.org",
+        "wsglw.net",
+        "robot301.net",
+        "91huayi.net",
+        "gov.cn",
+        "scncrc.com"
+      ]
+    }
+  ]
+}

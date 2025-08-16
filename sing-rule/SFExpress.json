@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "hbjia.net",
+        "sf-express.com",
+        "sf-cityrush.com",
+        "sf-jf.com",
+        "sf-saas.cn",
+        "sfgy.org",
+        "sf-tech.com.cn",
+        "feng1.com",
+        "sf-financial.com",
+        "sf-airlines.com",
+        "sf.cn",
+        "rongechain.com",
+        "sf-intra-city.com",
+        "sf-saas.com",
+        "sfcar.hk",
+        "sfbuy.com",
+        "fslinker.com",
+        "sffix.cn",
+        "sfair.com",
+        "sf-saas.com.cn"
+      ]
+    }
+  ],
+  "version": 2
+}

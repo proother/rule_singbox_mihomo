@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "birdpaper.cn",
+        "monidashi.com.cn",
+        "ludashi.cn",
+        "dualspace.com",
+        "kejids.com",
+        "ludashi.com",
+        "superlitetech.com",
+        "xiaoluhaohuo.com",
+        "dualspacetech.com",
+        "ludan.cn",
+        "youhua.com",
+        "taojike.cn",
+        "kejids.cn",
+        "xiaoluerhuo.com",
+        "monidashi.cn",
+        "easyclean.fun",
+        "xiaoluyouxuan.com"
+      ]
+    }
+  ]
+}

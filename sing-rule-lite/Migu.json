@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "miguvideo.com",
+        "cmvideo.cn",
+        "migu.cn"
+      ]
+    }
+  ]
+}

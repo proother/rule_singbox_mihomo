@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "store-images.s-microsoft.com",
+        "login.live.com",
+        "logincdn.msauth.net",
+        "img-prod-cms-rt-microsoft-com.akamaized.net"
+      ],
+      "domain_suffix": [
+        "xboxservices.com",
+        "minecraftshop.com",
+        "xboxab.net",
+        "xbox.com",
+        "xboxone.com",
+        "xboxgamestudios.com",
+        "xbox360.eu",
+        "xboxplayanywhere.com",
+        "xboxlive.com",
+        "bethesdagamestudios.com",
+        "xbox.org",
+        "mojang.com",
+        "xboxgamepass.com",
+        "xbox360.org",
+        "minecraft.net",
+        "xbox360.com",
+        "xboxlive.cn",
+        "xboxone.eu",
+        "forzaracingchampionship.com",
+        "gamepass.com",
+        "beth.games",
+        "bethesda.net",
+        "msgamestudios.com",
+        "xboxservice.com",
+        "callersbane.com",
+        "forzarc.com",
+        "renovacionxboxlive.com",
+        "orithegame.com",
+        "xboxstudios.com",
+        "xboxone.co",
+        "bethsoft.com",
+        "xbox.co",
+        "tellmewhygame.com",
+        "xbox360.co",
+        "xboxab.com",
+        "xbx.lv",
+        "forzamotorsport.net",
+        "xbox.eu"
+      ]
+    }
+  ]
+}

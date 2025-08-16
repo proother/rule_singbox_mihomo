@@ -1,0 +1,13 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "amd.com.cn",
+        "radeon.com",
+        "amd.com",
+        "amdfanstore.com"
+      ]
+    }
+  ],
+  "version": 2
+}

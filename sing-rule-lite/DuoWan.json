@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "5253.com",
+        "yy.com",
+        "huanju.cn",
+        "huanjuyun.com",
+        "duowan.cn",
+        "blogchina.org",
+        "hiido.cn",
+        "pikoplay.com",
+        "yyclouds.com",
+        "zhiniu8.com",
+        "yy.com.cn",
+        "bigda.com",
+        "bcshipgo.com",
+        "hiido.com",
+        "duowan.com.cn",
+        "chinaduo.com",
+        "yystatic.com",
+        "yygamedev.com",
+        "joyyinc.com",
+        "dwstatic.com",
+        "joyyued.com",
+        "duowan.com",
+        "huanju.net",
+        "joyy.com",
+        "c19ce66ff87253fdda68740edcb7ce3b.v.smtcdns.net",
+        "hiido.net",
+        "vooedit.com"
+      ]
+    }
+  ]
+}

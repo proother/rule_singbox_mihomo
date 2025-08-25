@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "letv.com",
+        "letvcloud.com",
+        "letvstore.com",
+        "le.com",
+        "videougc.com",
+        "letvlive.com",
+        "lemall.com",
+        "lecloud.com",
+        "letvimg.com",
+        "letvcdn.com",
+        "sanguowudi.com",
+        "lelecdn.com",
+        "letv8.com"
+      ]
+    }
+  ],
+  "version": 2
+}

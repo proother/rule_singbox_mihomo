@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "domain_suffix": [
+        "blogchina.org",
+        "huanju.cn",
+        "duowan.cn",
+        "zhiniu8.com",
+        "hiido.com",
+        "duowan.com",
+        "duowan.com.cn",
+        "hiido.cn",
+        "yy.com.cn",
+        "yy.com",
+        "5253.com",
+        "yystatic.com",
+        "dwstatic.com",
+        "hiido.net",
+        "huanjuyun.com",
+        "yygamedev.com",
+        "huanju.net",
+        "chinaduo.com",
+        "yyclouds.com",
+        "c19ce66ff87253fdda68740edcb7ce3b.v.smtcdns.net"
+      ]
+    }
+  ],
+  "version": 2
+}

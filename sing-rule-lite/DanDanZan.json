@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "343480.com",
+        "dandanzan.com",
+        "com-hs-hkdy.com",
+        "kuyunbo.club",
+        "baduziyuan.com",
+        "czybjz.com",
+        "fjhps.com"
+      ]
+    }
+  ]
+}

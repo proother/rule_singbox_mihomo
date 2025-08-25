@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "sublimetext.com",
+        "packagecontrol.io",
+        "sublimemerge.com",
+        "sublimehq.com"
+      ]
+    }
+  ]
+}

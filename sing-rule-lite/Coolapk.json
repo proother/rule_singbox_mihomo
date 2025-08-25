@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "coolapkmarket.com",
+        "coolapk.com",
+        "coolapkmarket.net"
+      ]
+    }
+  ]
+}

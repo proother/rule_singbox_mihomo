@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "wjx.com",
+        "sojump.com",
+        "wjx.top",
+        "wjx.cn"
+      ]
+    }
+  ]
+}

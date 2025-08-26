@@ -87,7 +87,7 @@ def translate_source_to_target(entry, source_dir, target_dir):
     source_file = os.path.join(source_dir, f'{entry}.yaml')
     if os.path.exists(os.path.join(source_dir, f'{entry}_Classical.yaml')):
         source_file = os.path.join(source_dir, f'{entry}_Classical.yaml')
-    target_file = os.path.join(target_dir, f'geosite-{entry}.json')
+    target_file = os.path.join(target_dir, f'{entry}.json')
 
     domain = list()
     domain_keyword = list()

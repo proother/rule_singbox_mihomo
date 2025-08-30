@@ -99,7 +99,7 @@ jobs:
 
       - name: Create lite rules
         run: |
-          echo "🔧 Creating Lite rules (IP-CIDR + DOMAIN only)..."
+          echo "🔧 Creating Lite rules (IP-CIDR + DOMAIN + DOMAIN_KEYWORD, exclude PROCESS_NAME)..."
           mkdir -p sing-rule-lite
           sudo apt-get update && sudo apt-get install -y jq
           
@@ -109,8 +109,8 @@ jobs:
               filename=$(basename "$json_file" .json)
               echo "   Processing: $filename"
               
-              # Extract rules containing only ip_cidr and domain
-              jq '{version: .version, rules: [.rules[] | with_entries(select(.key == "ip_cidr" or .key == "domain" or .key == "domain_suffix")) | select(. != {})]}' "$json_file" > "sing-rule-lite/${filename}.json"
+              # Extract rules containing ip_cidr, domain, domain_suffix, and domain_keyword (exclude process_name only)
+              jq '{version: .version, rules: [.rules[] | with_entries(select(.key == "ip_cidr" or .key == "domain" or .key == "domain_suffix" or .key == "domain_keyword")) | select(. != {})]}' "$json_file" > "sing-rule-lite/${filename}.json"
               
               # Check if there are valid rules
               rule_count=$(jq '[.rules[]? | length] | add // 0' "sing-rule-lite/${filename}.json")
@@ -612,8 +612,8 @@ jobs:
             ### 🎯 Sing-box 规则
             - `sing-rules-srs.zip` - 完整版 (.srs 二进制)
             - `sing-rules-json.zip` - 完整版 (.json 源码)
-            - `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制) - IP-CIDR + DOMAIN only
-            - `sing-rules-lite-json.zip` - 精简版 (.json 源码) - IP-CIDR + DOMAIN only
+            - `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制) - IP-CIDR + DOMAIN + DOMAIN_KEYWORD (排除 PROCESS_NAME)
+            - `sing-rules-lite-json.zip` - 精简版 (.json 源码) - IP-CIDR + DOMAIN + DOMAIN_KEYWORD (排除 PROCESS_NAME)
             
             ### 🛡️ Mihomo 规则
             - `meta-rules-yaml.zip` - YAML 格式 (默认)

@@ -43,15 +43,21 @@ jobs:
           sudo dpkg -i sing-box.deb
           rm sing-box.deb
 
-      - name: Copy Python scripts
+      - name: Clone blackmatrix7 repository
         run: |
-          # 复制修改后的 Python 脚本和相关文件
-          cp current-repo/main.py ./
-          cp current-repo/compile.sh ./
+          echo "📥 Cloning blackmatrix7/ios_rule_script repository..."
+          git clone https://github.com/blackmatrix7/ios_rule_script.git temp-ios-rule-script
+          echo "✅ Repository cloned successfully"
+
+      - name: Copy optimal integration script
+        run: |
+          # Copy our optimal integration script
+          cp current-repo/optimal_integration_fixed_v9.py ./
           cp current-repo/requirements.txt ./
-          # 修改 main.py 中的输出目录从 rule 到 sing-rule
-          sed -i "s|os.path.join(current_dir, 'rule')|os.path.join(current_dir, 'sing-rule')|g" main.py
-          sed -i 's|base_dir="rule"|base_dir="sing-rule"|g' compile.sh
+          
+          # Modify the output directory from rule to sing-rule in the script
+          sed -i "s|os.path.join(current_dir, 'rule')|os.path.join(current_dir, 'sing-rule')|g" optimal_integration_fixed_v9.py
+          sed -i "s|'rule'|'sing-rule'|g" optimal_integration_fixed_v9.py
 
       - name: Setup Python environment
         run: |
@@ -59,21 +65,34 @@ jobs:
           python3 -m venv venv
           source venv/bin/activate
           pip3 install -r requirements.txt
+          # Install additional dependencies
+          pip3 install PyYAML
 
-      - name: Generate sing-box rules
+      - name: Generate sing-box rules using optimal integration
         run: |
-          echo "🎯 GENERATING SING-BOX RULES (Python Method)"
+          echo "🎯 GENERATING SING-BOX RULES (Optimal Integration Method)"
           set -Eeuo pipefail
           source venv/bin/activate
-          python3 main.py
+          python3 optimal_integration_fixed_v9.py
           
           echo "📊 Generated files:"
           echo "   JSON files: $(find sing-rule -name "*.json" | wc -l)"
 
-      - name: Compile sing-box rules
+      - name: Compile sing-box rules to SRS format
         run: |
           echo "🔄 Compiling sing-box rules to SRS format..."
-          bash compile.sh
+          cd sing-rule
+          
+          # Compile all JSON files to SRS format
+          for json_file in *.json; do
+            if [[ -f "$json_file" ]]; then
+              filename=$(basename "$json_file" .json)
+              echo "   Compiling: $filename"
+              sing-box rule-set compile --output "${filename}.srs" "$json_file"
+            fi
+          done
+          
+          cd ..
           
           echo "📊 Compiled files:"
           echo "   SRS files: $(find sing-rule -name "*.srs" | wc -l)"
@@ -84,16 +103,16 @@ jobs:
           mkdir -p sing-rule-lite
           sudo apt-get update && sudo apt-get install -y jq
           
-          # 复制完整规则并过滤
+          # Copy complete rules and filter
           for json_file in sing-rule/*.json; do
             if [[ -f "$json_file" ]]; then
               filename=$(basename "$json_file" .json)
               echo "   Processing: $filename"
               
-              # 提取仅包含 ip_cidr 和 domain 的规则
+              # Extract rules containing only ip_cidr and domain
               jq '{version: .version, rules: [.rules[] | with_entries(select(.key == "ip_cidr" or .key == "domain" or .key == "domain_suffix")) | select(. != {})]}' "$json_file" > "sing-rule-lite/${filename}.json"
               
-              # 检查是否有有效规则
+              # Check if there are valid rules
               rule_count=$(jq '[.rules[]? | length] | add // 0' "sing-rule-lite/${filename}.json")
               if [[ "$rule_count" -eq 0 ]]; then
                 echo "   ❌ Removed empty: $filename (0 rules)"
@@ -101,7 +120,7 @@ jobs:
               else
                 echo "   ✅ Created: $filename ($rule_count rules)"
                 
-                # 如果存在对应的 SRS 文件，也复制一份用于后续处理
+                # If corresponding SRS file exists, also copy one for subsequent processing
                 if [[ -f "sing-rule/${filename}.srs" ]]; then
                   cp "sing-rule/${filename}.srs" "sing-rule-lite/${filename}_temp.srs"
                 fi
@@ -109,7 +128,7 @@ jobs:
             fi
           done
           
-          # 为 lite 版本重新编译 SRS
+          # Recompile SRS for lite version
           cd sing-rule-lite
           for json_file in *.json; do
             if [[ -f "$json_file" ]]; then
@@ -119,7 +138,7 @@ jobs:
             fi
           done
           
-          # 清理临时文件
+          # Clean up temporary files
           rm -f *_temp.srs
           cd ..
           
@@ -381,10 +400,10 @@ jobs:
           echo "   Checking ./geo/geosite:"
           ls -la geo/geosite/ 2>/dev/null | head -10 || echo "   ❌ ./geo/geosite not found"
           
-          # 检查meta-rule目录结构并适配（artifact可能解压到不同位置）
+          # Check meta-rule directory structure and adapt (artifacts may be extracted to different locations)
           META_RULE_PATH=""
           
-          # 检查可能的路径
+          # Check possible paths
           if [ -d "meta-rule/geo/geosite" ]; then
             META_RULE_PATH="meta-rule/geo/geosite"
             echo "✅ Found rules at: meta-rule/geo/geosite"
@@ -408,7 +427,7 @@ jobs:
             echo "   LIST files: $(find "$META_RULE_PATH" -name "*.list" -type f | wc -l)"
             echo "   MRS files: $(find "$META_RULE_PATH" -name "*.mrs" -type f | wc -l)"
             
-            # 复制所有文件到平铺结构
+            # Copy all files to flat structure
             echo "🔧 Copying all rule files..."
             cp "$META_RULE_PATH"/*.yaml publish/meta-rule/ 2>/dev/null || true
             cp "$META_RULE_PATH"/*.list publish/meta-rule/ 2>/dev/null || true
@@ -573,11 +592,11 @@ jobs:
           echo "🚀 Purging jsDelivr CDN - This may take a while..."
           cd publish
           
-          # 统计文件
+          # Count files
           total_files=$(find . -name "*.srs" -o -name "*.json" -o -name "*.yaml" -o -name "*.list" -o -name "*.mrs" | wc -l)
           echo "📊 Total files to purge: $total_files"
           
-          # 分批清理CDN（每批100个文件）
+          # Batch purge CDN (100 files per batch)
           batch_size=100
           batch_num=0
           file_count=0
@@ -588,7 +607,7 @@ jobs:
             
             file_count=$((file_count + 1))
             
-            # 每100个文件显示进度
+            # Show progress every 100 files
             if [ $((file_count % batch_size)) -eq 0 ]; then
               batch_num=$((batch_num + 1))
               echo "✅ Batch $batch_num completed: $file_count/$total_files files purged"

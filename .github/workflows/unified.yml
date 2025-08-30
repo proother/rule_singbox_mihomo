@@ -224,6 +224,7 @@ jobs:
         with:
           go-version: '1.22'
           cache: true
+          cache-dependency-path: custom/go.sum
 
       - name: Generate GFWList domains
         run: |
@@ -345,6 +346,7 @@ jobs:
         with:
           go-version: ^1.22
           cache: true
+          cache-dependency-path: go.sum
 
       - name: Install dependencies
         run: |

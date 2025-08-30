@@ -73,34 +73,47 @@ class OptimalIntegrationFixedV9:
     def discover_all_entries(self) -> Dict[str, Dict]:
         """Discover all base entries in BlackMatrix7"""
         logging.info("Starting to discover all base entries...")
+        logging.info(f"Source directory: {self.source_dir}")
+        
+        if not os.path.exists(self.source_dir):
+            logging.error(f"Source directory does not exist: {self.source_dir}")
+            return self.all_entries
         
         def scan_directory(directory_path: str, depth: int = 0):
             """Recursively scan directory"""
-            for item in os.listdir(directory_path):
-                item_path = os.path.join(directory_path, item)
-                
-                if os.path.isdir(item_path):
-                    scan_directory(item_path, depth + 1)
-                elif item.endswith('.yaml'):
-                    # Extract base entry name
-                    base_name = self.extract_base_name(item)
+            try:
+                for item in os.listdir(directory_path):
+                    item_path = os.path.join(directory_path, item)
                     
-                    if base_name not in self.all_entries:
-                        self.all_entries[base_name] = {
-                            'versions': [],
-                            'paths': [],
-                            'best_version': None,
-                            'version_priority': 0
-                        }
-                    
-                    self.all_entries[base_name]['versions'].append(item)
-                    self.all_entries[base_name]['paths'].append(item_path)
+                    if os.path.isdir(item_path):
+                        scan_directory(item_path, depth + 1)
+                    elif item.endswith('.yaml'):
+                        # Extract base entry name
+                        base_name = self.extract_base_name(item)
+                        
+                        if base_name not in self.all_entries:
+                            self.all_entries[base_name] = {
+                                'versions': [],
+                                'paths': [],
+                                'best_version': None,
+                                'version_priority': 0
+                            }
+                        
+                        self.all_entries[base_name]['versions'].append(item)
+                        self.all_entries[base_name]['paths'].append(item_path)
+            except Exception as e:
+                logging.error(f"Error scanning directory {directory_path}: {e}")
         
-        if os.path.exists(self.source_dir):
-            scan_directory(self.source_dir)
+        scan_directory(self.source_dir)
         
         self.stats['total_entries_found'] = len(self.all_entries)
         logging.info(f"Found {self.stats['total_entries_found']} base entries")
+        
+        if self.stats['total_entries_found'] == 0:
+            logging.warning("No entries found. This might indicate:")
+            logging.warning("1. Source directory is empty")
+            logging.warning("2. No .yaml files in the source directory")
+            logging.warning("3. Source directory path is incorrect")
         
         return self.all_entries
     
@@ -357,6 +370,12 @@ class OptimalIntegrationFixedV9:
             reverse=True
         )
         
+        # Check if any entries were found
+        if not sorted_entries:
+            logging.warning("No entries found to process")
+        else:
+            logging.info(f"Found {len(sorted_entries)} entries to process")
+        
         # Process all entries
         for entry_name, entry_info in sorted_entries:
             logging.info(f"Processing entry: {entry_name} (version: {entry_info['best_version']})")
@@ -375,7 +394,10 @@ class OptimalIntegrationFixedV9:
         logging.info(f"Total entries: {self.stats['total_entries_found']}")
         logging.info(f"Successfully processed: {self.stats['entries_processed']}")
         logging.info(f"Skipped entries: {self.stats['entries_skipped']}")
-        logging.info(f"Success rate: {self.stats['entries_processed']/self.stats['total_entries_found']*100:.1f}%")
+        if self.stats['total_entries_found'] > 0:
+            logging.info(f"Success rate: {self.stats['entries_processed']/self.stats['total_entries_found']*100:.1f}%")
+        else:
+            logging.info("Success rate: N/A (no entries found)")
         
         logging.info("\nVersion selection statistics:")
         logging.info(f"  - Used Classical version: {self.stats['version_selection']['classical_used']}")
@@ -395,5 +417,16 @@ class OptimalIntegrationFixedV9:
         logging.info("  - ✅ Reference documentation: https://sing-box.sagernet.org/configuration/rule-set/source-format/")
 
 if __name__ == "__main__":
-    integrator = OptimalIntegrationFixedV9()
-    result = integrator.run_optimal_integration()
+    try:
+        integrator = OptimalIntegrationFixedV9()
+        result = integrator.run_optimal_integration()
+        
+        if result is None:
+            logging.error("Integration failed")
+            exit(1)
+        else:
+            logging.info("Integration completed successfully")
+            exit(0)
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        exit(1)

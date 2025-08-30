@@ -288,11 +288,23 @@ jobs:
           cp ./community/data/cn direct-list.txt
           cp ./community/data/geolocation-\!cn proxy-list.txt
 
+      - name: Setup Go dependencies for custom
+        run: |
+          cd custom || exit 1
+          go mod download
+          go mod tidy
+
       - name: Build geosite.dat file
         run: |
           cd custom || exit 1
           echo ipleak.net >> ../community/data/geolocation-\!cn && echo browserleaks.org >> ../community/data/geolocation-\!cn
           go run ./ --datapath=../community/data
+
+      - name: Setup Go dependencies for convert
+        run: |
+          cd convert || exit 1
+          go mod download
+          go mod tidy
 
       - name: Convert geo to meta-rule-set
         env:
@@ -349,6 +361,12 @@ jobs:
           echo "📦 Installing GeoIP generator dependencies..."
           go mod download
           go mod tidy
+
+      - name: Setup Go with cache
+        uses: actions/setup-go@v5
+        with:
+          go-version: ^1.22
+          cache: true
 
       - name: Build geoip rule sets
         id: build

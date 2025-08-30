@@ -244,6 +244,16 @@ func release(source string, destination string, output string, ruleSetOutput str
 }
 
 func setActionOutput(name string, content string) {
+	// Use new GITHUB_OUTPUT syntax instead of deprecated set-output
+	outputFile := os.Getenv("GITHUB_OUTPUT")
+	if outputFile != "" {
+		file, err := os.OpenFile(outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err == nil {
+			defer file.Close()
+			file.WriteString(name + "=" + content + "\n")
+		}
+	}
+	// Fallback to old syntax for compatibility
 	os.Stdout.WriteString("::set-output name=" + name + "::" + content + "\n")
 }
 

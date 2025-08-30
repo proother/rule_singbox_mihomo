@@ -33,10 +33,10 @@
 | 文件名 | 说明 | 适用场景 |
 |--------|------|----------|
 | **sing-box 规则** |
-| `sing-rules-json.zip` | 完整版带process_name的JSON格式 | Linux、Windows 和 macOS |
-| `sing-rules-srs.zip` | 完整版带process_name的SRS二进制 | Linux、Windows 和 macOS |
-| `sing-rules-lite-json.zip` | 精简版不带process_name的JSON格式 | iOS 和 Android |
-| `sing-rules-lite-srs.zip` | 精简版不带SRS二进制 | iOS 和 Android |
+| `sing-rules-json.zip` | 完整版的JSON格式 | Linux、Windows 和 macOS |
+| `sing-rules-srs.zip` | 完整版的SRS二进制 | Linux、Windows 和 macOS |
+| `sing-rules-lite-json.zip` | 排除process_name的精简版的JSON格式 | iOS 和 Android |
+| `sing-rules-lite-srs.zip` | 排除process_name的精简版的SRS二进制 | iOS 和 Android |
 | **Mihomo 规则** |
 | `meta-rules-yaml.zip` | YAML格式 | 标准用法 |
 | `meta-rules-list.zip` | LIST纯文本格式 | 快速加载 |

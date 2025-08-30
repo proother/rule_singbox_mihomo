@@ -172,8 +172,6 @@ func setActionOutput(name string, content string) {
 			file.WriteString(name + "=" + content + "\n")
 		}
 	}
-	// Fallback to old syntax for compatibility
-	os.Stdout.WriteString("::set-output name=" + name + "::" + content + "\n")
 }
 
 func main() {

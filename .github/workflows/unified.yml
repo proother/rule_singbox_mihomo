@@ -223,7 +223,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache-dependency-path: ./custom/go.sum
+          cache: true
 
       - name: Generate GFWList domains
         run: |
@@ -344,6 +344,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ^1.22
+          cache: true
 
       - name: Install dependencies
         run: |
@@ -602,7 +603,7 @@ jobs:
           ls -la release-assets/
 
       - name: Create Unified GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.3.2
         with:
           tag_name: v${{ env.TAG_NAME }}
           name: Release ${{ env.BUILDTIME }}
@@ -610,10 +611,10 @@ jobs:
             ## ⚡ 并行构建版本 (Ultra Fast)
             
             ### 🎯 Sing-box 规则
-            - `sing-rules-srs.zip` - 完整版 (.srs 二进制)
-            - `sing-rules-json.zip` - 完整版 (.json 源码)
-            - `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制) - IP-CIDR + DOMAIN + DOMAIN_KEYWORD (排除 PROCESS_NAME)
-            - `sing-rules-lite-json.zip` - 精简版 (.json 源码) - IP-CIDR + DOMAIN + DOMAIN_KEYWORD (排除 PROCESS_NAME)
+            - `sing-rules-srs.zip` - 完整版 (.srs 二进制，供电脑版内核使用)
+            - `sing-rules-json.zip` - 完整版 (.json 源码，供电脑版内核使用)
+            - `sing-rules-lite-srs.zip` - 精简版 (.srs 二进制，排除 PROCESS_NAME，供移动版内核使用)
+            - `sing-rules-lite-json.zip` - 精简版 (.json 源码，排除 PROCESS_NAME，供移动版内核使用)
             
             ### 🛡️ Mihomo 规则
             - `meta-rules-yaml.zip` - YAML 格式 (默认)

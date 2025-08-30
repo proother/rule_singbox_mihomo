@@ -5,10 +5,10 @@
 ## ✨ 特色功能
 
 ### 🎯 sing-box 规则 (更新：使用 Python 脚本方式)
-- **Python 脚本生成**: 使用修改版的 senshinya/singbox_ruleset 方式
+- **脚本生成**: 采用 /blackmatrix7/ios_rule_script 的规则集，使用脚本自动生成。
 - **平铺目录结构**: 所有规则文件在同一目录，便于管理
-- **完整版**: 支持所有规则类型（~15k规则）
-- **精简版 (Lite)**: 仅包含 IP-CIDR + DOMAIN + DOMAIN-SUFFIX，体积小90%，加载飞快
+- **完整版**: 包含 `domain` `domain_suffix` `ip_cidr` `domain_keyword` `process_name` ，适合在Linux、Windows 和 macOS 上使用。
+- **精简版 (Lite)**: 包含 `domain` `domain_suffix` `ip_cidr` `domain_keyword` ，适合在iOS 和 Android 上使用。
 - **双格式支持**: 
   - `.json` - 人类可读，方便调试
   - `.srs` - 二进制格式，性能最优

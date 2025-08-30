@@ -55,9 +55,9 @@ jobs:
           cp current-repo/optimal_integration_fixed_v9.py ./
           cp current-repo/requirements.txt ./
           
-          # Modify the output directory from rule to sing-rule in the script
-          sed -i "s|os.path.join(current_dir, 'rule')|os.path.join(current_dir, 'sing-rule')|g" optimal_integration_fixed_v9.py
-          sed -i "s|'rule'|'sing-rule'|g" optimal_integration_fixed_v9.py
+          # No need to modify paths - they are already correct in the script
+          # Source directory: temp-ios-rule-script/rule/Clash (original rules)
+          # Target directory: sing-rule (generated sing-box rules)
 
       - name: Setup Python environment
         run: |
@@ -146,7 +146,28 @@ jobs:
           echo "   📄 Lite JSON files: $(find sing-rule-lite -name "*.json" | wc -l)"
           echo "   📄 Lite SRS files: $(find sing-rule-lite -name "*.srs" | wc -l)"
 
+      - name: Check if sing-box artifacts exist
+        id: check-artifacts
+        run: |
+          echo "🔍 Checking if sing-box artifacts exist..."
+          if [ -d "sing-rule" ] && [ "$(find sing-rule -name '*.json' -o -name '*.srs' | wc -l)" -gt 0 ]; then
+            echo "✅ sing-rule directory has files"
+            echo "has_sing_rule=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ sing-rule directory is empty or missing"
+            echo "has_sing_rule=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if [ -d "sing-rule-lite" ] && [ "$(find sing-rule-lite -name '*.json' -o -name '*.srs' | wc -l)" -gt 0 ]; then
+            echo "✅ sing-rule-lite directory has files"
+            echo "has_sing_rule_lite=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ sing-rule-lite directory is empty or missing"
+            echo "has_sing_rule_lite=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload sing-box artifacts
+        if: steps.check-artifacts.outputs.has_sing_rule == 'true' || steps.check-artifacts.outputs.has_sing_rule_lite == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: sing-box-rules
@@ -287,7 +308,20 @@ jobs:
           echo "   LIST files: $(find ../meta-rule -name "*.list" | wc -l)"
           echo "   MRS files: $(find ../meta-rule -name "*.mrs" | wc -l)"
 
+      - name: Check if mihomo artifacts exist
+        id: check-mihomo-artifacts
+        run: |
+          echo "🔍 Checking if mihomo artifacts exist..."
+          if [ -d "meta-rule" ] && [ "$(find meta-rule -name '*.yaml' -o -name '*.list' -o -name '*.mrs' | wc -l)" -gt 0 ]; then
+            echo "✅ meta-rule directory has files"
+            echo "has_mihomo_artifacts=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ meta-rule directory is empty or missing"
+            echo "has_mihomo_artifacts=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload mihomo artifacts
+        if: steps.check-mihomo-artifacts.outputs.has_mihomo_artifacts == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: mihomo-rules
@@ -357,25 +391,41 @@ jobs:
         with:
           name: sing-box-rules
           path: ./
+        continue-on-error: true
 
       - name: Download mihomo artifacts
         uses: actions/download-artifact@v4
         with:
           name: mihomo-rules
           path: ./
+        continue-on-error: true
 
       - name: Download geoip artifacts
         uses: actions/download-artifact@v4
         with:
           name: geoip-rules
           path: ./release/sing-geoip
+        continue-on-error: true
 
       - name: Prepare publish artifacts
         run: |
           echo "📦 PREPARING UNIFIED PUBLISH"
           mkdir -p publish
-          cp -r sing-rule publish/sing-rule
-          cp -r sing-rule-lite publish/sing-rule-lite
+          
+          # Copy sing-box rules if they exist
+          if [ -d "sing-rule" ] && [ "$(find sing-rule -name '*.json' -o -name '*.srs' | wc -l)" -gt 0 ]; then
+            cp -r sing-rule publish/sing-rule
+            echo "✅ Copied sing-rule: $(find publish/sing-rule -name '*.json' -o -name '*.srs' | wc -l) files"
+          else
+            echo "⚠️ No sing-rule files found"
+          fi
+          
+          if [ -d "sing-rule-lite" ] && [ "$(find sing-rule-lite -name '*.json' -o -name '*.srs' | wc -l)" -gt 0 ]; then
+            cp -r sing-rule-lite publish/sing-rule-lite
+            echo "✅ Copied sing-rule-lite: $(find publish/sing-rule-lite -name '*.json' -o -name '*.srs' | wc -l) files"
+          else
+            echo "⚠️ No sing-rule-lite files found"
+          fi
           
           # Copy GeoIP rules
           if [ -d "release/sing-geoip" ]; then
@@ -466,59 +516,73 @@ jobs:
           ls -la publish/meta-rule/ | head -20 || echo "❌ meta-rule directory not found or empty"
           
           # Sing-box packages
-          cd publish/sing-rule
-          if ls *.srs 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/sing-rules-srs.zip *.srs
-            echo "✅ sing-rules-srs.zip ($(ls *.srs | wc -l) files)"
+          if [ -d "publish/sing-rule" ]; then
+            cd publish/sing-rule
+            if ls *.srs 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/sing-rules-srs.zip *.srs
+              echo "✅ sing-rules-srs.zip ($(ls *.srs | wc -l) files)"
+            else
+              echo "⚠️ No .srs files found in sing-rule"
+            fi
+            if ls *.json 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/sing-rules-json.zip *.json
+              echo "✅ sing-rules-json.zip ($(ls *.json | wc -l) files)"
+            else
+              echo "⚠️ No .json files found in sing-rule"
+            fi
+            cd ../..
           else
-            echo "⚠️ No .srs files found in sing-rule"
-          fi
-          if ls *.json 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/sing-rules-json.zip *.json
-            echo "✅ sing-rules-json.zip ($(ls *.json | wc -l) files)"
-          else
-            echo "⚠️ No .json files found in sing-rule"
+            echo "⚠️ sing-rule directory not found"
           fi
           
-          cd ../sing-rule-lite
-          if ls *.srs 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/sing-rules-lite-srs.zip *.srs
-            echo "✅ sing-rules-lite-srs.zip ($(ls *.srs | wc -l) files)"
+          if [ -d "publish/sing-rule-lite" ]; then
+            cd publish/sing-rule-lite
+            if ls *.srs 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/sing-rules-lite-srs.zip *.srs
+              echo "✅ sing-rules-lite-srs.zip ($(ls *.srs | wc -l) files)"
+            else
+              echo "⚠️ No .srs files found in sing-rule-lite"
+            fi
+            if ls *.json 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/sing-rules-lite-json.zip *.json
+              echo "✅ sing-rules-lite-json.zip ($(ls *.json | wc -l) files)"
+            else
+              echo "⚠️ No .json files found in sing-rule-lite"
+            fi
+            cd ../..
           else
-            echo "⚠️ No .srs files found in sing-rule-lite"
-          fi
-          if ls *.json 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/sing-rules-lite-json.zip *.json
-            echo "✅ sing-rules-lite-json.zip ($(ls *.json | wc -l) files)"
-          else
-            echo "⚠️ No .json files found in sing-rule-lite"
+            echo "⚠️ sing-rule-lite directory not found"
           fi
           
           # Mihomo packages  
-          cd ../meta-rule
-          echo "🔍 Current directory: $(pwd)"
-          echo "📂 Files in meta-rule:"
-          ls -la | head -20
-          
-          if ls *.yaml 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/meta-rules-yaml.zip *.yaml
-            echo "✅ meta-rules-yaml.zip ($(ls *.yaml | wc -l) files)"
+          if [ -d "publish/meta-rule" ]; then
+            cd publish/meta-rule
+            echo "🔍 Current directory: $(pwd)"
+            echo "📂 Files in meta-rule:"
+            ls -la | head -20
+            
+            if ls *.yaml 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/meta-rules-yaml.zip *.yaml
+              echo "✅ meta-rules-yaml.zip ($(ls *.yaml | wc -l) files)"
+            else
+              echo "⚠️ No .yaml files found in meta-rule"
+            fi
+            if ls *.list 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/meta-rules-list.zip *.list
+              echo "✅ meta-rules-list.zip ($(ls *.list | wc -l) files)"
+            else
+              echo "⚠️ No .list files found in meta-rule"
+            fi
+            if ls *.mrs 1> /dev/null 2>&1; then
+              zip -r ../../release-assets/meta-rules-mrs.zip *.mrs
+              echo "✅ meta-rules-mrs.zip ($(ls *.mrs | wc -l) files)"
+            else
+              echo "⚠️ No .mrs files found in meta-rule"
+            fi
+            cd ../..
           else
-            echo "⚠️ No .yaml files found in meta-rule"
+            echo "⚠️ meta-rule directory not found"
           fi
-          if ls *.list 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/meta-rules-list.zip *.list
-            echo "✅ meta-rules-list.zip ($(ls *.list | wc -l) files)"
-          else
-            echo "⚠️ No .list files found in meta-rule"
-          fi
-          if ls *.mrs 1> /dev/null 2>&1; then
-            zip -r ../../release-assets/meta-rules-mrs.zip *.mrs
-            echo "✅ meta-rules-mrs.zip ($(ls *.mrs | wc -l) files)"
-          else
-            echo "⚠️ No .mrs files found in meta-rule"
-          fi
-          cd ../..
           
           # GeoIP packages
           if [ -d "publish/sing-geoip" ]; then

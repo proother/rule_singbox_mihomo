@@ -5,7 +5,7 @@
 ## ✨ 特色功能
 
 ### 🎯 sing-box 规则 (更新：使用 Python 脚本方式)
-- **脚本生成**: 采用 /blackmatrix7/ios_rule_script 的规则集，使用脚本自动生成。
+- **脚本生成**: 采用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 的规则集，使用脚本自动生成。
 - **平铺目录结构**: 所有规则文件在同一目录，便于管理
 - **完整版**: 包含 `domain` `domain_suffix` `ip_cidr` `domain_keyword` `process_name` ，适合在Linux、Windows 和 macOS 上使用。
 - **精简版 (Lite)**: 包含 `domain` `domain_suffix` `ip_cidr` `domain_keyword` ，适合在iOS 和 Android 上使用。
@@ -55,7 +55,7 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/{规则文件}
 ```
 
 示例：
-- Sing-box: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/apple.srs`
+- Sing-box: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/Apple.srs`
 - Mihomo: `https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/meta-rule/apple.yaml`
 
 ## 📝 配置示例
@@ -68,7 +68,7 @@ https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/{规则文件}
       "tag": "apple",
         "type": "remote",
       "format": "binary",
-      "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/apple.srs",
+      "url": "https://cdn.jsdelivr.net/gh/proother/rule_singbox_mihomo@release/sing-rule/Apple.srs",
       "download_detour": "direct"
     }],
     "rules": [{

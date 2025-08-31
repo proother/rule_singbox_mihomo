@@ -30,7 +30,7 @@ jobs:
           echo "TAG_NAME=$(TZ=Asia/Shanghai date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
 
       - name: Checkout current repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: current-repo
 
@@ -191,30 +191,30 @@ jobs:
         shell: bash
 
       - name: Checkout MetaCubeX/meta-rules-dat (Official)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: MetaCubeX/meta-rules-dat
 
       - name: Checkout Loyalsoldier/domain-list-custom
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: Loyalsoldier/domain-list-custom
           path: custom
 
       - name: Checkout v2fly/domain-list-community
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: v2fly/domain-list-community
           path: community
 
       - name: Checkout MetaCubeX/meta-rules-converter
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: MetaCubeX/meta-rules-converter
           path: convert
 
       - name: Checkout cokebar/gfwlist2dnsmasq
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: cokebar/gfwlist2dnsmasq
           path: gfwlist2dnsmasq
@@ -222,7 +222,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: ^1.25.0
 
       - name: Generate GFWList domains
         run: |
@@ -349,12 +349,12 @@ jobs:
           echo "TAG_NAME=$(TZ=Asia/Shanghai date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
 
       - name: Checkout current repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ^1.22
+          go-version: ^1.25.0
 
       - name: Install dependencies
         run: |
@@ -365,7 +365,7 @@ jobs:
       - name: Setup Go with cache
         uses: actions/setup-go@v5
         with:
-          go-version: ^1.22
+          go-version: ^1.25.0
           cache: true
 
       - name: Build geoip rule sets

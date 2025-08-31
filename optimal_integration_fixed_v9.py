@@ -278,6 +278,11 @@ class OptimalIntegrationFixedV9:
                     if self.is_valid_ip_cidr(value):
                         ip_cidrs.append(value)
                         self.stats['rule_types']['ip_rules'] += 1
+                elif rule_type == 'IP-CIDR6':
+                    # Add IPv6 support to sing-box ip_cidr field
+                    if self.is_valid_ip_cidr(value):
+                        ip_cidrs.append(value)
+                        self.stats['rule_types']['ip_rules'] += 1
                 elif rule_type == 'PROCESS-NAME':
                     process_names.append(value)
                     self.stats['rule_types']['process_rules'] += 1

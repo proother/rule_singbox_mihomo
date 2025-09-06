@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "funtouchos.com",
+        "bbktel.com.cn",
+        "vivo.com",
+        "vivosjpt.com",
+        "vivotc.com",
+        "vivo.cn",
+        "vivo.com.cn",
+        "vsearch.club",
+        "bbk.com",
+        "vivoglobal.com",
+        "gdbbk.com",
+        "iqoo.com",
+        "vmic.xyz",
+        "vivo.xyz"
+      ]
+    }
+  ]
+}

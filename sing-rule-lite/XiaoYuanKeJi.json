@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "bizport.cn",
+        "5gimos.com",
+        "mfexcel.com",
+        "10010mx.com",
+        "microfountain.com"
+      ]
+    }
+  ]
+}

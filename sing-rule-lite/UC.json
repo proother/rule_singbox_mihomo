@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "uc-test.cn",
+        "effirst.cn",
+        "zjbuc.cn",
+        "qingzhou.ltd",
+        "u-mob.cn",
+        "tinya1.cn",
+        "coolppa.cn",
+        "xmq123.cn",
+        "ucfly.com",
+        "ubibibi.com",
+        "zjbuc.com.cn",
+        "babymoment.net",
+        "qingzhou.pro",
+        "tinypap.cn",
+        "xiaomengquan.cn",
+        "uc123.com",
+        "myquark.cn",
+        "babybubble.cn",
+        "quark.cn",
+        "ucdesk.cn",
+        "zjbuc.com",
+        "qingzhou.biz",
+        "ucweb.cn",
+        "hdyzx.cn",
+        "minippa.cn",
+        "appsmall.mobi",
+        "uc.cn",
+        "effirst.com",
+        "ucweb.com.cn",
+        "uflowx.com",
+        "open-uc.cn",
+        "appchaoshi.cn",
+        "blovestorm.com",
+        "tinyppa.cn",
+        "tinyap2.cn",
+        "yun.cn",
+        "ucweb.com",
+        "uc-test.com"
+      ]
+    }
+  ]
+}

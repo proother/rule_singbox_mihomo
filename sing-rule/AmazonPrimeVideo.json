@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "dmqdd6hw24ucf.cloudfront.net",
+        "d1v5ir2lpwr8os.cloudfront.net",
+        "d25xi40x97liuc.cloudfront.net",
+        "d27xxe7juh1us6.cloudfront.net",
+        "d22qjgkvxw22r6.cloudfront.net"
+      ],
+      "domain_suffix": [
+        "media-amazon.com",
+        "aiv-delivery.net",
+        "aiv-cdn.net",
+        "amazonprimevideos.com",
+        "pv-cdn.net",
+        "fls-na.amazon.com",
+        "primevideo.com",
+        "amazonprimevideo.com.cn",
+        "primevideo.tv",
+        "primevideo.cc",
+        "amazonvideo.cc",
+        "llnwd.net",
+        "amazonvideo.com",
+        "prime-video.com",
+        "avodmp4s3ww-a.akamaihd.net",
+        "atv-ps.amazon.com",
+        "primevideo.info",
+        "primevideo.org",
+        "amazonprimevideo.cn"
+      ],
+      "domain_keyword": [
+        "avoddashs"
+      ],
+      "process_name": [
+        "com.amazon.avod.thirdpartyclient"
+      ]
+    }
+  ]
+}

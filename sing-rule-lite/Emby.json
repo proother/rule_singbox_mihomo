@@ -1,0 +1,64 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "emby.lcloud.wiki",
+        "emby.enjoyit.eu.org",
+        "notnetflix.cos.cat"
+      ],
+      "domain_suffix": [
+        "emby.cjpc.tv",
+        "embyplus.org",
+        "ohhhh.org",
+        "peachmv.me",
+        "jellyfin.xeton.dev",
+        "aws.jmsooo.com",
+        "ntt1.jmsooo.com",
+        "emby.cjpc.cc",
+        "mickeycloud.com",
+        "emby.cristiamo.top",
+        "emby.immtel.com",
+        "emby.mcwy.me",
+        "cristiamo.xyz",
+        "emby.ok.edu.hk",
+        "emby.ytoo.li",
+        "agasg1.jmsooo.com",
+        "embymv.tk",
+        "pornemby.club",
+        "movie.xeton.dev",
+        "embyserver.ga",
+        "hinet.jmsooo.com",
+        "cf1.jmsooo.com",
+        "123456.al",
+        "xmsl.org",
+        "poloemby.xyz",
+        "emby.maying.club",
+        "agahk1.jmsooo.com",
+        "emby.xeton.dev",
+        "jellyfin.asia",
+        "plusmedia.site",
+        "emby.nexitally.com",
+        "emby.mdss.cloud",
+        "emby.prprcloud.com",
+        "pilipiliultra.com",
+        "line.emby.men",
+        "emby.nyancat.net",
+        "agajp1.jmsooo.com",
+        "emby.neko.edu.rs",
+        "285286.xyz",
+        "emby.wtf",
+        "emby.flowercloud.yt",
+        "imetyou.top",
+        "emby.cjpc.xyz",
+        "servers.xeton.dev",
+        "emby.paoche.ooo"
+      ],
+      "domain_keyword": [
+        "odysseyplus",
+        "jmsooo",
+        "emby.wtf"
+      ]
+    }
+  ]
+}

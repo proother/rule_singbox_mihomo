@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "doh.360.cn",
+        "dns.alidns.com",
+        "doh.pub"
+      ],
+      "ip_cidr": [
+        "1.12.12.12/32",
+        "1.12.12.12/32"
+      ]
+    }
+  ]
+}

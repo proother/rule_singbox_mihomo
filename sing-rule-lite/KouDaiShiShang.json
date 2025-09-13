@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "koudai.cn",
+        "youshop04.com",
+        "fang.xin",
+        "weidian.cc",
+        "91ruyu.com",
+        "weidian.cn",
+        "geilicdn.com",
+        "youshop03.com",
+        "youshop01.com",
+        "wdfangyi.com",
+        "koudai.com",
+        "weidian-inc.com",
+        "fangxin.com",
+        "geili.cn",
+        "weidian.com",
+        "xihuan.com.cn",
+        "weidianfans.com",
+        "bibikan.cn",
+        "vdian.com",
+        "youshop02.com",
+        "kou6ai.cn",
+        "v5.cc"
+      ]
+    }
+  ]
+}

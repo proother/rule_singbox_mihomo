@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "mediav.com",
+        "bubuying.net",
+        "mvad.com",
+        "kuaishuru.net",
+        "mdvdns.com"
+      ]
+    }
+  ]
+}

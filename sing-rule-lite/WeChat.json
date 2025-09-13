@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "wup.imtt.qq.com",
+        "soup.v.qq.com",
+        "btrace.qq.com",
+        "vweixinf.tc.qq.com",
+        "apd-pcdnwxlogin.teg.tencent-cloud.net",
+        "slife.xy-asia.com",
+        "weixin110.qq.com",
+        "dldir1.qq.com"
+      ],
+      "domain_suffix": [
+        "wechatlegal.net",
+        "wechatpay.com",
+        "qpic.cn",
+        "tenpay.com",
+        "iot-tencent.com",
+        "weixin.qq.com",
+        "lbs.gtimg.com",
+        "vweixinthumb.tc.qq.com",
+        "qlogo.cn",
+        "weixin.com",
+        "map.qq.com",
+        "wechatos.net",
+        "wxs.qq.com",
+        "yun-hl.3g.qq.com",
+        "wxapp.tc.qq.com",
+        "weixinsxy.com",
+        "servicewechat.com",
+        "wx.gtimg.com",
+        "wechat.com",
+        "weixinbridge.com",
+        "up-hl.3g.qq.com",
+        "wx.qq.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "yzbo.tv",
+        "sndks.com",
+        "yizhibo.com",
+        "hifengli.com",
+        "liexiulive.com"
+      ]
+    }
+  ]
+}

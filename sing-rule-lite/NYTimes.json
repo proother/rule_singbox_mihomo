@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "nytimes.com",
+        "nytchina.com",
+        "d3lar09xbwlsge.cloudfront.net",
+        "dc8xl0ndzn2cb.cloudfront.net",
+        "nytlog.com",
+        "d3q1qj9jzsu8nw.cloudfront.net",
+        "nyt.net",
+        "nytcn.me",
+        "nytstyle.com",
+        "d1f1eryiqyjs0r.cloudfront.net",
+        "timestalks.com",
+        "nytco.com",
+        "tynt.com",
+        "nyt.com",
+        "nytimg.com",
+        "nyti.ms"
+      ]
+    }
+  ]
+}

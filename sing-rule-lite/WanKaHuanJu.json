@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "wankacn.com.cn",
+        "hapjs.org",
+        "daxianglink.com.cn",
+        "so-quick.cn",
+        "gm825.com",
+        "mhacn.com",
+        "wankamall.com",
+        "quickingdata.com",
+        "gm825.net",
+        "gm825.com.cn",
+        "itgsa.com",
+        "daxianglink.cn",
+        "gdsa.com",
+        "ita-alliance.com",
+        "quicklyopen.com",
+        "wankacn.net",
+        "daxianglink.com",
+        "daxianglingke.cn",
+        "wankacn.com",
+        "mhacn.com.cn",
+        "mhacn.net",
+        "shenyinhudong.cn",
+        "daxianglingke.com",
+        "shenyinhudong.com",
+        "quickapp.cn",
+        "wankacn.cn",
+        "gm825.cn",
+        "mhacn.cn",
+        "daxianglingke.com.cn"
+      ]
+    }
+  ]
+}

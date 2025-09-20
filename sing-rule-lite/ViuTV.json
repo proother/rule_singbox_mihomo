@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "mobileanalytics.us-east-1.amazonaws.com",
+        "d2anahhhmp1ffz.cloudfront.net",
+        "viu.tv",
+        "viu.now.com",
+        "viu.com",
+        "dfp6rglgjqszk.cloudfront.net",
+        "d1k2us671qcoau.cloudfront.net",
+        "cognito-identity.us-east-1.amazonaws.com"
+      ]
+    }
+  ]
+}

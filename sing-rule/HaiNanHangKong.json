@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "hainanairlines.com",
+        "10044.cn",
+        "hnair.com",
+        "hnacargo.com",
+        "hnair.net"
+      ],
+      "domain_keyword": [
+        "hnagroup"
+      ]
+    }
+  ]
+}

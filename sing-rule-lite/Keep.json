@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "gotokeep.com",
+        "keep.com.cn",
+        "calorietech.com",
+        "keep.com",
+        "keepcdn.com"
+      ]
+    }
+  ]
+}

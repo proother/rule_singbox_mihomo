@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "hboasia5-i.akamaihd.net",
+        "dai3fd1oh325y.cloudfront.net",
+        "hbolb.onwardsmg.com",
+        "s3-ap-southeast-1.amazonaws.com",
+        "hboasialive.akamaized.net",
+        "players.brightcove.net",
+        "wmff.warnermediacdn.com",
+        "cf-images.ap-southeast-1.prod.boltdns.net",
+        "hboasia3-i.akamaihd.net",
+        "bcbolthboa-a.akamaihd.net",
+        "hboasia1-i.akamaihd.net",
+        "hbounify-prod.evergent.com",
+        "hboasia2-i.akamaihd.net",
+        "44wilhpljf.execute-api.ap-southeast-1.amazonaws.com",
+        "hboasia4-i.akamaihd.net",
+        "hbogoprod-vod.akamaized.net"
+      ],
+      "domain_suffix": [
+        "hbogoasia.com",
+        "hbogoasia.hk"
+      ],
+      "domain_keyword": [
+        ".hbogoasia."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "tkhealthcare.com",
+        "tkmedicare.com",
+        "95522.cn",
+        "taikangzhijia.com",
+        "tk.cn",
+        "95522.com.cn",
+        "tanxingfuli.com.cn",
+        "eagent.cn",
+        "jmch12333.com",
+        "tanxingfuli.cn",
+        "tk-life.com",
+        "taikangonline.cn",
+        "taikangonline.net",
+        "taikanglife.com",
+        "taikanglife.net.cn",
+        "taikangonline.com",
+        "95522.net.cn",
+        "taihealthcare.com",
+        "sdrz12333.com",
+        "shzch12333.com",
+        "taikangfoundation.org.cn",
+        "taikang.com",
+        "changhu12333.com",
+        "qqhrch12333.com",
+        "taikanglife.com.cn",
+        "taikanglife.net",
+        "taikang.net.cn",
+        "bjsjsch12333.com",
+        "12333tc.com",
+        "srch12333.cn",
+        "taikanginv.com",
+        "sdhz12333.com",
+        "tanxingfuli.com",
+        "taikangonline.net.cn",
+        "taikanglife.cn",
+        "jxch12333.com",
+        "gzch12333.com",
+        "taikangph.com"
+      ]
+    }
+  ]
+}

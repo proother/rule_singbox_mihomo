@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "rrysapp.com",
+        "got001.com",
+        "zimuzu.tv",
+        "rrys.tv",
+        "jstucdn.com",
+        "zmzapi.net",
+        "zmz002.com",
+        "rrys2020.com",
+        "p4pfile.com",
+        "zmz004.com",
+        "zimuzu.io",
+        "zmz003.com",
+        "playcvn.com",
+        "zmz2019.com",
+        "zmzapi.com",
+        "yyets.com",
+        "rrys2019.com",
+        "zimuzu.com",
+        "zmzfile.com",
+        "zmz001.com",
+        "got002.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "thundercdn.com",
+        "thunderurl.com",
+        "xcloudbase.com",
+        "xunlei.net",
+        "falconalliance.cn",
+        "p2cdn.com",
+        "szxlxzb.com",
+        "2sonar.com",
+        "xlisp.net",
+        "kanimg.com",
+        "geilijiasu.net",
+        "00cdn.com",
+        "xlyouxi.net",
+        "newvr.com",
+        "xunlei.cn",
+        "n0808.com",
+        "sjzhushou.com",
+        "neoimaging.cn",
+        "xbase.cloud",
+        "xbase.xyz",
+        "xlpan.com",
+        "fontong.com",
+        "88cdn.com",
+        "8uri.cn",
+        "kankan.com",
+        "155.com",
+        "sandai.net",
+        "geilijiasu.com",
+        "xunlei.com",
+        "kuaipan.cn",
+        "gigaget.com"
+      ]
+    }
+  ]
+}

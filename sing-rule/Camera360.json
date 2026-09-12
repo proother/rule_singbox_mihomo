@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "ypjc.cloud",
+        "yipai.info",
+        "360in.com",
+        "c360dn.com",
+        "saladvideo.com",
+        "yipai360.com",
+        "52photo.com",
+        "camera360.com"
+      ]
+    }
+  ]
+}

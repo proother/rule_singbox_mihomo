@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "hls-svod.itunes.apple.com",
+        "amp-api.fitness.apple.com"
+      ]
+    }
+  ]
+}

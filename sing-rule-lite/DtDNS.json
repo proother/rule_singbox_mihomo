@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "3d-game.com",
+        "dtdns.net",
+        "darktech.org",
+        "deaftone.com",
+        "slyip.net",
+        "slyip.com",
+        "scieron.com",
+        "suroot.com",
+        "dtdns.com",
+        "effers.com",
+        "4irc.com",
+        "etowns.org",
+        "flnet.org",
+        "etowns.net",
+        "b0ne.com",
+        "chatnook.com",
+        "gotgeeks.com"
+      ]
+    }
+  ]
+}

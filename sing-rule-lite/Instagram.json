@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "instagram.com",
+        "instagr.am",
+        "cdninstagram.com"
+      ],
+      "domain_keyword": [
+        "instagram"
+      ]
+    }
+  ]
+}

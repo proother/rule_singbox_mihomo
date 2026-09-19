@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "xiaoshuo3-sm.com",
+        "uczzd.cn",
+        "xiaoshuo2-sm.com",
+        "xiaoshuo4-sm.com",
+        "uczzd.com.cn",
+        "smapi.cn",
+        "xiaoshuo1-sm.com",
+        "uczzd.com",
+        "yisou.com",
+        "uczzd.net",
+        "shenma-inc.com",
+        "xiaoshuo5-sm.com",
+        "sm.cn"
+      ]
+    }
+  ]
+}

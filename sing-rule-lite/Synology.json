@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "d2f0395ykn6hxb.cloudfront.net"
+      ],
+      "domain_suffix": [
+        "synology.com",
+        "i234.me",
+        "dsmunas.org",
+        "myds.com",
+        "familyds.net",
+        "dsmunas.net",
+        "dscloud.mobi",
+        "synology.cn",
+        "familyds.com",
+        "dscloud.biz",
+        "diskstation.me",
+        "synology.me",
+        "familyds.org",
+        "quickconnect.to",
+        "synodns.com",
+        "dsmunas.com",
+        "dscloud.me"
+      ],
+      "domain_keyword": [
+        "synology"
+      ]
+    }
+  ]
+}

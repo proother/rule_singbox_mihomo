@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "kkstudy.cn",
+        "kankanpro.cn",
+        "ibangtiao.com",
+        "taogepian.com"
+      ]
+    }
+  ]
+}

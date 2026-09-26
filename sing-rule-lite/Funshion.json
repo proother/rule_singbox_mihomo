@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "9ixiuxiu.com",
+        "fun.tv",
+        "fspcdn.com",
+        "funshion.tv",
+        "ibidian.com",
+        "funshion.net",
+        "jvcsmart.cn",
+        "funshion.com",
+        "jvcsmart.com.cn",
+        "9iwanwan.com"
+      ]
+    }
+  ]
+}

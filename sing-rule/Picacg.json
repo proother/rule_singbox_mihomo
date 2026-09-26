@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "picacgp.com",
+        "manhuabika.com",
+        "picacn.xyz",
+        "wikawika.xyz",
+        "picacgy.com",
+        "bikaa.xyz",
+        "picacomic.com",
+        "bikac.xyz",
+        "picacomic.xyz",
+        "bikaios.xyz"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "onedrive.com",
+        "microsoftpersonalcontent.com",
+        "sharepoint.com",
+        "oneclient.sfx.ms",
+        "onedrive.live.com",
+        "storage.msn.com",
+        "photos.live.com",
+        "livefilestore.com",
+        "sharepointonline.com",
+        "spoprod-a.akamaihd.net",
+        "1drv.com",
+        "skydrive.wns.windows.com",
+        "storage.live.com"
+      ],
+      "domain_keyword": [
+        "skydrive",
+        "1drv",
+        "onedrive"
+      ]
+    }
+  ]
+}

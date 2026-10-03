@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "speed.dler.io",
+        "speedtestcustom.com",
+        "speedtest.net",
+        "ooklaserver.net",
+        "fast.com",
+        "speedtest.co",
+        "speed.cloudflare.com"
+      ],
+      "domain_keyword": [
+        "speedtest"
+      ]
+    }
+  ]
+}

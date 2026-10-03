@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "gd10010.cn",
+        "10010.cn",
+        "unimip.cn",
+        "wo.cn",
+        "chinaunicom.com.hk",
+        "unicomgd.com",
+        "e-engine.com.cn",
+        "mucfc.com",
+        "17wo.cn",
+        "cuecp.cn",
+        "10010.com",
+        "cupb.cn",
+        "wom186.com",
+        "chinaunicom.com.cn",
+        "unicompayment.cn",
+        "cu5gaia.com",
+        "10010.com.cn",
+        "unicompayment.net",
+        "gnoc.com.cn",
+        "chinaunicomglobal.com",
+        "unicompayment.org",
+        "chinaunicom.com",
+        "cu5gaia.cn",
+        "wo-link.tech",
+        "chinaunicombidding.cn",
+        "wobaif.com",
+        "wo.com.cn",
+        "gd165.com",
+        "chinaunicom.cn",
+        "unicompayment.com",
+        "10010.net",
+        "mychinaunicom.com",
+        "gd116114.net.cn"
+      ],
+      "ip_cidr": [
+        "113.200.56.63/32",
+        "113.200.56.63/32"
+      ]
+    }
+  ]
+}

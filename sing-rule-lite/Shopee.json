@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "shopee.co.th",
+        "shopee.sg",
+        "shopee.tw",
+        "shopee.com.mx",
+        "shopee.ph",
+        "shopee.com.co",
+        "shopee.com",
+        "shopeesz.com",
+        "shopee.id",
+        "shopee.cn",
+        "shopee.in",
+        "shopee.io",
+        "shopee.co.id",
+        "shp.ee",
+        "shopee.fr",
+        "shopeemobile.com",
+        "shopee.com.br",
+        "shopee.cl",
+        "shopee.es",
+        "shopee.vn",
+        "shopee.com.my"
+      ]
+    }
+  ]
+}

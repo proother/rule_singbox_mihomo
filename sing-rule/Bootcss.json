@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "bootcss.com",
+        "phpcomposer.com",
+        "bootcdn.cn"
+      ]
+    }
+  ]
+}

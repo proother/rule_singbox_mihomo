@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "wikileaks.org",
+        "wikiquote.org",
+        "toolforge.org",
+        "wikimediacloud.org",
+        "wikimediafoundation.org",
+        "w.wiki",
+        "wmcloud.org",
+        "wikisource.org",
+        "wikipedia.com",
+        "wiktionary.org",
+        "wikiversity.org",
+        "wikidata.org",
+        "mediawiki.org",
+        "wmfusercontent.org",
+        "wikinews.org",
+        "wikivoyage.org",
+        "wikibooks.org",
+        "wikipedia.org",
+        "wikimedia.org",
+        "wmflabs.org"
+      ]
+    }
+  ]
+}

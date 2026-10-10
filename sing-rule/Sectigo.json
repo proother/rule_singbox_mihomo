@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "positivessl.com",
+        "usertrust.com",
+        "instantssl.com",
+        "sectigo.com",
+        "hackerguardian.com",
+        "optimumssl.com",
+        "enterprisessl.com"
+      ]
+    }
+  ]
+}

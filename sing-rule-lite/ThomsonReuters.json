@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "aranzadi.es",
+        "thomsonreutersmexico.com",
+        "thomsonreuters.co.uk",
+        "thomsonreuters.com.hk",
+        "tmsnrt.rs",
+        "thomsonreuters.com.tr",
+        "thomsonreuters.ru",
+        "thomsonreuters.com.br",
+        "thomsonreuters.in",
+        "thomsonreuters.co.jp",
+        "legaltracker.com",
+        "thomsonreuters.co.kr",
+        "reuters.com",
+        "thomsonreuters.com.my",
+        "sweetandmaxwell.co.uk",
+        "thomsonreuters.cn",
+        "thomsonreuters.com.sg",
+        "reutersagency.cn",
+        "thomsonreuters.es",
+        "elite.com",
+        "thomsonreuters.co.nz",
+        "livrariart.com.br",
+        "thomsonreuters.com.ar",
+        "tr.com",
+        "reuters.tv",
+        "thomsonreuters.com.au",
+        "thomsonreuters.com.pe",
+        "thomsonreuters.com",
+        "thomsonreuters.ca",
+        "corepublishingsolutions.com",
+        "reutersmedia.net"
+      ]
+    }
+  ]
+}

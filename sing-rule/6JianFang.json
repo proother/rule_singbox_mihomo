@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "6static.cn",
+        "imgjs6.cn",
+        "footbig.com",
+        "sixresource.cn",
+        "6resource.cn",
+        "ccpod.com",
+        "6rooms.com",
+        "webimgs.cn",
+        "wwwstatic.cn",
+        "luyanhui.com",
+        "6.com.cn",
+        "xiu123.cn",
+        "6staticcdn.cn",
+        "6webimg.cn",
+        "faceroom.cn",
+        "sixstatic.cn",
+        "6imgcss.cn",
+        "huanpeng.com",
+        "6.cn"
+      ]
+    }
+  ]
+}

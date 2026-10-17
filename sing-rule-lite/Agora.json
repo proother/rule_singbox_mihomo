@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "agoraio.cn",
+        "agora.io",
+        "agoralab.co"
+      ]
+    }
+  ]
+}

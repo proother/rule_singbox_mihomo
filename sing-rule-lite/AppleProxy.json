@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "mask.icloud.com",
+        "devimages-cdn.apple.com",
+        "devstreaming-cdn.apple.com",
+        "books.itunes.apple.com",
+        "apple.comscoreresearch.com",
+        "mask-api.icloud.com",
+        "api-glb-sea.smoot.apple.com",
+        "news-client.apple.com",
+        "mask-h2.icloud.com",
+        "docs-assets.developer.apple.com",
+        "news-events.apple.com",
+        "sandbox.itunes.apple.com",
+        "uts-api.itunes.apple.com",
+        "cvws.icloud-content.com",
+        "news-edge.apple.com",
+        "js-cdn.music.apple.com",
+        "cdn.apple-cloudkit.com",
+        "np-edge.itunes.apple.com",
+        "gspe1-ssl.ls.apple.com",
+        "hls-svod.itunes.apple.com",
+        "testflight.apple.com",
+        "lookup-api.apple.com",
+        "play-edge.itunes.apple.com",
+        "itunes.apple.com",
+        "news-assets.apple.com",
+        "tv.applemusic.com",
+        "developer.apple.com"
+      ],
+      "domain_suffix": [
+        "cdn-apple.com",
+        "apple-dns.net",
+        "digicert.com",
+        "apple.news",
+        "hls-amt.itunes.apple.com",
+        "appsto.re",
+        "audio-ssl.itunes.apple.com",
+        "apps.apple.com",
+        "ocsp.apple.com",
+        "hls.itunes.apple.com",
+        "blobstore.apple.com",
+        "tv.apple.com"
+      ]
+    }
+  ]
+}

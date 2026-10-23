@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "picsee.pro",
+        "picsee.co",
+        "pise.pw",
+        "pse.is",
+        "pics.ee",
+        "pros.ee"
+      ]
+    }
+  ]
+}

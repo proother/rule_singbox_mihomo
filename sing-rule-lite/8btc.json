@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "bystack.com",
+        "matpool.com",
+        "matpool.net",
+        "8btc.com",
+        "chainnode.com"
+      ]
+    }
+  ]
+}

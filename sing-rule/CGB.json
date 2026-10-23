@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "cgbchina.cn",
+        "gdb.com.cn",
+        "cgbchina.com.cn",
+        "95508.com"
+      ]
+    }
+  ]
+}

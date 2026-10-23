@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "foxdcg.com",
+        "uplynk.com",
+        "fox.com"
+      ]
+    }
+  ]
+}

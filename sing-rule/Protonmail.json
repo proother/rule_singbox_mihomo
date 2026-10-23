@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "protonmail.ch",
+        "protonstatus.com",
+        "pm.me",
+        "protonmail.com",
+        "proton.me"
+      ]
+    }
+  ]
+}

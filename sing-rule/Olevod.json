@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "olehd.com",
+        "olelive.com",
+        "iole.tv",
+        "haiwaikan.com"
+      ],
+      "domain_keyword": [
+        "olevod"
+      ]
+    }
+  ]
+}

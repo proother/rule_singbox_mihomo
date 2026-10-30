@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "jianguopuzi.com",
+        "nutstore.net",
+        "jianguoyun.com",
+        "nutstorehq.com",
+        "gdfgq.club"
+      ]
+    }
+  ]
+}

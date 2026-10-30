@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "redditmedia.com",
+        "reddituploads.com.cdn-cf.dropbox.com",
+        "reddituploads.com",
+        "reddit.com",
+        "reddituploads.com.cdn-cf.behance.net",
+        "redditstatic.com",
+        "redditmail.com",
+        "redd.it"
+      ]
+    }
+  ]
+}

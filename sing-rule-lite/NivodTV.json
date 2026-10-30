@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "nbys.tv",
+        "biggggg.com",
+        "nbyy.tv",
+        "newpppp.com",
+        "mudvod.tv",
+        "vod360.net",
+        "nbys1.tv"
+      ],
+      "domain_keyword": [
+        "nivod"
+      ]
+    }
+  ]
+}

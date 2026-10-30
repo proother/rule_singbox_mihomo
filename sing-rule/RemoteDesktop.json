@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "process_name": [
+        "ToDesk_Setup.exe",
+        "ToDesk_Session.exe",
+        "CrashReport.exe",
+        "ToDesk.exe",
+        "ToDesk_Service.exe",
+        "mstsc.exe",
+        "SunloginClient.exe",
+        "devcon.exe",
+        "DriverInstaller.exe"
+      ]
+    }
+  ]
+}

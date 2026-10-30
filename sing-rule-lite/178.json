@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "178.com",
+        "xyous.com",
+        "nga.cn",
+        "dospy.com",
+        "a9vg.com",
+        "766test.com",
+        "bjyueshenzj.com",
+        "178.net",
+        "carry6.net",
+        "psnine.com",
+        "766.com",
+        "stargame.com",
+        "nga.wiki",
+        "766app.com",
+        "ngacn.cc",
+        "tgbusdata.cn",
+        "766er.com",
+        "tgbus.com",
+        "ngabbs.com",
+        "carry6.cn",
+        "bigccq.cn",
+        "carry6.com"
+      ]
+    }
+  ]
+}

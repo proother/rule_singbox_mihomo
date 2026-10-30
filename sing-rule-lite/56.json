@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "icaneasy.com",
+        "icanvideo.com",
+        "vicovico.com",
+        "56.com",
+        "somama.com",
+        "56imgs.com",
+        "qianfan.tv",
+        "v-56.com",
+        "56img.com",
+        "qf.com.cn"
+      ]
+    }
+  ]
+}

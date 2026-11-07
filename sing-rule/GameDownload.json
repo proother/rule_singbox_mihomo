@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "steam.ru.qtlglb.com",
+        "level3.blizzard.com",
+        "xvcf2.xboxlive.com",
+        "download3.epicgames.com",
+        "assets1.xboxlive.com",
+        "steampipe-kr.akamaized.net",
+        "blzddist1-a.akamaihd.net",
+        "assets2.xboxlive.com",
+        "edge.steam-dns.top.comcast.net",
+        "blizzard.gcdn.cloudn.co.kr",
+        "blzddistkr1-a.akamaihd.net",
+        "steampipe-partner.akamaized.net",
+        "download.cdp.bethesda.net",
+        "download.hikarifield.co.jp",
+        "download.dm.origin.com",
+        "steam.naeu.qtlglb.com",
+        "fastly-download.epicgames.com",
+        "packagespc.xboxlive.com",
+        "eu.cdn.blizzard.com",
+        "steam.eca.qtlglb.com",
+        "xvcf1.xboxlive.com",
+        "content.cdp.bethesda.net",
+        "steampipe.akamaized.net",
+        "ssl-lvlt.cdn.ea.com",
+        "epicgames-download1.akamaized.net",
+        "gog-cdn-lumen.secure2.footprint.net",
+        "client.hikarifield.co.jp",
+        "gamedownloads-rockstargames-com.akamaized.net",
+        "origin-a.akamaihd.net",
+        "download4.epicgames.com",
+        "download2.epicgames.com",
+        "steamusercontent-a.akamaihd.net",
+        "kr.cdn.blizzard.com",
+        "uplaypc-s-ubisoft.cdn.ubionline.com.cn",
+        "download.epicgames.com",
+        "us.cdn.blizzard.com"
+      ],
+      "domain_suffix": [
+        "cdn.ubi.com",
+        "steamcontent.com",
+        "dyn.riotcdn.net"
+      ]
+    }
+  ]
+}

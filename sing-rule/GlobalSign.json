@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "globalsign.be",
+        "globalsign.com",
+        "globalsign.com.sg",
+        "globalsign.net",
+        "globalsign.nl",
+        "globalsign.co.uk",
+        "globalsign.es",
+        "globalsign.eu",
+        "globalsign.ch",
+        "globalsign-media.com",
+        "globalsign.com.au",
+        "globalsign.com.hk",
+        "globalsign.fr"
+      ]
+    }
+  ]
+}

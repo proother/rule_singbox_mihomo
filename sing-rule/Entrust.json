@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "certificat2.com",
+        "myatos.net",
+        "entrustdatacard.com",
+        "atos.net",
+        "entrust.net",
+        "trendmicro.com",
+        "affirmtrust.com"
+      ]
+    }
+  ]
+}

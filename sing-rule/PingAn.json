@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "olatop.com",
+        "4008824365.com",
+        "eka.cn",
+        "4008880999.net",
+        "1qianbao.com.cn",
+        "yqbimg.net",
+        "4008880999.cn",
+        "pinganonline.com.cn",
+        "1qianbao.com",
+        "4008000000.com",
+        "1qianbao.cn",
+        "olatop.cn",
+        "1qianbao.net",
+        "olatop.net",
+        "4008880999.com",
+        "ekapay.cn",
+        "pingan.com",
+        "18ebank.com",
+        "yqb.com",
+        "pinganventures.com",
+        "pingan.com.cn",
+        "yqbimg.com",
+        "1010-0000.com",
+        "mingyuanfund.com",
+        "yiqianbao.com.cn",
+        "yiqianbao.net",
+        "pingan.com.hk"
+      ]
+    }
+  ]
+}

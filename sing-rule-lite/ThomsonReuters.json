@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "thomsonreuters.com",
+        "reutersagency.cn",
+        "thomsonreuters.com.hk",
+        "legaltracker.com",
+        "thomsonreuters.ru",
+        "thomsonreutersmexico.com",
+        "thomsonreuters.com.pe",
+        "thomsonreuters.com.my",
+        "thomsonreuters.ca",
+        "livrariart.com.br",
+        "thomsonreuters.com.au",
+        "thomsonreuters.in",
+        "tr.com",
+        "thomsonreuters.co.jp",
+        "thomsonreuters.co.uk",
+        "reuters.com",
+        "thomsonreuters.com.br",
+        "thomsonreuters.com.sg",
+        "thomsonreuters.com.ar",
+        "thomsonreuters.com.tr",
+        "sweetandmaxwell.co.uk",
+        "thomsonreuters.cn",
+        "thomsonreuters.co.nz",
+        "reutersmedia.net",
+        "aranzadi.es",
+        "reuters.tv",
+        "thomsonreuters.es",
+        "corepublishingsolutions.com",
+        "thomsonreuters.co.kr",
+        "elite.com",
+        "tmsnrt.rs"
+      ]
+    }
+  ]
+}

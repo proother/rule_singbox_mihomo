@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "authbus.com",
+        "upai.com",
+        "shangzhibo.tv",
+        "sktcdn.com",
+        "oncdp.com",
+        "aicdn2.com",
+        "aicdn.com",
+        "aicdn4.com",
+        "upyun.com",
+        "yupoo.com",
+        "zhidian-inc.cn",
+        "upcdn.net",
+        "shangketang.com",
+        "aicdn5.com",
+        "upaiyun.com",
+        "aicdn3.com"
+      ]
+    }
+  ]
+}

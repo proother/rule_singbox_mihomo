@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "zencoder.com",
+        "bcovlive.io",
+        "brightcove.net",
+        "videojs.com",
+        "bcove.video",
+        "bcvp0rtal.com",
+        "brightcove.services",
+        "bcsecure01-a.akamaihd.net",
+        "brightcove.imgix.net",
+        "brightcove.com",
+        "bcovlive-a.akamaihd.net",
+        "zencdn.net",
+        "brightcovecdn.com",
+        "boltdns.net"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "onethingpcs.com",
+        "onethingn.com",
+        "miuapp.com.cn",
+        "onethingtech.net",
+        "wezhibo.net",
+        "wzhibo.tv",
+        "wezhibo.tv",
+        "xycdn.com",
+        "onethingcloud.cn",
+        "onethingc.com",
+        "onethingcloud.com",
+        "xylive.tv",
+        "0101cdn.com",
+        "xycloud.com",
+        "seekr.com.cn",
+        "ionecloud.cn",
+        "walk-live.com",
+        "onething.net",
+        "peiluyou.com",
+        "uhabo.com",
+        "kuiniuca.com",
+        "onethingd.com",
+        "wzhibo.net",
+        "onethingtech.com.cn",
+        "xunleioa.com",
+        "hiveshared.com"
+      ]
+    }
+  ]
+}

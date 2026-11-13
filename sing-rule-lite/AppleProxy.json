@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "mask-api.icloud.com",
+        "devimages-cdn.apple.com",
+        "gspe1-ssl.ls.apple.com",
+        "testflight.apple.com",
+        "news-assets.apple.com",
+        "sandbox.itunes.apple.com",
+        "news-events.apple.com",
+        "hls-svod.itunes.apple.com",
+        "api-glb-sea.smoot.apple.com",
+        "lookup-api.apple.com",
+        "uts-api.itunes.apple.com",
+        "np-edge.itunes.apple.com",
+        "books.itunes.apple.com",
+        "news-edge.apple.com",
+        "js-cdn.music.apple.com",
+        "docs-assets.developer.apple.com",
+        "play-edge.itunes.apple.com",
+        "devstreaming-cdn.apple.com",
+        "mask.icloud.com",
+        "cdn.apple-cloudkit.com",
+        "itunes.apple.com",
+        "tv.applemusic.com",
+        "apple.comscoreresearch.com",
+        "cvws.icloud-content.com",
+        "developer.apple.com",
+        "news-client.apple.com",
+        "mask-h2.icloud.com"
+      ],
+      "domain_suffix": [
+        "apps.apple.com",
+        "hls.itunes.apple.com",
+        "digicert.com",
+        "apple.news",
+        "hls-amt.itunes.apple.com",
+        "appsto.re",
+        "tv.apple.com",
+        "audio-ssl.itunes.apple.com",
+        "cdn-apple.com",
+        "apple-dns.net",
+        "ocsp.apple.com",
+        "blobstore.apple.com"
+      ]
+    }
+  ]
+}

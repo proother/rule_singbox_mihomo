@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "xiami.fm",
+        "xiami.net",
+        "xiami.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "qu2345.com",
+        "iyouxia.com",
+        "wy213.net",
+        "fhyx.com",
+        "fengyx.com",
+        "158c.com",
+        "ali213.net",
+        "wy213.com"
+      ]
+    }
+  ]
+}

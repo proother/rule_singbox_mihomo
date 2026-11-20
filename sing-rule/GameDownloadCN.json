@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "dl.delivery.mp.microsoft.com",
+        "uplaypc-s-ubisoft.cdn.ubionline.com.cn",
+        "xz.pphimalayanrt.com",
+        "st.dl.eccdnx.com",
+        "steampipe.steamcontent.tnkjmec.com",
+        "trts.baishancdnx.cn",
+        "assets1.xboxlive.cn",
+        "dl.steam.clngaa.com",
+        "epicgames-download1-1251447533.file.myqcloud.com",
+        "st.dl.bscstorage.net",
+        "tlu.dl.delivery.mp.microsoft.com",
+        "assets2.xboxlive.cn",
+        "cdn-ali.content.steamchina.com",
+        "cdn-ws.content.steamchina.com",
+        "cdn-qc.content.steamchina.com"
+      ],
+      "domain_suffix": [
+        "pdl.wow.battlenet.com.cn"
+      ]
+    }
+  ]
+}

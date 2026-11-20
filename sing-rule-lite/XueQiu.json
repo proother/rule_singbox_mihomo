@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "aiganggu.com",
+        "danjuanfunds.com",
+        "snowballfinance.com",
+        "imedao.com",
+        "ncfjj.com",
+        "iganggu.com",
+        "imeigu.cn",
+        "danjuanapp.com",
+        "xueqiu.com",
+        "imeigu.com.cn",
+        "snowballsecurities.com"
+      ]
+    }
+  ]
+}

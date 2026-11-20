@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "gitlab-assets.oss-cn-hongkong.aliyuncs.com",
+        "gitlab.com",
+        "gitter.im",
+        "gitter-static.net",
+        "gitlab-static.net",
+        "gitlab.net"
+      ]
+    }
+  ]
+}

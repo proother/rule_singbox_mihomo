@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "chaba123.com",
+        "jjwxc.net",
+        "jjwxc.org",
+        "jjycw.net",
+        "jjwxc.cn",
+        "jjwxc.com",
+        "robook.com"
+      ]
+    }
+  ]
+}

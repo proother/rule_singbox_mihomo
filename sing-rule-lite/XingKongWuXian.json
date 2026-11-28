@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "avstar09.com",
+        "avstar1.com",
+        "avstar6.com",
+        "avstar02.me",
+        "avstar01.me",
+        "avstar2.com",
+        "avstar09.me",
+        "avstar3.com",
+        "avstar5.com",
+        "avstar04.me",
+        "avstar04.com",
+        "avstar03.me",
+        "avstar8.com",
+        "avstar05.me",
+        "avstar06.me",
+        "avstar9.com",
+        "avstar07.me",
+        "avstar4.com",
+        "avstar07.com"
+      ]
+    }
+  ]
+}

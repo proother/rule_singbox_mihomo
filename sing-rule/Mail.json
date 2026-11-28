@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "smtp-mail.outlook.com",
+        "imap-mail.outlook.com",
+        "apple.smtp.mail.yahoo.com",
+        "imap.gmail.com",
+        "smtp.gmail.com",
+        "smtp.office365.com",
+        "outlook.office365.com",
+        "pop.gmail.com",
+        "apple.imap.mail.yahoo.com"
+      ],
+      "domain_suffix": [
+        "smtp.yandex.com",
+        "m.hotmail.com",
+        "imap.yandex.com"
+      ]
+    }
+  ]
+}

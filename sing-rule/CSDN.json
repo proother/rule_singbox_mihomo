@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "csdn.net",
+        "programmer.com.cn",
+        "gitcode.net",
+        "gitchat.cn",
+        "gitcode.com",
+        "linuxpower.com.cn",
+        "csdn.com",
+        "gitbook.cn",
+        "powerlinux.com.cn",
+        "kaifayun.com",
+        "topcto50.com",
+        "iteye.com",
+        "datasea.cn",
+        "programmer.net.cn",
+        "codechina.net",
+        "qualcomm-challenge.com",
+        "tinymind.com",
+        "csto.com",
+        "tinymind.com.cn",
+        "csdn.net.cn",
+        "csdnimg.cn",
+        "tinymind.cn"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "lppz.com",
+        "517lppz.com",
+        "lppzimg.com"
+      ]
+    }
+  ]
+}

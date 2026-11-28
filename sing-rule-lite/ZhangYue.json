@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "zhangyue02.com",
+        "zhi3.net",
+        "ireader.com",
+        "ireader.live",
+        "corp3g.cn",
+        "palmeread.cn",
+        "transmonkey.net",
+        "zhangyue.com",
+        "ireaderm.com",
+        "transmonkey.com",
+        "zuoshujiang.com",
+        "palmeread.com",
+        "z3.cn",
+        "ireader.mobi",
+        "palmestore.cn",
+        "ireaderm.net",
+        "zhangyue03.com",
+        "transmonkey.cn",
+        "zhi3.com.cn",
+        "iremaker.com",
+        "palmestore.com",
+        "mgcube.cn",
+        "ireader.com.cn",
+        "palmebook.com",
+        "zhangyue.net",
+        "zhangyue01.com"
+      ]
+    }
+  ]
+}

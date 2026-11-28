@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain_suffix": [
+        "97973.com.cn",
+        "xcmy0.cn",
+        "jyjqdn.cn",
+        "maozhuar.cn",
+        "97973.com",
+        "xuanyaodang.cn",
+        "smmdn.cn",
+        "hj-dog.com",
+        "xuanyaodang.net",
+        "maozhuar.com",
+        "xuanyaodang.com",
+        "lccnxn.cn",
+        "ljnvb.cn",
+        "lzcmm9x.cn",
+        "maozhuar.com.cn",
+        "carrydj.com",
+        "shsyfzq.cn",
+        "sylqmn.cn",
+        "yblxyp.cn",
+        "youmengchuangxiang.com",
+        "fldvz.cn"
+      ]
+    }
+  ]
+}
